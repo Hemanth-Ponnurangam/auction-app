@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Admin - Platform Console</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #050508; color: #e0e0e0; margin: 0; padding: 20px; min-height: 100vh; overflow-x: hidden; box-sizing: border-box; }
+        .gateway-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #050508; z-index: 5000; }
+        .gateway-card { background: #0f0f15; padding: 40px; border-radius: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.9); border: 1px solid #333; text-align: center; width: 100%; max-width: 400px; }
+        .login-input { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #444; color: #ffc107; border-radius: 8px; box-sizing: border-box; font-size: 24px; text-align: center; letter-spacing: 8px; outline: none;}
+        .login-input:focus { border-color: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.2); }
+        .submit-btn { width: 100%; background: linear-gradient(145deg, #eab308, #b08605); color: #000; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: all 0.2s;}
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(234, 179, 8, 0.4); }
+        #masterDashboard { display: none; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 15px; margin-bottom: 10px;}
+        .main-title { color: #fff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; display: flex; align-items: center; gap: 10px;}
+        .main-title span { color: #ffc107; }
+        .badge { background: #dc3545; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 1px;}
+        .tabs { display: flex; gap: 10px; background: #0f0f15; padding: 10px; border-radius: 12px; border: 1px solid #222;}
+        .tab-btn { flex: 1; padding: 12px; background: transparent; border: none; color: #888; font-weight: bold; cursor: pointer; border-radius: 8px; transition: 0.3s; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;}
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab-btn.active { background: #22222d; color: #ffc107; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #333; }
+        .tab-content { display: none; flex-direction: column; gap: 20px; animation: fadeIn 0.3s;}
+        .tab-content.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .panel { background: #0f0f15; border: 1px solid #222; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .panel-title { font-size: 16px; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;}
+        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.2s;}
+        .action-btn:hover { background: #0056b3; }
+        .action-btn.danger { background: rgba(220,53,69,0.1); color: #dc3545; border: 1px solid #dc3545;}
+        .action-btn.danger:hover { background: #dc3545; color: #fff;}
+        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc;}
+        .action-btn.outline:hover { background: #333; color: #fff;}
+        select.admin-select, input.admin-search { background: #000; color: #ffc107; border: 1px solid #333; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; outline: none;}
+        select.admin-select { appearance: none; cursor: pointer; min-width: 250px; }
+        input.admin-search { color: #fff; width: 250px; font-weight: normal; }
+        input.admin-search:focus { border-color: #007bff; }
+        .room-grid, .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .room-card { background: #000; border: 1px solid #333; border-radius: 10px; padding: 20px; position: relative; transition: 0.3s;}
+        .room-card:hover { border-color: #555; transform: translateY(-3px);}
+        .r-title { font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between;}
+        .r-pin { color: #ffc107; font-family: monospace; background: #222; padding: 2px 6px; border-radius: 4px; font-size: 14px;}
+        .r-stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #222; font-size: 12px; color: #aaa;}
+        .r-stat span:last-child { color: #fff; font-weight: bold;}
+        .team-card { background: #000; border-top: 4px solid #fff; border-radius: 8px; padding: 15px; text-align: center; border-left: 1px solid #222; border-right: 1px solid #222; border-bottom: 1px solid #222;}
+        .t-code { font-size: 24px; font-weight: 900; margin-bottom: 5px;}
+        .t-name { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;}
+        .db-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;}
+        .db-table th { background: #0a0a0f; color: #888; padding: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10;}
+        .db-table td { padding: 12px; border-bottom: 1px solid #222; color: #ccc;}
+        .db-table tr:hover td { background: #111; color: #fff;}
+        .edit-link { color: #007bff; cursor: pointer; font-weight: bold; text-decoration: underline;}
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
+        .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 500px; box-shadow: 0 15px 50px rgba(0,0,0,0.8); }
+        .modal-card input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; box-sizing: border-box;}
+        .modal-card label { display: block; font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px;}
+        .neon-plane { text-shadow: 0 0 10px #0dcaf0, 0 0 20px #0dcaf0; color: #0dcaf0; font-size: 1.2em; margin-left: 6px; vertical-align: middle;}
+    </style>
+</head>
+<body>
+
+    <div id="adminLoginScreen" class="gateway-container">
+        <div class="gateway-card">
+            <h1 style="color: #fff; font-size: 24px; margin-bottom: 10px; letter-spacing: 2px;">👑 GOD MODE</h1>
+            <p style="color:#aaa; margin-bottom:25px; font-size: 12px;">Super Admin Access Only</p>
+            <input type="password" id="superPin" class="login-input" placeholder="PIN" maxlength="4">
+            <button class="submit-btn" onclick="verifySuperAdmin()">AUTHENTICATE</button>
+        </div>
+    </div>
+
+    <div id="masterDashboard">
+        <div class="header">
+            <h1 class="main-title">🛡️ <span>PLATFORM CONSOLE</span> <span class="badge">SUPER ADMIN</span></h1>
+            <button class="action-btn outline" onclick="window.location.reload()">🔒 LOCK CONSOLE</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('databases', this)">🗄️ Database Manager</button>
+            <button class="tab-btn" onclick="switchTab('rooms', this)">📡 Live Servers</button>
+            <button class="tab-btn" onclick="switchTab('franchises', this)">🌐 Global Franchises</button>
+        </div>
+
+        <div id="tab-databases" class="tab-content active">
+            <div class="panel">
+                <div class="panel-header">
+                    <div style="display:flex; gap:15px; align-items:center; flex-wrap: wrap;">
+                        <h2 class="panel-title">Active Preset</h2>
+                        <select id="dbSelector" class="admin-select" onchange="loadSelectedDatabase()"></select>
+                        <input type="text" id="adminDbSearch" class="admin-search" placeholder="🔍 Search players..." oninput="renderDbTable()">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="action-btn" onclick="openUploadModal()">+ Upload CSV Preset</button>
+                        <button class="action-btn outline" onclick="exportCurrentDB()">📥 Export</button>
+                        <button class="action-btn danger" onclick="deleteCurrentDB()">🗑️ Delete</button>
+                    </div>
+                </div>
+                <div style="max-height: 600px; overflow-y: auto; border: 1px solid #222; border-radius: 8px;">
+                    <table class="db-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Player Name</th>
+                                <th>Role</th>
+                                <th>Nat.</th>
+                                <th>Base Price</th>
+                                <th>Set</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dbTableBody">
+                            <tr><td colspan="6" style="text-align:center;">Select a database to view players.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-rooms" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Active Auction Rooms</h2>
+                    <button class="action-btn outline" onclick="loadLiveRooms()">🔄 Refresh</button>
+                </div>
+                <div id="roomsContainer" class="room-grid"></div>
+            </div>
+        </div>
+
+        <div id="tab-franchises" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Global Franchise Registry</h2>
+                    <button class="action-btn" onclick="openTeamModal()">+ Add New Team</button>
+                </div>
+                <p style="color:#888; font-size:12px; margin-top:0;">These are the master teams available to join in any room globally.</p>
+                <div id="teamsContainer" class="team-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 style="color:#fff; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px;">Upload Database</h2>
+            <label>Preset ID (e.g. mega_2026)</label>
+            <input type="text" id="uploadDbId" placeholder="No spaces, lowercase preferred">
+            <label>CSV File Upload</label>
+            <input type="file" id="uploadCsvFile" accept=".csv" style="padding:5px;">
+            <div style="font-size: 11px; color: #aaa; background: #0a0a0f; padding: 10px; border-radius: 6px; border: 1px dashed #444; margin-bottom: 15px;">
+                <strong style="color: #ffc107;">REQUIRED FORMAT:</strong><br>
+                Column 1-6 MUST be exactly: <strong>Name, Base Price, Set, Franchise, Nationality, Role</strong><br><br>
+                <strong style="color: #0dcaf0;">DYNAMIC STATS:</strong><br>
+                The <strong>last 3 columns</strong> of your CSV will automatically be pulled as the player's stats (e.g., Runs, Ave, SR OR Wickets, Econ, BBI).
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="action-btn" style="flex:1;" onclick="processCsvUpload()">UPLOAD & SAVE</button>
+                <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('uploadModal').style.display='none'">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addTeamModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 400px;">
+            <h2 style="color:#fff; margin-top:0;">Add Global Franchise</h2>
+            <label>Team Code (e.g. CSK, RCB)</label>
+            <input type="text" id="ntCode" style="text-transform: uppercase;">
+            <label>Full Team Name</label>
+            <input type="text" id="ntName" placeholder="e.g. Chennai Super Kings">
+            <label>Theme Color (Hex Code)</label>
+            <input type="color" id="ntColor" value="#007bff" style="height:40px; cursor:pointer; padding:2px;">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="action-btn" style="flex:1;" onclick="saveNewTeam()">ADD TEAM</button>
+                <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('addTeamModal').style.display='none'">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🚨 PASTE YOUR FIREBASE CONFIG HERE 🚨
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjJaWjPwK57YDkhPMBLmadg8iaZj5C70A",
+            authDomain: "auction-ea32b.firebaseapp.com",
+            databaseURL: "https://auction-ea32b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "auction-ea32b",
+            storageBucket: "auction-ea32b.firebasestorage.app",
+            messagingSenderId: "621695853292",
+            appId: "1:621695853292:web:d6dcfe11ee1c7b4fea3bc9",
+            measurementId: "G-31Z19QTDEX"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        let currentDbData = [];
+        let currentDbId = "";
+
+        function verifySuperAdmin() {
+            let enteredPin = document.getElementById('superPin').value;
+            db.ref('platform_settings/admin_pin').once('value', snap => {
+                let realPin = snap.val();
+                if (!realPin) {
+                    db.ref('platform_settings/admin_pin').set("7777");
+                    realPin = "7777";
+                }
+                if (enteredPin === realPin) {
+                    document.getElementById('adminLoginScreen').style.display = 'none';
+                    document.getElementById('masterDashboard').style.display = 'flex';
+                    bootDashboard();
+                } else alert("ACCESS DENIED: Incorrect PIN.");
+            });
+        }
+
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            element.classList.add('active');
+            if(tabName === 'rooms') loadLiveRooms();
+            if(tabName === 'franchises') loadGlobalFranchises();
+        }
+
+        function bootDashboard() {
+            db.ref('preset_databases').on('value', snap => {
+                let dbs = snap.val() || {};
+                let selector = document.getElementById('dbSelector');
+                let currentSelection = selector.value;
+                selector.innerHTML = "";
+                let keys = Object.keys(dbs);
+                if (keys.length === 0) {
+                    selector.innerHTML = "<option disabled selected>No Databases Found</option>";
+                    document.getElementById('dbTableBody').innerHTML = `<tr><td colspan="6" style="text-align:center;">Upload a CSV to create a preset.</td></tr>`;
+                    currentDbId = "";
+                    currentDbData = [];
+                    return;
+                }
+                keys.forEach(k => {
+                    let opt = document.createElement('option');
+                    opt.value = k; opt.text = k.toUpperCase() + ` (${dbs[k].length} Players)`;
+                    selector.appendChild(opt);
+                });
+                if(keys.includes(currentSelection)) selector.value = currentSelection;
+                else selector.value = keys[0];
+                loadSelectedDatabase();
+            });
+        }
+
+        function loadSelectedDatabase() {
+            currentDbId = document.getElementById('dbSelector').value;
+            if(!currentDbId) return;
+            db.ref('preset_databases/' + currentDbId).once('value', snap => {
+                currentDbData = snap.val() || [];
+                renderDbTable();
+            });
+        }
+
+        function renderDbTable() {
+            let tbody = document.getElementById('dbTableBody');
+            let searchTerm = document.getElementById('adminDbSearch').value.toLowerCase();
+            let html = "";
+            
+            currentDbData.forEach((p, i) => {
+                if(searchTerm && !p.name.toLowerCase().includes(searchTerm)) return;
+                
+                let pNat = (p.nationality || "Indian").trim();
+                let pNatLower = pNat.toLowerCase();
+                let isOverseas = (pNatLower !== 'india' && pNatLower !== 'indian' && pNatLower !== 'ind');
+                let plane = isOverseas ? `<span class="neon-plane" title="${pNat}">✈️</span>` : ``;
+
+                html += `<tr>
+                    <td style="color:#666;">${i+1}</td>
+                    <td style="font-weight:bold; color:#fff; font-size:15px;">${p.name} ${plane}</td>
+                    <td style="color:#007bff; font-weight:bold;">${p.role || '-'}</td>
+                    <td style="color:#aaa;">${pNat}</td>
+                    <td style="color:#28a745; font-weight:bold;">₹${(p.base_price/10000000).toFixed(2)} Cr</td>
+                    <td>${p.set || '-'}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html || `<tr><td colspan="6" style="text-align:center;">No players matched your search.</td></tr>`;
+        }
+
+        function openUploadModal() { document.getElementById('uploadModal').style.display = 'flex'; }
+        
+        function processCsvUpload() {
+            let id = document.getElementById('uploadDbId').value.trim().toLowerCase().replace(/\s+/g, '_');
+            let fileInput = document.getElementById('uploadCsvFile');
+            
+            if(!id || fileInput.files.length === 0) return alert("Provide an ID and a file.");
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let text = e.target.result;
+                let lines = text.split('\n');
+                let result = [];
+                
+                let rawHeaders = lines[0].split(',');
+                let headers = rawHeaders.map(h => h.trim().toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                
+                let totalCols = headers.length;
+                let s1Label = rawHeaders[totalCols-3] ? rawHeaders[totalCols-3].trim() : "Stat 1";
+                let s2Label = rawHeaders[totalCols-2] ? rawHeaders[totalCols-2].trim() : "Stat 2";
+                let s3Label = rawHeaders[totalCols-1] ? rawHeaders[totalCols-1].trim() : "Stat 3";
+
+                for(let i=1; i<lines.length; i++){
+                    if(!lines[i].trim()) continue;
+                    let obj = {};
+                    let currentline = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    
+                    for(let j=0; j<headers.length; j++){
+                        let val = currentline[j] ? currentline[j].replace(/['"]+/g, '').trim() : "";
+                        if(headers[j] === "base_price" || headers[j] === "baseprice") {
+                            let num = Number(val) || 0;
+                            if(num > 0 && num <= 100) num = num * 10000000;
+                            obj["base_price"] = num;
+                        } else {
+                            obj[headers[j]] = val;
+                        }
+                    }
+                    
+                    obj.status = "available"; 
+                    
+                    obj.stat1_label = s1Label; obj.stat1_val = currentline[totalCols-3] ? currentline[totalCols-3].replace(/['"]+/g, '').trim() : "-";
+                    obj.stat2_label = s2Label; obj.stat2_val = currentline[totalCols-2] ? currentline[totalCols-2].replace(/['"]+/g, '').trim() : "-";
+                    obj.stat3_label = s3Label; obj.stat3_val = currentline[totalCols-1] ? currentline[totalCols-1].replace(/['"]+/g, '').trim() : "-";
+                    
+                    result.push(obj);
+                }
+
+                if(result.length > 0 && result[0].name !== undefined) {
+                    db.ref('preset_databases/' + id).set(result).then(() => {
+                        document.getElementById('uploadModal').style.display = 'none';
+                        alert(`Database '${id}' uploaded successfully with ${result.length} players!`);
+                    });
+                } else {
+                    alert("Invalid CSV format. Missing required columns.");
+                }
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        function exportCurrentDB() {
+            if(currentDbData.length === 0) return alert("Database is empty.");
+            let csvContent = "data:text/csv;charset=utf-8,";
+            let p0 = currentDbData[0];
+            let headers = ["Name", "Base Price", "Set", "Franchise", "Nationality", "Role", p0.stat1_label, p0.stat2_label, p0.stat3_label];
+            csvContent += headers.join(",") + "\n";
+            
+            currentDbData.forEach(row => {
+                let rowData = [
+                    row.name || "",
+                    (row.base_price/10000000) || 0,
+                    row.set || "",
+                    row.franchise || "",
+                    row.nationality || "",
+                    row.role || "",
+                    row.stat1_val || "-",
+                    row.stat2_val || "-",
+                    row.stat3_val || "-"
+                ];
+                csvContent += rowData.map(v => `"${v}"`).join(",") + "\n";
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", currentDbId + "_export.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        function deleteCurrentDB() {
+            if (!currentDbId) return alert("No database selected to delete.");
+            let code = prompt(`DANGER! To permanently delete the preset database '${currentDbId}', type its exact ID below to confirm:`);
+            
+            if (code === currentDbId) {
+                db.ref('preset_databases/' + currentDbId).remove().then(() => {
+                    alert(`Database '${currentDbId}' deleted successfully.`);
+                }).catch((error) => {
+                    alert("Error deleting database: " + error.message);
+                });
+            } else if (code !== null) {
+                alert("Incorrect ID. Deletion cancelled.");
+            }
+        }
+
+        function loadLiveRooms() {
+            db.ref('rooms').once('value', snap => {
+                let rooms = snap.val() || {};
+                let html = "";
+                for (let key in rooms) {
+                    let r = rooms[key];
+                    let rName = r.settings?.room_name || "Unnamed Room";
+                    let live = r.live_state || {};
+                    let stateColor = live.auction_state === 'bidding' ? '#28a745' : '#888';
+                    let bidStr = live.current_bid ? `₹${(live.current_bid/10000000).toFixed(2)}Cr` : "None";
+                    let pCount = r.logged_in_teams ? Object.keys(r.logged_in_teams).length : 0;
+                    
+                    // Safely grab the active player's name from the heavy player pool using the index in live_state
+                    let activePlayerName = '-';
+                    if (live.current_player_index !== undefined && live.current_player_index >= 0 && r.player_pool) {
+                        activePlayerName = r.player_pool[live.current_player_index]?.name || '-';
+                    }
+
+                    html += `
+                    <div class="room-card">
+                        <div class="r-title"><span>${rName}</span> <span class="r-pin">${key}</span></div>
+                        <div style="margin-bottom: 15px; font-size:11px; color:${stateColor}; text-transform:uppercase; font-weight:bold;">● State: ${live.auction_state || 'idle'}</div>
+                        <div class="r-stat"><span>Participants:</span> <span>${pCount} Teams</span></div>
+                        <div class="r-stat"><span>On Block:</span> <span>${activePlayerName}</span></div>
+                        <div class="r-stat"><span>Current Bid:</span> <span style="color:#28a745">${bidStr}</span></div>
+                        <div class="r-stat"><span>Leader:</span> <span style="color:#007bff">${live.highest_bidder || '-'}</span></div>
+                        <button class="action-btn danger" style="width:100%; margin-top:20px;" onclick="killRoom('${key}')">🛑 SHUT DOWN SERVER</button>
+                    </div>`;
+                }
+                document.getElementById('roomsContainer').innerHTML = html || "<p style='color:#666;'>No active rooms found.</p>";
+            });
+        }
+
+        function killRoom(key) {
+            let code = prompt(`DANGER! To permanently delete room ${key}, type its PIN to confirm:`);
+            if (code === key) {
+                db.ref('rooms/' + key).remove().then(() => {
+                    alert("Room terminated.");
+                    loadLiveRooms();
+                });
+            }
+        }
+
+        function loadGlobalFranchises() {
+            db.ref('global_teams').on('value', snap => {
+                let teams = snap.val();
+                if(!teams) {
+                    document.getElementById('teamsContainer').innerHTML = "<p style='color:#666; font-size:12px; grid-column: span 3;'>No franchises found in the global registry. Add them using the button above.</p>";
+                    return; 
+                }
+
+                let html = "";
+                for (let code in teams) {
+                    let t = teams[code];
+                    html += `
+                    <div class="team-card" style="border-top-color: ${t.color};">
+                        <div class="t-code" style="color:${t.color}">${code}</div>
+                        <div class="t-name">${t.name}</div>
+                        <button class="action-btn outline" style="padding:4px 8px; font-size:10px;" onclick="deleteGlobalTeam('${code}')">Remove</button>
+                    </div>`;
+                }
+                document.getElementById('teamsContainer').innerHTML = html;
+            });
+        }
+
+        function openTeamModal() { document.getElementById('addTeamModal').style.display = 'flex'; }
+
+        function saveNewTeam() {
+            let code = document.getElementById('ntCode').value.trim().toUpperCase();
+            let name = document.getElementById('ntName').value.trim();
+            let color = document.getElementById('ntColor').value;
+
+            if(!code || !name) return alert("Provide Team Code and Name");
+
+            db.ref('global_teams/' + code).set({ name: name, color: color }).then(() => {
+                document.getElementById('addTeamModal').style.display = 'none';
+                document.getElementById('ntCode').value = "";
+                document.getElementById('ntName').value = "";
+            });
+        }
+
+        function deleteGlobalTeam(code) {
+            if(confirm(`Remove ${code} from Global Registry?`)) {
+                db.ref('global_teams/' + code).remove();
+            }
+        }
+    </script>
+</body>
+</html>
