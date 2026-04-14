@@ -10,7 +10,6 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
 
-        /* FIX: body was overflow:hidden which cut content on mobile */
         body {
             font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
             background: #0a0a0f; color: #fff; margin: 0; padding: 15px;
@@ -83,8 +82,10 @@
         .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
         @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
+        @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
         .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
+        .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
         .party-mood { animation: partyText .5s infinite alternate; text-shadow: 0 0 15px currentColor; transform: scale(1.1); display: inline-block; }
         @keyframes partyText { 0% { filter: hue-rotate(0deg) brightness(1); } 100% { filter: hue-rotate(40deg) brightness(1.5); } }
 
@@ -206,10 +207,8 @@
 </head>
 <body>
 
-<!-- Connection Banner -->
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
 
-<!-- Gateway Screen -->
 <div id="gatewayScreen" class="gateway-container">
     <div class="gateway-card">
         <h1 style="color:#fff; font-size:28px; margin-bottom:30px; letter-spacing:2px;">🏏 IPL <span style="color:#ffc107;">AUCTION</span></h1>
@@ -219,7 +218,6 @@
     </div>
 </div>
 
-<!-- Room Key Screen -->
 <div id="roomKeyScreen" class="gateway-container" style="display:none;">
     <div class="gateway-card">
         <h2 style="color:#fff; margin-bottom:10px;">Enter Room Key</h2>
@@ -230,7 +228,6 @@
     </div>
 </div>
 
-<!-- Role Popup -->
 <div id="rolePopup" class="role-popup">
     <button onclick="setRole('C')" title="Captain">C</button>
     <button onclick="setRole('VC')" title="Vice Captain">VC</button>
@@ -238,7 +235,6 @@
     <button onclick="setRole('')" class="clear-btn" title="Clear Role">❌</button>
 </div>
 
-<!-- Login Screen -->
 <div id="loginScreen">
     <div class="login-card">
         <h1 id="loginTitle" style="color:#fff; font-size:24px; margin-bottom:5px;">Franchise Access</h1>
@@ -264,7 +260,6 @@
     </div>
 </div>
 
-<!-- App Modal -->
 <div id="appModal" class="modal-overlay">
     <div class="modal-card">
         <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
@@ -274,10 +269,8 @@
     </div>
 </div>
 
-<!-- Main Dashboard -->
 <div id="mainDashboard">
     <div class="top-row">
-        <!-- Left: My Team -->
         <div class="col-left">
             <div class="panel my-team-card" id="myTeamBox">
                 <div class="team-msg-popup" id="msg-popup-myteam"></div>
@@ -291,7 +284,6 @@
             </div>
         </div>
 
-        <!-- Center: Auction Block -->
         <div class="col-center">
             <div class="panel" id="centerPanel">
                 <div class="timer-pill" id="playerTimer">--</div>
@@ -324,7 +316,6 @@
             </div>
         </div>
 
-        <!-- Right: Log + Tabs -->
         <div class="col-right">
             <div class="panel log-panel">
                 <div class="log-header">
@@ -353,7 +344,6 @@
         </div>
     </div>
 
-    <!-- Bottom: Other Teams -->
     <div class="bottom-row" id="otherTeamsList"></div>
 </div>
 
@@ -591,9 +581,10 @@
             let e = snap.val(); logAction(e.msg, new Date(e.t));
         });
 
-        // 3. Settings
+        // 3. Settings (Saved globally for dynamic bid limits)
         roomRef.child('settings').on('value', snap => {
             let s = snap.val() || {};
+            window.auctionSettings = s; 
             STARTING_PURSE_CR = Number(s.starting_purse) || 100;
             TEAM_BUDGET = STARTING_PURSE_CR * CRORE;
             window.isOverseasStrict = s.overseas_limit_enabled === true;
@@ -653,6 +644,18 @@
             }
         });
         myOverseasCount = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName && isOverseas(p)).length;
+    }
+
+    function getCurrentBidIncrement() {
+        let set = window.auctionSettings || {};
+        let base = (set.inc_base || 20) * 100000;
+        let mid = (set.inc_mid || 50) * 100000;
+        let high = (set.inc_high || 100) * 100000;
+        let cr = localCurrentBid / CRORE;
+
+        if (cr >= 5) return high;
+        if (cr >= 2) return mid;
+        return base;
     }
 
     // ── Live UI ────────────────────────────────────────────────────────────
@@ -786,7 +789,7 @@
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
             let lBadge  = document.getElementById('leaderBadge');
             let curWin  = lBadge ? lBadge.textContent : '';
-            let lgClass = (t === curWin && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow' :
+            let lgClass = (t === curWin && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow-silver' :
                           (t === curWin && currentAuctionState==='sold') ? ' sold-card-glow' : '';
             othersHtml += `
             <div class="other-team-card-hz${lgClass}" style="border-top-color:${tColor};">
@@ -807,11 +810,16 @@
         let btn = document.getElementById('mainActionButton');
         let bidZone = document.getElementById('bidZoneBox');
         let jumps   = document.querySelectorAll('.jump-btn');
-        let myBudget  = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
-        let nextBidCr = (localCurrentBid + BID_INCREMENT) / CRORE;
-        let isInsufficient = nextBidCr > myBudget / CRORE;
-        let isOvMaxed = window.isOverseasStrict && data.current_player_index >= 0 && playerPool.length > 0 &&
-                        isOverseas(playerPool[data.current_player_index]||{}) && myOverseasCount >= 8;
+        
+        let set = window.auctionSettings || {};
+        let maxOv = set.max_overseas || 8;
+        let maxSq = set.max_squad || 25;
+
+        let myRosterCount = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName).length;
+        let isOvMaxed = window.isOverseasStrict && data.current_player_index >= 0 && playerPool.length > 0 && isOverseas(playerPool[data.current_player_index]||{}) && myOverseasCount >= maxOv;
+        let isSquadMaxed = myRosterCount >= maxSq;
+        let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
+        let isInsufficient = (localCurrentBid + getCurrentBidIncrement()) > myBudget;
 
         const setBtn = (cls, text, enabled) => {
             btn.className = `action-btn-bid ${cls}`; btn.textContent = text; btn.disabled = !enabled;
@@ -827,25 +835,25 @@
             btn.textContent=`SOLD TO ${data.highest_bidder}`; jumps.forEach(j=>j.disabled=true);
         } else if (currentAuctionState === 'unsold') {
             setStatus('status-losing');  setBtn('btn-bid-unsold','UNSOLD',false);
-        } else if (currentAuctionState === 'cooldown') {
-            setStatus('status-neutral'); setBtn('btn-cooldown','COOLDOWN…',false);
-        } else if (currentAuctionState === 'paused') {
-            setStatus('status-neutral'); setBtn('btn-cooldown','PAUSED…',false);
+        } else if (currentAuctionState === 'cooldown' || currentAuctionState === 'paused') {
+            setStatus('status-neutral'); setBtn('btn-cooldown', currentAuctionState.toUpperCase() + '…', false);
         } else if (amIWinning) {
             setStatus('status-winning'); bidZone.style.borderColor='rgba(40,167,69,.3)';
             btn.className='action-btn-bid btn-bid-locked'; btn.textContent='BID'; btn.disabled=true;
             jumps.forEach(j=>j.disabled=true);
+        } else if (isSquadMaxed) {
+            setStatus('status-losing');  setBtn('btn-bid-insufficient', `SQUAD FULL (${maxSq})`, false);
         } else if (isOvMaxed) {
-            setStatus('status-losing');  setBtn('btn-bid-insufficient','MAX OVERSEAS (8/8)',false);
+            setStatus('status-losing');  setBtn('btn-bid-insufficient', `MAX OVERSEAS (${maxOv})`, false);
         } else if (isInsufficient) {
-            setStatus('status-losing');  setBtn('btn-bid-insufficient','INSUFFICIENT FUNDS',false);
+            setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
-            setStatus('status-losing');  setBtn('btn-bid-active','BID',true);
+            setStatus('status-losing');  setBtn('btn-bid-active', `BID (+₹${(getCurrentBidIncrement()/100000)}L)`, true);
         }
     }
 
     // ── Bidding ────────────────────────────────────────────────────────────
-    function placeBid()            { placeJumpBid(BID_INCREMENT); }
+    function placeBid()            { placeJumpBid(getCurrentBidIncrement()); }
     function placeJumpBid(amount) {
         let btn = document.getElementById('mainActionButton');
         if (!myTeamName || btn.disabled || localBidCooldown) return;
@@ -853,14 +861,13 @@
 
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
 
-        // Firebase transaction — atomic update on the tiny live_state node only.
-        // This prevents race conditions when multiple teams bid simultaneously.
+        // Firebase transaction
         roomRef.child('live_state').transaction(liveData => {
             if (!liveData) return liveData;
             let state = liveData.auction_state;
-            if (state !== 'bidding' && state !== 'cooldown') return liveData; // abort if not biddable
+            if (state !== 'bidding' && state !== 'cooldown') return liveData; 
             let newBid = (liveData.current_bid || 0) + amount;
-            if (newBid > myBudget || liveData.highest_bidder === myTeamName) return liveData; // abort, no change
+            if (newBid > myBudget || liveData.highest_bidder === myTeamName) return liveData; 
             liveData.current_bid     = newBid;
             liveData.highest_bidder  = myTeamName;
             liveData.timer_end       = Date.now() + 15000;
@@ -912,29 +919,37 @@
         popup.style.top  = rect.top + 'px';
         popup.style.left = rect.left + 'px';
     };
+    
     window.setRole = function(role) {
         if (!currentRolePlayer) return;
         let curRoles = allRegisteredTeams[myTeamName]?.playerRoles || {};
         let updates  = {};
         let activeArr = (curRoles[currentRolePlayer] || '').split(',').filter(Boolean);
+
         if (role === '') {
             updates[currentRolePlayer] = null;
-        } else if (role === 'WK') {
-            if (activeArr.includes('WK')) activeArr = activeArr.filter(r => r !== 'WK');
-            else activeArr.push('WK');
-            updates[currentRolePlayer] = activeArr.join(',') || null;
-        } else if (role === 'C' || role === 'VC') {
-            let opp = role === 'C' ? 'VC' : 'C';
-            activeArr = activeArr.filter(r => r !== opp);
-            if (activeArr.includes(role)) { activeArr = activeArr.filter(r => r !== role); }
-            else {
+        } else {
+            // Strictly enforce ONE per team for C, VC, and WK
+            for (let p in curRoles) {
+                if (p !== currentRolePlayer) {
+                    let pArr = (curRoles[p] || '').split(',').filter(r => r !== role);
+                    updates[p] = pArr.join(',') || null;
+                }
+            }
+
+            // Toggle role on the clicked player
+            if (activeArr.includes(role)) {
+                activeArr = activeArr.filter(r => r !== role);
+            } else {
+                if (role === 'C') activeArr = activeArr.filter(r => r !== 'VC');
+                if (role === 'VC') activeArr = activeArr.filter(r => r !== 'C');
                 activeArr.push(role);
-                // Remove this role from any other player who has it
-                for (let p in curRoles) {
-                    if (p !== currentRolePlayer) {
-                        let pArr = (curRoles[p] || '').split(',').filter(r => r !== role);
-                        updates[p] = pArr.join(',') || null;
-                    }
+
+                // Global Chat Announcement for Leadership
+                if (role === 'C' || role === 'VC') {
+                    let title = role === 'C' ? 'Captain' : 'Vice Captain';
+                    let msg = `👑 ${esc(currentRolePlayer)} has been appointed as the ${title} of ${myTeamName}!`;
+                    roomRef.child('chat_events').push({ team: 'SYSTEM', text: msg, time: Date.now() });
                 }
             }
             updates[currentRolePlayer] = activeArr.join(',') || null;
@@ -942,6 +957,7 @@
         roomRef.child('teams_auth/' + myTeamName + '/playerRoles').update(updates);
         document.getElementById('rolePopup').style.display = 'none';
     };
+
     document.addEventListener('click', e => {
         let popup = document.getElementById('rolePopup');
         if (popup.style.display === 'flex' && !popup.contains(e.target) && !e.target.classList.contains('role-badge'))
