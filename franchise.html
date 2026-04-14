@@ -83,9 +83,11 @@
         @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
+        
         .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
         .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
+        
         .party-mood { animation: partyText .5s infinite alternate; text-shadow: 0 0 15px currentColor; transform: scale(1.1); display: inline-block; }
         @keyframes partyText { 0% { filter: hue-rotate(0deg) brightness(1); } 100% { filter: hue-rotate(40deg) brightness(1.5); } }
 
@@ -357,10 +359,10 @@
     let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle', myOverseasCount = 0;
     let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
+    let teamBudgets = {};   // cached — only recalculated when player_pool changes
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
     let isUserScrollingLog = false;
-    let teamBudgets = {};   // cached — only recalculated when player_pool changes
 
     const logContainer = document.getElementById('logContainer');
 
@@ -633,6 +635,19 @@
         });
     }
 
+    // ── Dynamic Bidding Increment Logic ────────────────────────────────────
+    function getCurrentBidIncrement() {
+        let set = window.auctionSettings || {};
+        let base = (set.inc_base || 20) * 100000;
+        let mid = (set.inc_mid || 50) * 100000;
+        let high = (set.inc_high || 100) * 100000;
+        let cr = localCurrentBid / CRORE;
+
+        if (cr >= 5) return high;
+        if (cr >= 2) return mid;
+        return base;
+    }
+
     // ── Budget Cache ───────────────────────────────────────────────────────
     // Only recalculated when playerPool changes — not on every bid tick
     function recalculateBudgets() {
@@ -644,18 +659,6 @@
             }
         });
         myOverseasCount = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName && isOverseas(p)).length;
-    }
-
-    function getCurrentBidIncrement() {
-        let set = window.auctionSettings || {};
-        let base = (set.inc_base || 20) * 100000;
-        let mid = (set.inc_mid || 50) * 100000;
-        let high = (set.inc_high || 100) * 100000;
-        let cr = localCurrentBid / CRORE;
-
-        if (cr >= 5) return high;
-        if (cr >= 2) return mid;
-        return base;
     }
 
     // ── Live UI ────────────────────────────────────────────────────────────
@@ -787,10 +790,13 @@
             let count  = playerPool.filter(p => p.status === 'sold' && p.team === t).length;
             let isOnline = activePresence[t];
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
+            
+            // Get winning leader card logic with SILVER PULSE
             let lBadge  = document.getElementById('leaderBadge');
             let curWin  = lBadge ? lBadge.textContent : '';
             let lgClass = (t === curWin && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow-silver' :
                           (t === curWin && currentAuctionState==='sold') ? ' sold-card-glow' : '';
+                          
             othersHtml += `
             <div class="other-team-card-hz${lgClass}" style="border-top-color:${tColor};">
                 <div class="team-msg-popup" id="msg-popup-${esc(t)}"></div>
@@ -848,12 +854,13 @@
         } else if (isInsufficient) {
             setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
+            // Apply dynamic bid increment text on the main button
             setStatus('status-losing');  setBtn('btn-bid-active', `BID (+₹${(getCurrentBidIncrement()/100000)}L)`, true);
         }
     }
 
     // ── Bidding ────────────────────────────────────────────────────────────
-    function placeBid()            { placeJumpBid(getCurrentBidIncrement()); }
+    function placeBid() { placeJumpBid(getCurrentBidIncrement()); }
     function placeJumpBid(amount) {
         let btn = document.getElementById('mainActionButton');
         if (!myTeamName || btn.disabled || localBidCooldown) return;
@@ -890,8 +897,6 @@
     function updateAllPopups() {
         let now = Date.now();
         [myTeamName, ...Object.keys(allRegisteredTeams)].forEach(t => {
-            let el = document.getElementById('msg-popup-' + t) || document.getElementById('msg-popup-myteam');
-            // use correct id
             let pop = t === myTeamName ? document.getElementById('msg-popup-myteam') : document.getElementById('msg-popup-'+t);
             if (!pop) return;
             if (activePopups[t] && activePopups[t].expiry > now) {
