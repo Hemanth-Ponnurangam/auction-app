@@ -28,6 +28,7 @@
         .upload-instructions { font-size: 10px; color: #888; margin-top: 8px; line-height: 1.5; background: rgba(255,255,255,.05); padding: 8px; border-radius: 4px; }
         .upload-instructions strong { color: #ffc107; }
         select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
+        
         /* ─ Dashboard ────────────────────────────────────────────────────── */
         #adminDashboardWrapper { display: none; width: 100%; flex-direction: column; }
         .main-title { color: #fff; text-align: center; margin: 0 0 5px; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; text-shadow: 0 0 20px rgba(255,193,7,.4); position: relative; }
@@ -47,6 +48,7 @@
         .timer-paused { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.6); }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-top: 8px; }
+        
         /* ─ Buttons ─────────────────────────────────────────────────────── */
         button { border: none; padding: 10px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: .2s; color: white; text-transform: uppercase; }
         button:not(:disabled):active { transform: translateY(0); }
@@ -54,28 +56,31 @@
         .btn-green:not(:disabled):hover { background: linear-gradient(145deg,#218838,#19692c); box-shadow: 0 6px 20px rgba(40,167,69,.4); transform: translateY(-2px); }
         .btn-red { background: linear-gradient(145deg,#dc3545,#bd2130); width: 48%; font-size: 15px; padding: 12px; letter-spacing: 2px; border: 1px solid #c82333; box-shadow: 0 4px 15px rgba(220,53,69,.2); border-radius: 8px; flex-shrink: 0; }
         .btn-red:not(:disabled):hover { background: linear-gradient(145deg,#c82333,#a71d2a); box-shadow: 0 6px 20px rgba(220,53,69,.4); transform: translateY(-2px); }
-        .btn-clock { background: rgba(253,126,20,.1); border: 1px solid #fd7e14; color: #fd7e14; padding: 10px; font-size: 12px; border-radius: 6px; }
+        
+        .btn-clock { background: rgba(253,126,20,.1); border: 1px solid #fd7e14; color: #fd7e14; }
         .btn-clock:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
-        .btn-pause { background: rgba(253,126,20,.15); border: 1px solid #fd7e14; color: #fd7e14; padding: 10px; font-size: 11px; font-weight: bold; border-radius: 6px; }
+        .btn-pause { background: rgba(253,126,20,.15); border: 1px solid #fd7e14; color: #fd7e14; }
         .btn-pause:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
         .btn-pause.is-paused { background: rgba(40,167,69,.15); border-color: #28a745; color: #28a745; }
         .btn-pause.is-paused:not(:disabled):hover { background: #28a745; color: #fff; }
-        .btn-undo { background: rgba(108,117,125,.1); border: 1px solid #6c757d; color: #e0e0e0; padding: 10px; font-size: 11px; font-weight: bold; border-radius: 6px; }
+        .btn-undo { background: rgba(108,117,125,.1); border: 1px solid #6c757d; color: #e0e0e0; }
         .btn-undo:not(:disabled):hover { background: #6c757d; color: #fff; transform: translateY(-1px); }
-        .btn-outline-danger { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #dc3545; padding: 10px; font-size: 11px; font-weight: bold; border-radius: 6px; }
+        .btn-outline-danger { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #dc3545; }
         .btn-outline-danger:not(:disabled):hover { background: #dc3545; color: #fff; transform: translateY(-1px); }
-        .btn-dice { background: #22222d; border: 1px solid #444; color: #fff; padding: 6px 14px; font-size: 20px; border-radius: 8px; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
-        .btn-dice:not(:disabled):hover { background: #3a3a4c; border-color: #666; transform: scale(1.05); }
-        .btn-push { background: rgba(0,123,255,.1); border: 1px solid #007bff; color: #58a6ff; padding: 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; text-align: center; }
+        .btn-push { background: rgba(0,123,255,.1); border: 1px solid #007bff; color: #58a6ff; }
         .btn-push:not(:disabled):hover { background: #007bff; color: #fff; box-shadow: 0 0 10px rgba(0,123,255,.5); }
         .btn-repush { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #ff6b7b; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; }
         .btn-repush:not(:disabled):hover { background: #dc3545; color: #fff; }
+        
+        .btn-dice { background: #22222d; border: 1px solid #444; color: #fff; padding: 6px 14px; font-size: 20px; border-radius: 8px; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+        .btn-dice:not(:disabled):hover { background: #3a3a4c; border-color: #666; transform: scale(1.05); }
         .flex-row { display: flex; justify-content: space-between; margin-bottom: 0; gap: 15px; flex-shrink: 0; }
         
-        /* ─ Budget Grid ─────────────────────────────────────────────────── */
-        .budget-grid { display: grid; grid-template-columns: repeat(5,1fr); grid-auto-rows: minmax(85px, 1fr); gap: 12px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; }
+        /* ─ Budget Grid (Perfect 10 Fit) ────────────────────────────────── */
+        .budget-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(calc(50% - 6px), 1fr); gap: 12px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; }
         .budget-card { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; transition: all .3s; }
         .budget-card-empty { border: 1px dashed #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px; font-weight: bold; letter-spacing: 1px; height: 100%; }
+        
         @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
@@ -87,6 +92,7 @@
         .live-dot { height: 6px; width: 6px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 4px; box-shadow: 0 0 5px #28a745; vertical-align: middle; }
         .offline-dot { height: 6px; width: 6px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 4px; box-shadow: 0 0 5px #dc3545; vertical-align: middle; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+        
         /* ─ Tabs ─────────────────────────────────────────────────────────── */
         .tabs-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .tabs { display: flex; margin-bottom: 10px; background: #0a0a0f; border-radius: 10px; padding: 6px; border: 1px solid #222; flex-shrink: 0; gap: 6px; }
@@ -100,6 +106,7 @@
         .item-price { font-size: 10px; color: #888; }
         select { appearance: none; padding: 8px 12px; font-size: 13px; border-radius: 8px; background: #111118; color: #fff; border: 1px solid #333; outline: none; width: 100%; cursor: pointer; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 8px center; }
         .compact-select { max-width: 220px; flex: 1; }
+        
         /* ─ Log / Chat ───────────────────────────────────────────────────── */
         .chat-input-area { display: flex; gap: 8px; background: rgba(0,0,0,.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
         .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; outline: none; flex: 1; transition: .2s; }
@@ -108,6 +115,7 @@
         .chat-btn:hover { transform: translateY(-1px); }
         .log-entry { font-family: 'Consolas', monospace; font-size: 12px; margin-bottom: 8px; color: #aaa; border-bottom: 1px dashed #222; padding-bottom: 8px; }
         .log-time { color: #555; margin-right: 8px; }
+        
         /* ─ Stats ─────────────────────────────────────────────────────────── */
         .stats-bar { display: flex; background: #0a0a0f; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
         .stat-box { flex: 1; text-align: center; padding: 10px 5px; border-right: 1px solid #222; }
@@ -115,6 +123,7 @@
         .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: bold; }
         .stat-val { font-size: 18px; color: #eee; font-weight: bold; }
         .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
+        
         /* ─ Settings Overlay ─────────────────────────────────────────────── */
         .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.8); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
         .settings-card { background: #161620; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 100%; max-width: 480px; box-shadow: 0 15px 50px rgba(0,0,0,.8); max-height: 90vh; overflow-y: auto; }
@@ -122,6 +131,7 @@
         .setting-label { color: #aaa; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
         .setting-input { background: #0a0a0f; border: 1px solid #333; color: #ffc107; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-size: 16px; font-weight: bold; outline: none; }
         .setting-input.wide { width: 180px; text-align: right; }
+        
         /* ─ App Modal ─────────────────────────────────────────────────────── */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px); }
         .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
@@ -133,6 +143,7 @@
         .action-btn.danger:hover { background: #dc3545; color: #fff; }
         .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
         .action-btn.outline:hover { background: #333; color: #fff; }
+        
         /* Hotkey hint */
         .hotkey-hint { position: absolute; top: 8px; right: 15px; font-size: 11px; color: #888; background: #111118; padding: 4px 8px; border-radius: 8px; border: 1px solid #2d2d3f; z-index: 10; }
         .key-badge { background: #22222d; color: #ffc107; padding: 3px 6px; border-radius: 4px; font-family: monospace; border-bottom: 2px solid #000; margin: 0 4px; }
@@ -195,7 +206,6 @@
             <div class="setting-label">Starting Purse (Cr)</div>
             <input type="number" id="set-purse" class="setting-input" value="100" min="1">
         </div>
-        
         <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px; flex-wrap:wrap; gap:10px;">
             <div class="setting-label" style="width:100%;">Differential Bid Increments (Lakhs)</div>
             <input type="number" id="set-inc-base" class="setting-input" value="20" title="Base Tier (0-2Cr)">
@@ -216,7 +226,6 @@
             <span style="color:#666;">to</span>
             <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;" title="Maximum Squad">
         </div>
-
         <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px; margin-top:20px; border-top:1px solid #222; padding-top:15px;">
             <div class="setting-label">Export Auction Data</div>
             <div style="display:flex; gap:10px; width:100%;">
@@ -296,22 +305,29 @@
 
         <div class="col-right">
             <div class="panel" style="flex:0 0 auto; padding: 12px 15px;">
-                <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:8px; display:block; font-weight:bold; text-align:center;">Auction Controls</label>
+                <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:10px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Auction Controls</label>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                    <button class="btn-clock master-clock" onclick="startTimer(15,'bidding')">15s</button>
-                    <button class="btn-clock master-clock" onclick="startTimer(30,'bidding')">30s</button>
-                    <button class="btn-clock master-clock" onclick="startTimer(60,'bidding')">60s</button>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                    <button class="btn-push" onclick="bypassCooldown()">⏩ FORCE START</button>
-                    <button id="btnPause" class="btn-pause" onclick="togglePause()">⏸ PAUSE</button>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <button class="btn-undo" onclick="undoLastSale()">⏪ UNDO SALE</button>
-                    <button class="btn-outline-danger" onclick="confirmResetAuction()">☢️ RESET</button>
+                <div style="display: flex; gap: 10px; align-items: stretch; height: 80px;">
+                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 0 0 60px;">
+                        <button class="btn-clock master-clock" style="flex:1; padding:0; font-size:11px; border-radius:6px;" onclick="startTimer(15,'bidding')">15s</button>
+                        <button class="btn-clock master-clock" style="flex:1; padding:0; font-size:11px; border-radius:6px;" onclick="startTimer(30,'bidding')">30s</button>
+                        <button class="btn-clock master-clock" style="flex:1; padding:0; font-size:11px; border-radius:6px;" onclick="startTimer(60,'bidding')">60s</button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; flex: 1;">
+                        <button class="btn-push" style="padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; border-radius:6px; line-height:1.2; text-align:center;" onclick="bypassCooldown()">
+                            <span style="font-size:14px; margin-bottom:2px;">⏩</span>FORCE START
+                        </button>
+                        <button id="btnPause" class="btn-pause" style="padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; border-radius:6px; line-height:1.2; text-align:center;" onclick="togglePause()">
+                            <span style="font-size:14px; margin-bottom:2px;">⏸</span>PAUSE
+                        </button>
+                        <button class="btn-undo" style="padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; border-radius:6px; line-height:1.2; text-align:center;" onclick="undoLastSale()">
+                            <span style="font-size:14px; margin-bottom:2px;">⏪</span>UNDO SALE
+                        </button>
+                        <button class="btn-outline-danger" style="padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; border-radius:6px; line-height:1.2; text-align:center;" onclick="confirmResetAuction()">
+                            <span style="font-size:14px; margin-bottom:2px;">☢️</span>RESET
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -361,7 +377,7 @@
     let playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle';
     let TEAM_BUDGET = 100 * CRORE, STARTING_PURSE_CR = 100;
-    let teamBudgets = {};       // cached budget per team, recomputed on pool changes only
+    let teamBudgets = {};       
     let _modalCb = null, _liveStateData = {};
     let _renderTimer = null;
 
@@ -511,7 +527,6 @@
 
     // ── Firebase Listeners ────────────────────────────────────────────────
     function attachFirebaseListeners() {
-        // 1. Chat
         let isChatLoaded=false;
         roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
             if (!isChatLoaded) return;
@@ -520,7 +535,6 @@
         });
         roomRef.child('chat_events').once('value', () => { isChatLoaded=true; });
 
-        // 2. Persistent Auction Log
         let isLogLoaded=false;
         roomRef.child('auction_log').limitToLast(100).once('value', snap => {
             let entries=snap.val()||{};
@@ -532,7 +546,6 @@
             let e=snap.val(); logLocal(e.msg, new Date(e.t));
         });
 
-        // 3. Settings
         roomRef.child('settings').on('value', snap => {
             let d=snap.val()||{};
             STARTING_PURSE_CR=Number(d.starting_purse)||100;
@@ -540,7 +553,6 @@
             document.getElementById('headerRoomName').textContent=(d.room_name||'IPL AUCTIONEER').toUpperCase();
         });
 
-        // 4. Teams & Presence
         roomRef.child('teams_auth').on('value', snap => {
             allRegisteredTeams=snap.val()||{};
             populateDropdowns(); recalculateBudgets(); updateBudgetTracker();
@@ -549,14 +561,12 @@
             activePresence=snap.val()||{}; updateBudgetTracker();
         });
 
-        // 5a. Player Pool
         roomRef.child('player_pool').once('value', snap => {
             let raw=snap.val()||[];
             playerPool=Array.isArray(raw)?raw:Object.values(raw);
             populateDropdowns(); recalculateBudgets(); scheduleRender();
         });
 
-        // 5b. Player Pool Child Updates
         roomRef.child('player_pool').on('child_changed', snap => {
             let idx=parseInt(snap.key);
             if (!isNaN(idx)) {
@@ -565,7 +575,6 @@
             }
         });
 
-        // 6. Live State
         roomRef.child('live_state').on('value', snap => {
             let data=snap.val()||{};
             _liveStateData=data;
@@ -613,7 +622,6 @@
         leaderEl.textContent=currentLeader;
         leaderEl.style.color=allRegisteredTeams[currentLeader]?.color||'#007bff';
 
-        // Timer tick
         if (window.uiTimer) clearInterval(window.uiTimer);
         window.uiTimer=setInterval(() => {
             let timerEl=document.getElementById('adminTimer');
@@ -628,7 +636,6 @@
             if (currentAuctionState==='cooldown'&&t===0) { clearInterval(window.uiTimer); startTimer(15,'bidding'); }
         }, 500);
 
-        // Button states
         let btnSold=document.getElementById('btnSold'), btnUnsold=document.getElementById('btnUnsold');
         let diceBtn=document.getElementById('randomDiceBtn'), clocks=document.querySelectorAll('.master-clock');
         let pauseBtn=document.getElementById('btnPause');
@@ -646,8 +653,8 @@
             diceBtn.style.opacity='0.3';
         }
         
-        if (isPaused) { pauseBtn.textContent='▶ RESUME'; pauseBtn.classList.add('is-paused'); }
-        else { pauseBtn.textContent='⏸ PAUSE'; pauseBtn.classList.remove('is-paused'); }
+        if (isPaused) { pauseBtn.innerHTML='<span style="font-size:14px; margin-bottom:2px;">▶</span>RESUME'; pauseBtn.classList.add('is-paused'); }
+        else { pauseBtn.innerHTML='<span style="font-size:14px; margin-bottom:2px;">⏸</span>PAUSE'; pauseBtn.classList.remove('is-paused'); }
 
         updateBudgetTracker();
     }
@@ -1016,4 +1023,9 @@
 </html>
 
 }
-Wait there is no change in height of the franchise cards it looks exact same from the previous code
+Can you do this change in franchise.html too?
+Top space and franchise card 
+I think the problem of that empty space below is there are 5 columns and 2 rows right ? If only 3 are participating the rest goes as waiting 
+those 3 align at top and remaining waiting cards stretch to occupy 
+Make those stretch cards small like participating cards and let the below space be blank 
+No problem
