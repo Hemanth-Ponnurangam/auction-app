@@ -120,7 +120,7 @@
         .role-popup button.clear-btn { color: #ff4444; }
         .role-popup button.clear-btn:hover { background: #ff4444; color: #fff; border-color: #ff4444; }
 
-        /* ─ Center Panel ───────────────────────────────────────────────── */
+        /* ─ Center Panel (Profile & Stats) ─────────────────────────────── */
         #centerPanel { overflow-y: auto; overflow-x: hidden; height: 100%; }
         .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all .3s; }
         .timer-green  { background: rgba(40,167,69,.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40,167,69,.4); }
@@ -128,15 +128,20 @@
         .timer-danger { background: rgba(220,53,69,.2); color: #ff4444; border-color: #ff4444; box-shadow: 0 0 20px rgba(220,53,69,.6); animation: pulse 1s infinite; }
         .timer-paused { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
-        .player-header { margin-bottom: 10px; padding-right: 70px; flex-shrink: 0; }
+        
+        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
+        .player-photo-box { width: 110px; height: 110px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
+        .player-header { flex: 1; padding-right: 70px; }
+        
         .player-name { font-size: 28px; color: #fff; font-weight: bold; margin: 0 0 5px; line-height: 1.1; display: flex; align-items: center; }
         .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
-        .stats-bar { display: flex; background: #0a0a0f; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 15px; flex-shrink: 0; }
-        .stat-box { flex: 1; text-align: center; padding: 10px 5px; border-right: 1px solid #222; }
-        .stat-box:last-child { border-right: none; }
-        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: bold; }
-        .stat-val { font-size: 18px; color: #eee; font-weight: bold; }
+        
+        /* New 6-Column Stats Grid */
+        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 15px; flex-shrink: 0; }
+        .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
+        .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
+        .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
 
         /* ─ Bid Zone ────────────────────────────────────────────────────── */
         .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 15px; text-align: center; transition: all .3s; margin-top: auto; flex-shrink: 0; }
@@ -162,11 +167,11 @@
 
         /* ─ Log Panel ───────────────────────────────────────────────────── */
         .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; }
-        .log-header { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #2d2d3f; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-input-area { display: flex; gap: 5px; background: rgba(0,0,0,.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
-        .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; outline: none; transition: .2s; flex: 1; }
+        .log-header { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #2d2d3f; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-input-area { display: flex; gap: 5px; background: rgba(0,0,0,.3); padding: 3px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
+        .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 4px 8px; font-size: 9px; outline: none; transition: .2s; flex: 1; }
         .chat-input:focus { border-color: #007bff; }
-        .chat-btn { background: linear-gradient(145deg,#007bff,#0056b3); color: #fff; border: none; border-radius: 4px; font-size: 10px; cursor: pointer; padding: 6px 14px; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: 1px; }
+        .chat-btn { background: linear-gradient(145deg,#007bff,#0056b3); color: #fff; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; padding: 4px 10px; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: 1px; }
         .chat-btn:hover { transform: translateY(-1px); }
         .log-container { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
         .log-entry { font-family: 'Consolas', monospace; font-size: 11px; margin-bottom: 4px; color: #bbb; border-bottom: 1px dashed #222; padding-bottom: 4px; line-height: 1.4; }
@@ -289,19 +294,28 @@
         <div class="col-center">
             <div class="panel" id="centerPanel">
                 <div class="timer-pill" id="playerTimer">--</div>
-                <div class="player-header">
-                    <span class="label-text">On The Block</span>
-                    <div class="player-name" id="playerName">Waiting…</div>
-                    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                        <div class="past-teams" id="playerFranchise" style="display:none;"></div>
-                        <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+                
+                <div class="player-top-section">
+                    <div class="player-photo-box" id="playerPhoto">PHOTO</div>
+                    <div class="player-header" style="margin-bottom:0; padding-right:0;">
+                        <span class="label-text">On The Block</span>
+                        <div class="player-name" id="playerName">Waiting…</div>
+                        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                            <div class="past-teams" id="playerFranchise" style="display:none;"></div>
+                            <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+                        </div>
                     </div>
                 </div>
+
                 <div class="stats-bar">
-                    <div class="stat-box"><div class="stat-label" id="statLabel1">STAT 1</div><div class="stat-val" id="playerStat1">-</div></div>
-                    <div class="stat-box"><div class="stat-label" id="statLabel2">STAT 2</div><div class="stat-val" id="playerStat2">-</div></div>
-                    <div class="stat-box"><div class="stat-label" id="statLabel3">STAT 3</div><div class="stat-val" id="playerStat3">-</div></div>
+                    <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
+                    <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
+                    <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
+                    <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
+                    <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
+                    <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                 </div>
+
                 <div class="bidding-zone" id="bidZoneBox">
                     <span class="label-text" style="font-size:12px;">Current Bid</span>
                     <div class="current-bid-display status-neutral" id="currentBidContainer">
@@ -321,7 +335,7 @@
         <div class="col-right">
             <div class="panel log-panel">
                 <div class="log-header">
-                    <span>📜 Live Room Activity</span>
+                    <span>📜 Live Activity</span>
                     <div class="chat-input-area">
                         <input type="text" id="chatInput" class="chat-input" maxlength="30" placeholder="Type message…" onkeypress="if(event.key==='Enter') sendChatMessage()">
                         <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
@@ -693,16 +707,21 @@
                 let rl = document.getElementById('playerRole');
                 if (p.franchise) { fr.textContent = p.franchise; fr.style.display = 'inline-block'; } else fr.style.display = 'none';
                 if (p.role)      { rl.textContent = p.role;      rl.style.display = 'inline-block'; } else rl.style.display = 'none';
-                document.getElementById('statLabel1').textContent = p.stat1_label || 'STAT 1'; document.getElementById('playerStat1').textContent = p.stat1_val || '-';
-                document.getElementById('statLabel2').textContent = p.stat2_label || 'STAT 2'; document.getElementById('playerStat2').textContent = p.stat2_val || '-';
-                document.getElementById('statLabel3').textContent = p.stat3_label || 'STAT 3'; document.getElementById('playerStat3').textContent = p.stat3_val || '-';
+                
+                // Attempt to parse dynamic fields if they exist, otherwise fallback to dashes
+                document.getElementById('statRuns').textContent   = p.runs || p.stat1_val || '-';
+                document.getElementById('statAvg').textContent    = p.average || p.avg || p.stat2_val || '-';
+                document.getElementById('statBatSR').textContent  = p.bat_sr || p.strike_rate || p.stat3_val || '-';
+                document.getElementById('statWkts').textContent   = p.wickets || '-';
+                document.getElementById('statEcon').textContent   = p.economy || p.econ || '-';
+                document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
             }
         } else {
             document.getElementById('playerName').textContent = 'Waiting…';
             document.getElementById('playerFranchise').style.display = 'none';
             document.getElementById('playerRole').style.display      = 'none';
-            ['statLabel1','playerStat1','statLabel2','playerStat2','statLabel3','playerStat3'].forEach((id,i) => {
-                document.getElementById(id).textContent = ['STAT 1','-','STAT 2','-','STAT 3','-'][i];
+            ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => {
+                document.getElementById(id).textContent = '-';
             });
         }
 
@@ -868,7 +887,8 @@
 
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
 
-        // Firebase transaction
+        // Firebase transaction — atomic update on the tiny live_state node only.
+        // This prevents race conditions when multiple teams bid simultaneously.
         roomRef.child('live_state').transaction(liveData => {
             if (!liveData) return liveData;
             let state = liveData.auction_state;
