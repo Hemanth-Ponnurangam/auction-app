@@ -517,7 +517,7 @@
         });
         roomRef.child('chat_events').once('value', () => { isChatLoaded=true; });
 
-        // 2. Persistent Auction Log
+        // 2. Persistent Auction Log (replaces latest_event hack)
         let isLogLoaded=false;
         roomRef.child('auction_log').limitToLast(100).once('value', snap => {
             let entries=snap.val()||{};
@@ -546,14 +546,15 @@
             activePresence=snap.val()||{}; updateBudgetTracker();
         });
 
-        // 5a. Player Pool
+        // 5a. Player Pool — full load ONCE to avoid bandwidth on every bid
         roomRef.child('player_pool').once('value', snap => {
             let raw=snap.val()||[];
             playerPool=Array.isArray(raw)?raw:Object.values(raw);
             populateDropdowns(); recalculateBudgets(); scheduleRender();
         });
 
-        // 5b. Player Pool Child Updates
+        // 5b. Player Pool — only fires when a player's status changes (sold/unsold/reset)
+        //     Each event delivers ONE player object instead of the entire pool.
         roomRef.child('player_pool').on('child_changed', snap => {
             let idx=parseInt(snap.key);
             if (!isNaN(idx)) {
@@ -562,7 +563,7 @@
             }
         });
 
-        // 6. Live State
+        // 6. Live State (hyper-fast — fires on every bid)
         roomRef.child('live_state').on('value', snap => {
             let data=snap.val()||{};
             _liveStateData=data;
@@ -574,8 +575,10 @@
         });
     }
 
+    // Debounced render so child_changed bursts (e.g. on reset) don't thrash the DOM
     function scheduleRender() { clearTimeout(_renderTimer); _renderTimer=setTimeout(()=>{ renderDeck(); renderUnsold(); renderSquads(); }, 60); }
 
+    // Recompute budgets from pool — only called when player_pool changes, not on every bid
     function recalculateBudgets() {
         let keys=Object.keys(allRegisteredTeams);
         keys.forEach(t => { teamBudgets[t]=TEAM_BUDGET; });
@@ -622,6 +625,7 @@
             if (t>10) timerEl.classList.add('timer-green');
             else if (t>5) timerEl.classList.add('timer-orange');
             else timerEl.classList.add('timer-red');
+            // Auto-transition from cooldown to bidding
             if (currentAuctionState==='cooldown'&&t===0) { clearInterval(window.uiTimer); startTimer(15,'bidding'); }
         }, 500);
 
@@ -642,7 +646,7 @@
             _setBtn(pauseBtn, active||isPaused);
             diceBtn.style.opacity='0.3';
         }
-        
+        // Pause button label
         if (isPaused) { pauseBtn.textContent='▶ RESUME'; pauseBtn.classList.add('is-paused'); }
         else { pauseBtn.textContent='⏸ PAUSE'; pauseBtn.classList.remove('is-paused'); }
 
@@ -696,6 +700,7 @@
     }
 
     // ── Persistent Log ────────────────────────────────────────────────────
+    // Significant events are pushed to Firebase so the log survives refresh
     function persistEvent(msg) {
         if (roomRef) roomRef.child('auction_log').push({ msg, t: Date.now() });
     }
@@ -749,8 +754,9 @@
     function startTimer(seconds, state='bidding') {
         roomRef.child('live_state').update({ timer_end:Date.now()+(seconds*1000), auction_state:state });
     }
-    
-    function bypassCooldown() {
+
+    // NEW BYPASS FUNCTION INTEGRATED HERE
+    window.bypassCooldown = function() {
         if (currentAuctionState === 'cooldown') {
             roomRef.child('live_state').update({ 
                 auction_state: 'bidding', 
@@ -758,11 +764,12 @@
             });
             persistEvent('⏩ Cooldown bypassed. Bidding is LIVE!');
         }
-    }
+    };
 
     // ── PAUSE / RESUME ────────────────────────────────────────────────────
     function togglePause() {
         if (currentAuctionState==='paused') {
+            // Resume — restore timer from stored remaining time
             let remaining=_liveStateData.paused_remaining||15000;
             roomRef.child('live_state').update({ auction_state:'bidding', timer_end:Date.now()+remaining, paused_remaining:null });
             persistEvent('▶️ Auction <strong>RESUMED</strong>.');
@@ -806,7 +813,7 @@
                     let resetPool=playerPool.map(p=>{p.status='available'; p.team=null; p.sold_price=null; return p;});
                     roomRef.update({ player_pool:resetPool, logged_in_teams:null, teams_auth:null });
                     roomRef.child('live_state').update({ current_bid:0, highest_bidder:'-', timer_end:0, current_player_index:-1, last_sold_index:-1, auction_state:'idle' });
-                    roomRef.child('auction_log').remove(); 
+                    roomRef.child('auction_log').remove(); // clear old log on full reset
                     persistEvent('🔄 <strong>FULL AUCTION RESET</strong> performed by auctioneer.');
                 } else { showAlert('Cancelled','Incorrect confirmation. Reset cancelled.'); }
             })
@@ -839,7 +846,7 @@
         if (n&&p) { let show=n.style.display!=='none'; n.style.display=show?'none':'block'; p.style.display=show?'block':'none'; }
     }
 
-    // ── Settings ──────────────────────────────────────────────────────────
+    // ── Settings (UPDATED WITH NEW VARIABLES) ─────────────────────────────
     function openSettings() {
         document.getElementById('settingsOverlay').style.display='flex';
         document.getElementById('set-room-key').value=currentRoomKey||'';
@@ -849,6 +856,7 @@
             document.getElementById('set-purse').value=s.starting_purse||100;
             document.getElementById('set-overseas-rule').value=s.overseas_limit_enabled!==false?'true':'false';
             
+            // New Advanced Settings Population
             document.getElementById('set-inc-base').value = s.inc_base || 20;
             document.getElementById('set-inc-mid').value = s.inc_mid || 50;
             document.getElementById('set-inc-high').value = s.inc_high || 100;
@@ -865,6 +873,8 @@
         let rName=document.getElementById('set-room-name').value.trim();
         let purse=parseInt(document.getElementById('set-purse').value)||100;
         let oLimit=document.getElementById('set-overseas-rule').value==='true';
+        
+        // Parsing New Advanced Settings Inputs
         let incBase = parseInt(document.getElementById('set-inc-base').value) || 20;
         let incMid = parseInt(document.getElementById('set-inc-mid').value) || 50;
         let incHigh = parseInt(document.getElementById('set-inc-high').value) || 100;
@@ -874,9 +884,9 @@
 
         if (roomRef&&rName) {
             roomRef.child('settings').update({
-                room_name:rName, 
-                starting_purse:purse, 
-                overseas_limit_enabled:oLimit,
+                room_name: rName, 
+                starting_purse: purse, 
+                overseas_limit_enabled: oLimit,
                 inc_base: incBase,
                 inc_mid: incMid,
                 inc_high: incHigh,
