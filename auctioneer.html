@@ -10,7 +10,7 @@
     <script src="firebase-config.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0f15; color: #e0e0e0; margin: 0; padding: 15px 20px; height: 100vh; overflow: hidden; font-size: 14px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0f15; color: #e0e0e0; margin: 0; padding: 10px 20px; height: 100vh; overflow: hidden; font-size: 14px; }
         #connBanner { display: none; position: fixed; top: 0; left: 0; right: 0; padding: 8px; background: #dc3545; color: #fff; text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999; }
         /* ─ Screens ─────────────────────────────────────────────────────── */
         .gateway-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000; }
@@ -30,11 +30,11 @@
         select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
         /* ─ Dashboard ────────────────────────────────────────────────────── */
         #adminDashboardWrapper { display: none; width: 100%; flex-direction: column; }
-        .main-title { color: #fff; text-align: center; margin: 0 0 10px; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; text-shadow: 0 0 20px rgba(255,193,7,.4); position: relative; }
+        .main-title { color: #fff; text-align: center; margin: 0 0 5px; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; text-shadow: 0 0 20px rgba(255,193,7,.4); position: relative; }
         .main-title span { color: #ffc107; }
         .gear-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.05); border: 1px solid #444; border-radius: 8px; padding: 5px 12px; color: #aaa; font-size: 14px; cursor: pointer; transition: .3s; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
         .gear-btn:hover { background: #333; color: #fff; border-color: #555; }
-        .dashboard { width: 100%; max-width: 1400px; margin: auto; display: flex; flex-direction: row; justify-content: space-between; align-items: stretch; gap: 15px; height: calc(100vh - 65px); padding-bottom: 10px; }
+        .dashboard { width: 100%; max-width: 1400px; margin: auto; display: flex; flex-direction: row; justify-content: space-between; align-items: stretch; gap: 15px; height: calc(100vh - 50px); padding-bottom: 10px; }
         .col-left { width: calc(65% - 7px); display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
         .col-right { width: calc(35% - 7px); display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
         .panel { background: #161620; padding: 12px 15px; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.2); position: relative; display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; overflow-y: auto; overflow-x: hidden; }
@@ -54,28 +54,28 @@
         .btn-green:not(:disabled):hover { background: linear-gradient(145deg,#218838,#19692c); box-shadow: 0 6px 20px rgba(40,167,69,.4); transform: translateY(-2px); }
         .btn-red { background: linear-gradient(145deg,#dc3545,#bd2130); width: 48%; font-size: 15px; padding: 12px; letter-spacing: 2px; border: 1px solid #c82333; box-shadow: 0 4px 15px rgba(220,53,69,.2); border-radius: 8px; flex-shrink: 0; }
         .btn-red:not(:disabled):hover { background: linear-gradient(145deg,#c82333,#a71d2a); box-shadow: 0 6px 20px rgba(220,53,69,.4); transform: translateY(-2px); }
-        .btn-clock { background: rgba(253,126,20,.1); border: 1px solid #fd7e14; color: #fd7e14; flex: 1; padding: 10px; }
+        .btn-clock { background: rgba(253,126,20,.1); border: 1px solid #fd7e14; color: #fd7e14; padding: 10px; font-size: 12px; border-radius: 6px; }
         .btn-clock:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
-        .btn-pause { background: rgba(253,126,20,.15); border: 1px solid #fd7e14; color: #fd7e14; padding: 10px; font-size: 11px; font-weight: bold; }
+        .btn-pause { background: rgba(253,126,20,.15); border: 1px solid #fd7e14; color: #fd7e14; padding: 10px; font-size: 11px; font-weight: bold; border-radius: 6px; }
         .btn-pause:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
         .btn-pause.is-paused { background: rgba(40,167,69,.15); border-color: #28a745; color: #28a745; }
         .btn-pause.is-paused:not(:disabled):hover { background: #28a745; color: #fff; }
-        .btn-undo { background: rgba(108,117,125,.1); border: 1px solid #6c757d; color: #e0e0e0; flex: 1; padding: 10px; }
+        .btn-undo { background: rgba(108,117,125,.1); border: 1px solid #6c757d; color: #e0e0e0; padding: 10px; font-size: 11px; font-weight: bold; border-radius: 6px; }
         .btn-undo:not(:disabled):hover { background: #6c757d; color: #fff; transform: translateY(-1px); }
-        .btn-outline-danger { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #dc3545; flex: 1; padding: 10px; }
+        .btn-outline-danger { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #dc3545; padding: 10px; font-size: 11px; font-weight: bold; border-radius: 6px; }
         .btn-outline-danger:not(:disabled):hover { background: #dc3545; color: #fff; transform: translateY(-1px); }
         .btn-dice { background: #22222d; border: 1px solid #444; color: #fff; padding: 6px 14px; font-size: 20px; border-radius: 8px; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
         .btn-dice:not(:disabled):hover { background: #3a3a4c; border-color: #666; transform: scale(1.05); }
-        .btn-push { background: rgba(0,123,255,.1); border: 1px solid #007bff; color: #58a6ff; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; }
+        .btn-push { background: rgba(0,123,255,.1); border: 1px solid #007bff; color: #58a6ff; padding: 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; text-align: center; }
         .btn-push:not(:disabled):hover { background: #007bff; color: #fff; box-shadow: 0 0 10px rgba(0,123,255,.5); }
         .btn-repush { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #ff6b7b; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; }
         .btn-repush:not(:disabled):hover { background: #dc3545; color: #fff; }
         .flex-row { display: flex; justify-content: space-between; margin-bottom: 0; gap: 15px; flex-shrink: 0; }
         
         /* ─ Budget Grid ─────────────────────────────────────────────────── */
-        .budget-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; align-content: start; }
-        .budget-card { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 95px; position: relative; transition: all .3s; }
-        .budget-card-empty { border: 1px dashed #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px; font-weight: bold; letter-spacing: 1px; height: 95px; }
+        .budget-grid { display: grid; grid-template-columns: repeat(5,1fr); grid-auto-rows: minmax(85px, 1fr); gap: 12px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; }
+        .budget-card { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; transition: all .3s; }
+        .budget-card-empty { border: 1px dashed #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px; font-weight: bold; letter-spacing: 1px; height: 100%; }
         @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
@@ -242,7 +242,7 @@
 </div>
 
 <div id="adminDashboardWrapper">
-    <div style="position:relative; width:100%; max-width:1400px; margin:0 auto; text-align:center; padding-top:10px; margin-bottom:10px;">
+    <div style="position:relative; width:100%; max-width:1400px; margin:0 auto; text-align:center; padding-top:5px; margin-bottom:5px;">
         <h1 class="main-title">🔨 <span id="headerRoomName">IPL AUCTIONEER</span> COMMAND CENTER</h1>
         <button class="gear-btn" onclick="openSettings()">⚙️ Settings</button>
     </div>
@@ -305,13 +305,13 @@
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                    <button class="btn-push" style="padding:10px 5px; font-size:11px;" onclick="bypassCooldown()">⏩ FORCE START</button>
-                    <button id="btnPause" class="btn-pause" style="padding:10px 5px; font-size:11px; border-radius:6px;" onclick="togglePause()">⏸ PAUSE</button>
+                    <button class="btn-push" onclick="bypassCooldown()">⏩ FORCE START</button>
+                    <button id="btnPause" class="btn-pause" onclick="togglePause()">⏸ PAUSE</button>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <button class="btn-undo" style="padding:10px 5px; font-size:11px;" onclick="undoLastSale()">⏪ UNDO SALE</button>
-                    <button class="btn-outline-danger" style="padding:10px 5px; font-size:11px;" onclick="confirmResetAuction()">☢️ RESET</button>
+                    <button class="btn-undo" onclick="undoLastSale()">⏪ UNDO SALE</button>
+                    <button class="btn-outline-danger" onclick="confirmResetAuction()">☢️ RESET</button>
                 </div>
             </div>
 
@@ -1014,3 +1014,6 @@
 </script>
 </body>
 </html>
+
+}
+Wait there is no change in height of the franchise cards it looks exact same from the previous code
