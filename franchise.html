@@ -3,978 +3,1070 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPL Live Auction - Franchise Room</title>
+    <title>IPL Live Auction – Franchise Room</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
+    <script src="firebase-config.js"></script>
     <style>
-        body { font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif; background-color: #0a0a0f; color: #fff; margin: 0; padding: 15px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; overflow: hidden;}
-        .gateway-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000; }
-        .gateway-card { background: #161620; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 1px solid #2d2d3f; text-align: center; width: 100%; max-width: 420px; box-sizing: border-box; }
-        .btn-massive { width: 100%; padding: 20px; margin: 10px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-radius: 10px; cursor: pointer; transition: 0.3s; border: none; letter-spacing: 1px; }
-        .btn-franchise { background: linear-gradient(145deg, #0056b3, #004494); color: white; box-shadow: 0 5px 15px rgba(0, 86, 179, 0.4); }
-        .btn-franchise:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 86, 179, 0.6); }
-        .btn-auctioneer { background: linear-gradient(145deg, #eab308, #b08605); color: black; box-shadow: 0 5px 15px rgba(234, 179, 8, 0.4); }
-        .btn-auctioneer:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(234, 179, 8, 0.6); }
-        #loginScreen { display: none; width: 100%; max-width: 450px; margin: auto; text-align: center; z-index: 4000; position: relative;}
-        .login-card { background: #161620; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #2d2d3f; }
-        .preset-teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;}
-        .team-btn { padding: 12px 10px; font-size: 13px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
-        .team-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
-        .btn-custom { background-color: transparent; border: 1px dashed #666; color: #aaa; width: 100%; padding: 12px; grid-column: span 2; margin-top: 5px; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 13px;}
-        .btn-custom:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.05); }
-        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0a0a0f; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;}
-        .login-input:focus { outline: none; border-color: #ffc107; }
-        .submit-btn { width: 100%; background: #28a745; color: #fff; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase;}
-        .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline;}
-        .live-dot { height: 8px; width: 8px; background-color: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle;}
-        .offline-dot { height: 8px; width: 8px; background-color: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle;}
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        *, *::before, *::after { box-sizing: border-box; }
+
+        /* FIX: body was overflow:hidden which cut content on mobile */
+        body {
+            font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+            background: #0a0a0f; color: #fff; margin: 0; padding: 15px;
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; overflow-x: hidden;
+        }
+
+        /* ─ Connection Banner ─────────────────────────────────────────── */
+        #connBanner {
+            display: none; position: fixed; top: 0; left: 0; right: 0;
+            padding: 10px; background: #dc3545; color: #fff; text-align: center;
+            font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999;
+        }
+
+        /* ─ Gateway / Login Screens ───────────────────────────────────── */
+        .gateway-container {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; width: 100%;
+            position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000;
+        }
+        .gateway-card {
+            background: #161620; padding: 40px; border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,.8); border: 1px solid #2d2d3f;
+            text-align: center; width: 100%; max-width: 420px;
+        }
+        .btn-massive {
+            width: 100%; padding: 20px; margin: 10px 0; font-size: 16px;
+            font-weight: bold; text-transform: uppercase; border-radius: 10px;
+            cursor: pointer; transition: .3s; border: none; letter-spacing: 1px;
+        }
+        .btn-franchise { background: linear-gradient(145deg,#0056b3,#004494); color: #fff; box-shadow: 0 5px 15px rgba(0,86,179,.4); }
+        .btn-franchise:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,86,179,.6); }
+        .btn-auctioneer { background: linear-gradient(145deg,#eab308,#b08605); color: #000; box-shadow: 0 5px 15px rgba(234,179,8,.4); }
+        .btn-auctioneer:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(234,179,8,.6); }
+
+        #loginScreen { display: none; width: 100%; max-width: 450px; margin: auto; text-align: center; z-index: 4000; position: relative; }
+        .login-card { background: #161620; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,.5); border: 1px solid #2d2d3f; }
+        .preset-teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .team-btn { padding: 12px 10px; font-size: 13px; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: .5px; }
+        .team-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+        .btn-custom { background: transparent; border: 1px dashed #666; color: #aaa; width: 100%; padding: 12px; grid-column: span 2; margin-top: 5px; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 13px; }
+        .btn-custom:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,.05); }
+        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0a0a0f; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
+        .login-input:focus { border-color: #ffc107; }
+        .submit-btn { width: 100%; background: #28a745; color: #fff; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .submit-btn:hover { background: #218838; }
+        .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
+        .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
+        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
+
+        /* ─ Dots ──────────────────────────────────────────────────────── */
+        .live-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle; }
+        .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+
+        /* ─ Main Dashboard ─────────────────────────────────────────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; height: calc(100vh - 30px); }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
-        @media (min-width: 1000px) { .top-row { flex-direction: row; align-items: stretch; } .col-left { flex: 2.5; display: flex; flex-direction: column; min-height: 0; height: 100%;} .col-center { flex: 4.5; display: flex; flex-direction: column; min-height: 0; height: 100%;} .col-right { flex: 3; display: flex; flex-direction: column; gap: 20px; min-height: 0; height: 100%;} }
-        .bottom-row { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: #161620; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,0.4); flex-shrink: 0;}
-        .panel { background: #161620; border: 1px solid #2d2d3f; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; transition: all 0.3s ease; box-sizing: border-box; min-height: 0; display: flex; flex-direction: column;}
-        .glow-sold { box-shadow: 0 0 40px rgba(57, 255, 20, 0.4), inset 0 0 20px rgba(57, 255, 20, 0.2) !important; border-color: #39ff14 !important; }
-        .glow-unsold { box-shadow: 0 0 40px rgba(255, 7, 58, 0.4), inset 0 0 20px rgba(255, 7, 58, 0.2) !important; border-color: #ff073a !important; }
-        .party-mood { animation: partyText 0.5s infinite alternate; text-shadow: 0 0 15px currentColor; transform: scale(1.1); display: inline-block;}
-        @keyframes partyText { 0% { filter: hue-rotate(0deg) brightness(1); } 100% { filter: hue-rotate(40deg) brightness(1.5); } }
+        @media (min-width: 1000px) {
+            .top-row { flex-direction: row; align-items: stretch; }
+            .col-left   { flex: 2.5; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+            .col-center { flex: 4.5; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+            .col-right  { flex: 3; display: flex; flex-direction: column; gap: 20px; min-height: 0; height: 100%; }
+        }
+        .bottom-row { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: #161620; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.4); flex-shrink: 0; }
+        .panel { background: #161620; border: 1px solid #2d2d3f; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.4); position: relative; transition: all .3s ease; box-sizing: border-box; min-height: 0; display: flex; flex-direction: column; }
+
+        /* ─ Glow States ────────────────────────────────────────────────── */
+        .glow-sold    { box-shadow: 0 0 40px rgba(57,255,20,.4), inset 0 0 20px rgba(57,255,20,.2) !important; border-color: #39ff14 !important; }
+        .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
+        @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
+        @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
-        @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255, 193, 7, 0.2); border-color: rgba(255, 193, 7, 0.4) !important; } 100% { box-shadow: 0 0 25px rgba(255, 193, 7, 0.9); border-color: rgba(255, 193, 7, 1) !important; } }
-        .sold-card-glow { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
-        @keyframes soldPulse { 0% { box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); border-color: rgba(57, 255, 20, 0.4) !important; } 100% { box-shadow: 0 0 25px rgba(57, 255, 20, 0.9); border-color: rgba(57, 255, 20, 1) !important; } }
-        .my-team-card { background: #111118; border: 2px solid #444; border-radius: 10px; padding: 10px 12px; text-align: center; flex: 1; min-height: 0; position: relative; transition: all 0.3s ease; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
-        .my-team-name { font-size: 18px; font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; margin-top: 0px; flex-shrink: 0;}
-        .my-team-purse { font-size: 22px; font-weight: bold; margin-bottom: 6px; transition: color 0.3s ease; flex-shrink: 0;}
-        .roster-header { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; text-align: left; font-weight: bold; display: flex; justify-content: space-between; flex-shrink: 0;}
-        .roster-list { text-align: left; background: #0a0a0f; border-radius: 8px; padding: 4px; border: 1px solid #222;}
-        .drop-zone { transition: background 0.2s; }
-        .drop-zone.over-zone { background: rgba(0, 123, 255, 0.05); }
-        .roster-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 0 6px; height: 24px; border-bottom: 1px solid #222; background: transparent; transition: background 0.2s; border-radius: 4px; box-sizing: border-box; flex-shrink: 0;}
+        .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
+        .party-mood { animation: partyText .5s infinite alternate; text-shadow: 0 0 15px currentColor; transform: scale(1.1); display: inline-block; }
+        @keyframes partyText { 0% { filter: hue-rotate(0deg) brightness(1); } 100% { filter: hue-rotate(40deg) brightness(1.5); } }
+
+        /* ─ My Team Card ───────────────────────────────────────────────── */
+        .my-team-card { background: #111118; border: 2px solid #444; border-radius: 10px; padding: 10px 12px; text-align: center; flex: 1; min-height: 0; position: relative; transition: all .3s; overflow: hidden; display: flex; flex-direction: column; }
+        .my-team-name { font-size: 18px; font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .my-team-purse { font-size: 22px; font-weight: bold; margin-bottom: 6px; transition: color .3s; flex-shrink: 0; }
+        .roster-header { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; text-align: left; font-weight: bold; display: flex; justify-content: space-between; flex-shrink: 0; }
+        .roster-list { text-align: left; background: #0a0a0f; border-radius: 8px; padding: 4px; border: 1px solid #222; }
+        .drop-zone.over-zone { background: rgba(0,123,255,.05); }
+        .roster-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 0 6px; height: 24px; border-bottom: 1px solid #222; background: transparent; transition: background .2s; border-radius: 4px; flex-shrink: 0; }
         .roster-item-drag { cursor: grab; }
         .roster-item-drag:active { cursor: grabbing; }
-        .roster-item.over { border-top: 2px solid #007bff; background: rgba(0, 123, 255, 0.1); }
+        .roster-item.over { border-top: 2px solid #007bff; background: rgba(0,123,255,.1); }
         .roster-item:last-child { border-bottom: none; }
-        #playingXIList { height: 264px; flex: 0 0 264px; overflow-y: hidden; margin-bottom: 8px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: flex-start; }
-        #benchList { flex: 1 1 0; overflow-y: auto; min-height: 0; margin-bottom: 0; } 
-        .role-badge { font-size: 10px; padding: 0 4px; border: none; background: transparent; cursor: pointer; user-select: none; margin-left: 8px; font-weight: bold; transition: all 0.2s;}
+        #playingXIList { height: 264px; flex: 0 0 264px; overflow-y: hidden; margin-bottom: 8px; flex-shrink: 0; display: flex; flex-direction: column; }
+        #benchList { flex: 1 1 0; overflow-y: auto; min-height: 0; }
+        .logout-btn { position: absolute; top: 10px; left: 10px; background: rgba(220,53,69,.05); border: 1px solid #dc3545; color: #dc3545; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
+        .logout-btn:hover { color: #fff; background: #dc3545; }
+        .team-msg-popup { position: absolute; bottom: -5px; left: 5px; right: 5px; background: rgba(0,123,255,.95); color: #fff; padding: 6px; font-size: 11px; font-weight: bold; z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; opacity: 0; transition: all .3s; pointer-events: none; backdrop-filter: blur(4px); border-radius: 6px; border: 1px solid #007bff; box-shadow: 0 4px 15px rgba(0,0,0,.5); transform: translateY(10px); }
+        .team-msg-popup.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        #myTeamBox .team-msg-popup { bottom: 10px; left: 10px; right: 10px; }
+
+        /* ─ Role Badge ─────────────────────────────────────────────────── */
+        .role-badge { font-size: 10px; padding: 0 4px; border: none; background: transparent; cursor: pointer; user-select: none; margin-left: 8px; font-weight: bold; transition: all .2s; }
         .role-badge:hover { filter: brightness(1.2); }
-        .role-popup { position: fixed; display: none; background: #22222d; border: 1px solid #444; border-radius: 20px; padding: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); z-index: 9999; gap: 6px; align-items: center; transform: translate(-50%, -100%); margin-top: -12px; }
-        .role-popup button { background: #111118; border: 1px solid #333; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .role-popup { position: fixed; display: none; background: #22222d; border: 1px solid #444; border-radius: 20px; padding: 6px; box-shadow: 0 5px 15px rgba(0,0,0,.8); z-index: 9999; gap: 6px; align-items: center; transform: translate(-50%,-100%); margin-top: -12px; }
+        .role-popup button { background: #111118; border: 1px solid #333; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: .2s; }
         .role-popup button:hover { background: #ffc107; color: #000; border-color: #ffc107; transform: scale(1.1); }
         .role-popup button.clear-btn { color: #ff4444; }
         .role-popup button.clear-btn:hover { background: #ff4444; color: #fff; border-color: #ff4444; }
-        .logout-btn { position: absolute; top: 10px; left: 10px; background: rgba(220, 53, 69, 0.05); border: 1px solid #dc3545; color: #dc3545; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; z-index: 10;}
-        .logout-btn:hover { color: #fff; background: #dc3545;}
-        .other-team-card-hz { background: #0a0a0f; border: 1px solid #222; border-top: 3px solid #444; border-radius: 8px; padding: 10px 5px; display: flex; flex-direction: column; flex: 0 0 auto; min-width: 140px; align-items: center; justify-content: center; text-align: center; transition: all 0.3s ease; position: relative; box-sizing: border-box; overflow: hidden;}
-        .other-team-rep-name { font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.5px;}
-        .purse-val { font-size: 15px; font-weight: bold; transition: color 0.3s ease; }
-        .team-msg-popup { position: absolute; top: auto; bottom: -5px; left: 5px; right: 5px; background: rgba(0, 123, 255, 0.95); color: #fff; padding: 6px; font-size: 11px; font-weight: bold; z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; opacity: 0; transition: all 0.3s ease; pointer-events: none; backdrop-filter: blur(4px); border-radius: 6px; border: 1px solid #007bff; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transform: translateY(10px); }
-        .team-msg-popup.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
-        #myTeamBox .team-msg-popup { bottom: 10px; left: 10px; right: 10px; }
+
+        /* ─ Center Panel ───────────────────────────────────────────────── */
         #centerPanel { overflow-y: auto; overflow-x: hidden; height: 100%; }
-        .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all 0.3s;}
-        .timer-green { background: rgba(40, 167, 69, 0.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40, 167, 69, 0.4);}
-        .timer-warn { background: rgba(253, 126, 20, 0.15); color: #fd7e14; border-color: #fd7e14; box-shadow: 0 0 15px rgba(253, 126, 20, 0.4);}
-        .timer-danger { background: rgba(220, 53, 69, 0.2); color: #ff4444; border-color: #ff4444; box-shadow: 0 0 20px rgba(220, 53, 69, 0.6); animation: pulse 1s infinite;}
-        .player-header { margin-bottom: 10px; padding-right: 70px; flex-shrink: 0;} 
-        .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block;}
-        .player-name { font-size: 28px; color: #fff; font-weight: bold; margin: 0 0 5px 0; line-height: 1.1; display: flex; align-items: center; }
-        .past-teams { font-size: 11px; color: #ffc107; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px;}
-        .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0, 123, 255, 0.1); border: 1px solid rgba(0, 123, 255, 0.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px;}
-        .stats-bar { display: flex; background: #0a0a0f; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 15px; flex-shrink: 0;}
-        .stat-box { flex: 1; text-align: center; padding: 10px 5px; border-right: 1px solid #222;}
+        .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all .3s; }
+        .timer-green  { background: rgba(40,167,69,.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40,167,69,.4); }
+        .timer-warn   { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; box-shadow: 0 0 15px rgba(253,126,20,.4); }
+        .timer-danger { background: rgba(220,53,69,.2); color: #ff4444; border-color: #ff4444; box-shadow: 0 0 20px rgba(220,53,69,.6); animation: pulse 1s infinite; }
+        .timer-paused { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        .player-header { margin-bottom: 10px; padding-right: 70px; flex-shrink: 0; }
+        .player-name { font-size: 28px; color: #fff; font-weight: bold; margin: 0 0 5px; line-height: 1.1; display: flex; align-items: center; }
+        .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
+        .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
+        .stats-bar { display: flex; background: #0a0a0f; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 15px; flex-shrink: 0; }
+        .stat-box { flex: 1; text-align: center; padding: 10px 5px; border-right: 1px solid #222; }
         .stat-box:last-child { border-right: none; }
-        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: bold;}
-        .stat-val { font-size: 18px; color: #eee; font-weight: bold;}
-        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 15px; text-align: center; transition: all 0.3s; margin-top: auto; flex-shrink: 0;}
-        .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px 0; line-height: 1; transition: color 0.3s; display: flex; justify-content: center; align-items: center; gap: 15px;}
-        .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all 0.3s ease;}
-        .status-losing { color: #dc3545; } 
-        .status-winning { color: #28a745; text-shadow: 0 0 25px rgba(40,167,69,0.4); } 
-        .status-neutral { color: #fff; } 
-        .action-btn { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.2s;}
-        .btn-bid-active { background: #dc3545; color: white; box-shadow: 0 6px 20px rgba(220,53,69,0.4); }
+        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: bold; }
+        .stat-val { font-size: 18px; color: #eee; font-weight: bold; }
+
+        /* ─ Bid Zone ────────────────────────────────────────────────────── */
+        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 15px; text-align: center; transition: all .3s; margin-top: auto; flex-shrink: 0; }
+        .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all .3s; }
+        .status-losing  { color: #dc3545; }
+        .status-winning { color: #28a745; text-shadow: 0 0 25px rgba(40,167,69,.4); }
+        .status-neutral { color: #fff; }
+        .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; }
+        .btn-bid-active       { background: #dc3545; color: #fff; box-shadow: 0 6px 20px rgba(220,53,69,.4); }
         .btn-bid-active:hover { background: #c82333; transform: translateY(-2px); }
-        .btn-bid-active:active { transform: translateY(2px); box-shadow: 0 2px 10px rgba(220,53,69,0.4); }
-        .btn-bid-locked { background: rgba(40,167,69,0.15); color: #28a745; border: 2px solid #28a745; cursor: not-allowed; box-shadow: none;}
-        .btn-bid-insufficient { background: #333; color: #888; border: 2px solid #444; cursor: not-allowed; box-shadow: none;}
-        .btn-cooldown { background: #22222d; color: #aaa; border: 1px solid #444; cursor: not-allowed; }
-        .btn-bid-unsold { background: rgba(255, 7, 58, 0.15); color: #ff073a; border: 2px solid #ff073a; cursor: not-allowed; box-shadow: none; }
-        .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; letter-spacing: 0.5px;}
-        .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000;}
+        .btn-bid-active:active{ transform: translateY(2px); }
+        .btn-bid-locked       { background: rgba(40,167,69,.15); color: #28a745; border: 2px solid #28a745; cursor: not-allowed; }
+        .btn-bid-insufficient { background: #333; color: #888; border: 2px solid #444; cursor: not-allowed; }
+        .btn-cooldown         { background: #22222d; color: #aaa; border: 1px solid #444; cursor: not-allowed; }
+        .btn-bid-unsold       { background: rgba(255,7,58,.15); color: #ff073a; border: 2px solid #ff073a; cursor: not-allowed; }
+        .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000; }
         .jump-bids { display: flex; gap: 10px; margin-top: 10px; }
-        .jump-btn { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .jump-btn:not(:disabled):hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #555;}
-        .jump-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 5px; min-height: 150px;}
-        .log-header { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #2d2d3f; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
-        .chat-input-area { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center;}
-        .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; width: 130px; outline: none; transition: 0.2s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);}
-        .chat-input:focus { border-color: #007bff; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 0 8px rgba(0,123,255,0.4); }
-        .chat-btn { background: linear-gradient(145deg, #007bff, #0056b3); color: #fff; border: none; border-radius: 4px; font-size: 10px; cursor: pointer; padding: 6px 14px; font-weight: bold; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 3px 8px rgba(0,123,255,0.4);}
-        .chat-btn:hover { background: linear-gradient(145deg, #0056b3, #004494); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,123,255,0.6); }
-        .log-container { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column;}
-        .log-entry { font-family: 'Consolas', monospace; font-size: 11px; margin-bottom: 4px; color: #bbb; border-bottom: 1px dashed #222; padding-bottom: 4px; line-height: 1.4;}
+        .jump-btn { flex: 1; background: rgba(255,255,255,.05); border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: .2s; }
+        .jump-btn:not(:disabled):hover { background: rgba(255,255,255,.1); color: #fff; border-color: #555; }
+        .jump-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+        /* ─ Log Panel ───────────────────────────────────────────────────── */
+        .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; }
+        .log-header { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #2d2d3f; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-input-area { display: flex; gap: 5px; background: rgba(0,0,0,.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
+        .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; outline: none; transition: .2s; flex: 1; }
+        .chat-input:focus { border-color: #007bff; }
+        .chat-btn { background: linear-gradient(145deg,#007bff,#0056b3); color: #fff; border: none; border-radius: 4px; font-size: 10px; cursor: pointer; padding: 6px 14px; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: 1px; }
+        .chat-btn:hover { transform: translateY(-1px); }
+        .log-container { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .log-entry { font-family: 'Consolas', monospace; font-size: 11px; margin-bottom: 4px; color: #bbb; border-bottom: 1px dashed #222; padding-bottom: 4px; line-height: 1.4; }
         .log-time { color: #555; margin-right: 6px; }
-        .tabs-panel { flex: 1.5; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 5px; min-height: 250px;}
-        .tabs { display: flex; margin-bottom: 8px; background: #0a0a0f; border-radius: 8px; padding: 4px; border: 1px solid #222; flex-shrink: 0; gap: 4px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);}
-        .tab-btn { flex: 1; background: transparent; color: #777; padding: 6px 4px; border-radius: 6px; margin: 0; font-size: 10px; font-weight: 800; transition: all 0.2s ease; cursor: pointer; letter-spacing: 0.5px; border: 1px solid transparent; display: flex; justify-content: center; align-items: center;}
-        .tab-btn:hover { color: #ccc; background: rgba(255,255,255,0.03); }
-        .tab-btn.active { background: #22222d; color: #ffc107; border-color: #333; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        select.tab-btn { appearance: none; -webkit-appearance: none; background-color: transparent; text-align: center; text-align-last: center; background-image: none !important; padding-right: 4px; cursor: pointer; }
-        select.tab-btn option { background-color: #22222d; color: #fff; text-align: left; }
-        .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px;}
+
+        /* ─ Right Tabs ──────────────────────────────────────────────────── */
+        .tabs-panel { flex: 1.5; display: flex; flex-direction: column; overflow: hidden; min-height: 250px; }
+        .tabs { display: flex; margin-bottom: 8px; background: #0a0a0f; border-radius: 8px; padding: 4px; border: 1px solid #222; flex-shrink: 0; gap: 4px; }
+        .tab-btn { flex: 1; background: transparent; color: #777; padding: 6px 4px; border-radius: 6px; margin: 0; font-size: 10px; font-weight: 800; transition: all .2s; cursor: pointer; letter-spacing: .5px; border: 1px solid transparent; display: flex; justify-content: center; align-items: center; }
+        .tab-btn:hover { color: #ccc; background: rgba(255,255,255,.03); }
+        .tab-btn.active { background: #22222d; color: #ffc107; border-color: #333; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+        select.tab-btn { appearance: none; background-color: transparent; text-align: center; text-align-last: center; background-image: none !important; padding-right: 4px; cursor: pointer; }
+        select.tab-btn option { background: #22222d; color: #fff; text-align: left; }
+        .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
         .tab-content.active { display: flex; }
-        .list-item { background: transparent; margin-bottom: 2px; padding: 4px 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; border-left: 3px solid transparent;}
+        .list-item { background: transparent; margin-bottom: 2px; padding: 4px 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; border-left: 3px solid transparent; }
         .item-info { display: flex; flex-direction: column; }
-        .item-name { font-weight: bold; font-size: 12px; color: #eee; margin-bottom: 1px;}
+        .item-name { font-weight: bold; font-size: 12px; color: #eee; margin-bottom: 1px; }
         .item-price { font-size: 9px; color: #888; }
-        .neon-plane { text-shadow: 0 0 10px #0dcaf0, 0 0 20px #0dcaf0; color: #0dcaf0; font-size: 0.9em; margin-left: 10px; vertical-align: middle;}
-        ::-webkit-scrollbar { width: 5px; height: 5px;}
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        /* ─ Other Teams Row ─────────────────────────────────────────────── */
+        .other-team-card-hz { background: #0a0a0f; border: 1px solid #222; border-top: 3px solid #444; border-radius: 8px; padding: 10px 5px; display: flex; flex-direction: column; flex: 0 0 auto; min-width: 140px; align-items: center; justify-content: center; text-align: center; transition: all .3s; position: relative; overflow: hidden; }
+        .other-team-rep-name { font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .5px; }
+        .purse-val { font-size: 15px; font-weight: bold; transition: color .3s; }
+
+        /* ─ App Modal ────────────────────────────────────────────────────── */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
+        .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
+        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
+        .modal-input:focus { border-color: #ffc107; }
+        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
+        .action-btn:hover { background: #0056b3; }
+        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
+        .action-btn.outline:hover { background: #333; color: #fff; }
+
+        .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body>
 
-    <div id="gatewayScreen" class="gateway-container">
-        <div class="gateway-card">
-            <h1 style="color: #fff; font-size: 28px; margin-bottom: 30px; letter-spacing: 2px;">🏏 IPL <span style="color:#ffc107;">AUCTION</span></h1>
-            <p style="color:#aaa; margin-bottom:25px;">Select your role to proceed</p>
-            <button class="btn-massive btn-franchise" onclick="showRoomKeyScreen()">FRANCHISE</button>
-            <button class="btn-massive btn-auctioneer" onclick="window.location.href='auctioneer.html'">AUCTIONEER</button>
+<!-- Connection Banner -->
+<div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
+
+<!-- Gateway Screen -->
+<div id="gatewayScreen" class="gateway-container">
+    <div class="gateway-card">
+        <h1 style="color:#fff; font-size:28px; margin-bottom:30px; letter-spacing:2px;">🏏 IPL <span style="color:#ffc107;">AUCTION</span></h1>
+        <p style="color:#aaa; margin-bottom:25px;">Select your role to proceed</p>
+        <button class="btn-massive btn-franchise" onclick="showRoomKeyScreen()">FRANCHISE</button>
+        <button class="btn-massive btn-auctioneer" onclick="window.location.href='auctioneer.html'">AUCTIONEER</button>
+    </div>
+</div>
+
+<!-- Room Key Screen -->
+<div id="roomKeyScreen" class="gateway-container" style="display:none;">
+    <div class="gateway-card">
+        <h2 style="color:#fff; margin-bottom:10px;">Enter Room Key</h2>
+        <p style="color:#888; margin-bottom:25px; font-size:13px;">Ask your auctioneer for the 4-digit room PIN.</p>
+        <input type="password" id="joinRoomKey" class="login-input" placeholder="4-Digit Room PIN" maxlength="4" style="text-align:center; font-size:20px; letter-spacing:5px;" onkeypress="if(event.key==='Enter') verifyRoomKey()">
+        <button class="submit-btn" style="margin-bottom:10px;" onclick="verifyRoomKey()">ENTER ROOM</button>
+        <button class="back-btn" onclick="backToGateway()">← Back</button>
+    </div>
+</div>
+
+<!-- Role Popup -->
+<div id="rolePopup" class="role-popup">
+    <button onclick="setRole('C')" title="Captain">C</button>
+    <button onclick="setRole('VC')" title="Vice Captain">VC</button>
+    <button onclick="setRole('WK')" title="Wicket Keeper">WK</button>
+    <button onclick="setRole('')" class="clear-btn" title="Clear Role">❌</button>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+    <div class="login-card">
+        <h1 id="loginTitle" style="color:#fff; font-size:24px; margin-bottom:5px;">Franchise Access</h1>
+        <p id="loginSub" style="color:#888; margin-bottom:25px; font-size:13px;">Select or create a team to enter the room.</p>
+        <div id="presetSelection">
+            <div class="preset-teams-grid" id="globalTeamsGrid"><p style="grid-column:span 2; color:#666; font-size:11px;">Loading…</p></div>
+            <button class="btn-custom" onclick="prepareCustomLogin()">➕ Create Custom Team</button>
+        </div>
+        <div id="pinEntryDiv" style="display:none; text-align:left;">
+            <label class="label-text">Representative Name</label>
+            <input type="text" id="repNameInput" class="login-input" placeholder="e.g. Rahul">
+            <div id="customFields" style="display:none;">
+                <label class="label-text">Franchise Code (e.g. PWI)</label>
+                <input type="text" id="customCodeInput" class="login-input" placeholder="3-4 Letters" maxlength="4" style="text-transform:uppercase;">
+                <label class="label-text">Theme Color</label>
+                <input type="color" id="customColorInput" class="login-input" value="#9900ff" style="padding:2px 5px; height:40px; cursor:pointer;">
+            </div>
+            <label class="label-text">4-Digit Auth PIN</label>
+            <input type="password" id="pinInput" class="login-input" placeholder="Enter PIN" maxlength="4" pattern="\d*" onkeypress="if(event.key==='Enter') submitAuth()">
+            <button class="submit-btn" onclick="submitAuth()">Enter Room</button>
+            <button class="back-btn" onclick="backToSelection()">← Back to Teams</button>
         </div>
     </div>
+</div>
 
-    <div id="roomKeyScreen" class="gateway-container" style="display:none;">
-        <div class="gateway-card">
-            <h2 style="color:#fff; margin-bottom: 10px;">Enter Room Key</h2>
-            <p style="color:#888; margin-bottom: 25px; font-size: 13px;">Ask your auctioneer for the 4-digit room PIN.</p>
-            <input type="password" id="joinRoomKey" class="login-input" placeholder="4-Digit Room PIN" maxlength="4" style="text-align: center; font-size: 20px; letter-spacing: 5px;">
-            <button class="submit-btn" style="margin-bottom: 10px;" onclick="verifyRoomKey()">ENTER ROOM</button>
-            <button class="back-btn" onclick="backToGateway()">← Back</button>
-        </div>
+<!-- App Modal -->
+<div id="appModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
+        <p id="modalMessage" style="color:#aaa; margin-bottom:15px; line-height:1.6; white-space:pre-wrap;"></p>
+        <input type="text" id="modalInput" class="modal-input" style="display:none;">
+        <div id="modalButtons" style="display:flex; gap:10px;"></div>
     </div>
+</div>
 
-    <div id="rolePopup" class="role-popup">
-        <button onclick="setRole('C')" title="Captain">C</button>
-        <button onclick="setRole('VC')" title="Vice Captain">VC</button>
-        <button onclick="setRole('WK')" title="Wicket Keeper">WK</button>
-        <button onclick="setRole('')" class="clear-btn" title="Clear Role">❌</button>
-    </div>
-
-    <div id="loginScreen">
-        <div class="login-card">
-            <h1 id="loginTitle" style="color: #fff; font-size: 24px; margin-bottom: 5px;">Franchise Access</h1>
-            <p id="loginSub" style="color: #888; margin-bottom: 25px; font-size: 13px;">Select or create a team to enter the room.</p>
-            
-            <div id="presetSelection">
-                <div class="preset-teams-grid" id="globalTeamsGrid"><p style="grid-column: span 2; color:#666; font-size:11px;">Loading...</p></div>
-                <button class="btn-custom" onclick="prepareCustomLogin()">➕ Create Custom</button>
-            </div>
-
-            <div id="pinEntryDiv" style="display: none; text-align: left;">
-                <label class="label-text">Representative Name</label>
-                <input type="text" id="repNameInput" class="login-input" placeholder="e.g. Rahul">
-                
-                <div id="customFields" style="display: none;">
-                    <label class="label-text">Franchise Code (e.g. PWI)</label>
-                    <input type="text" id="customCodeInput" class="login-input" placeholder="3-4 Letters" maxlength="4" style="text-transform: uppercase;">
-                    <label class="label-text">Theme Color</label>
-                    <input type="color" id="customColorInput" class="login-input" value="#9900ff" style="padding: 2px 5px; height: 40px; cursor: pointer;">
-                </div>
-
-                <label class="label-text">4-Digit Auth PIN</label>
-                <input type="password" id="pinInput" class="login-input" placeholder="Enter PIN" maxlength="4" pattern="\d*">
-                
-                <button class="submit-btn" onclick="submitAuth()">Enter Room</button>
-                <button class="back-btn" onclick="backToSelection()">← Back to Teams</button>
+<!-- Main Dashboard -->
+<div id="mainDashboard">
+    <div class="top-row">
+        <!-- Left: My Team -->
+        <div class="col-left">
+            <div class="panel my-team-card" id="myTeamBox">
+                <div class="team-msg-popup" id="msg-popup-myteam"></div>
+                <button class="logout-btn" onclick="logout()">LEAVE</button>
+                <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
+                <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
+                <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
+                <div class="roster-list drop-zone" id="playingXIList"></div>
+                <div class="roster-header" style="margin-top:6px;">BENCH</div>
+                <div class="roster-list drop-zone" id="benchList"></div>
             </div>
         </div>
-    </div>
 
-    <div id="mainDashboard">
-        <div class="top-row">
-            <div class="col-left">
-                <div class="panel my-team-card" id="myTeamBox">
-                    <div class="team-msg-popup" id="msg-popup-myteam"></div>
-                    <button class="logout-btn" onclick="logout()" title="Leave Room">LEAVE</button>
-                    <div class="my-team-name"><span id="myTeamDisplay">---</span> <span class="live-dot"></span></div>
-                    <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
-                    
-                    <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
-                    <div class="roster-list drop-zone" id="playingXIList"></div>
-                    
-                    <div class="roster-header">BENCH</div>
-                    <div class="roster-list drop-zone" id="benchList"></div>
-                </div>
-            </div>
-
-            <div class="col-center">
-                <div class="panel" id="centerPanel">
-                    <div class="timer-pill" id="playerTimer">--</div>
-                    <div class="player-header">
-                        <span class="label-text">On The Block</span>
-                        <div class="player-name" id="playerName">Waiting...</div>
-                        <div style="display: flex; gap: 8px; margin-top: 8px;">
-                            <div class="past-teams" id="playerFranchise" style="display: none; margin-top: 0;"></div>
-                            <div class="player-role-pill" id="playerRole" style="display: none; margin-top: 0; margin-left: 0;"></div>
-                        </div>
-                    </div>
-                    <div class="stats-bar" id="statsContainer" style="display: flex;">
-                        <div class="stat-box"><div class="stat-label" id="statLabel1">STAT 1</div><div class="stat-val" id="playerStat1">-</div></div>
-                        <div class="stat-box"><div class="stat-label" id="statLabel2">STAT 2</div><div class="stat-val" id="playerStat2">-</div></div>
-                        <div class="stat-box"><div class="stat-label" id="statLabel3">STAT 3</div><div class="stat-val" id="playerStat3">-</div></div>
-                    </div>
-                    <div class="bidding-zone" id="bidZoneBox">
-                        <span class="label-text" style="font-size: 12px;">Current Bid</span>
-                        <div class="current-bid-display status-neutral" id="currentBidContainer">
-                            <span id="actualBidAmount">₹0.00 Cr</span>
-                            <span class="leader-badge" id="leaderBadge">-</span>
-                        </div>
-                        <button id="mainActionButton" class="action-btn btn-bid-active" onclick="placeBid()">WAITING...</button>
-                        <div class="shortcut-hint">Press <span class="key">Space</span> to place a standard bid</div>
-                        <div class="jump-bids">
-                            <button id="jumpBtn5Cr" class="jump-btn" onclick="placeJumpBid(50000000)">+₹5 CR</button>
-                            <button id="jumpBtn10Cr" class="jump-btn" onclick="placeJumpBid(100000000)">+₹10 CR</button>
-                        </div>
+        <!-- Center: Auction Block -->
+        <div class="col-center">
+            <div class="panel" id="centerPanel">
+                <div class="timer-pill" id="playerTimer">--</div>
+                <div class="player-header">
+                    <span class="label-text">On The Block</span>
+                    <div class="player-name" id="playerName">Waiting…</div>
+                    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                        <div class="past-teams" id="playerFranchise" style="display:none;"></div>
+                        <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-right">
-                <div class="panel log-panel">
-                    <div class="log-header">
-                        <span>📜 Live Room Activity</span>
-                        <div class="chat-input-area">
-                            <input type="text" id="chatInput" class="chat-input" maxlength="30" placeholder="Type message..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
-                            <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
-                        </div>
-                    </div>
-                    <div class="log-container" id="logContainer"></div>
+                <div class="stats-bar">
+                    <div class="stat-box"><div class="stat-label" id="statLabel1">STAT 1</div><div class="stat-val" id="playerStat1">-</div></div>
+                    <div class="stat-box"><div class="stat-label" id="statLabel2">STAT 2</div><div class="stat-val" id="playerStat2">-</div></div>
+                    <div class="stat-box"><div class="stat-label" id="statLabel3">STAT 3</div><div class="stat-val" id="playerStat3">-</div></div>
                 </div>
-                <div class="panel tabs-panel">
-                    <div class="tabs">
-                        <select id="setSelector" class="tab-btn tab-select active" onclick="switchTab('deck', this)" onchange="switchTab('deck', this); renderRightPanel()">
-                            <option value="" disabled selected hidden>ON DECK</option>
-                        </select>
-                        <button id="unsoldTabBtn" class="tab-btn" onclick="switchTab('unsold', this)">UNSOLD</button>
-                        <select id="teamSelector" class="tab-btn tab-select" onclick="switchTab('squads', this)" onchange="switchTab('squads', this); renderRightPanel()">
-                            <option value="" disabled selected hidden>SQUADS</option>
-                        </select>
+                <div class="bidding-zone" id="bidZoneBox">
+                    <span class="label-text" style="font-size:12px;">Current Bid</span>
+                    <div class="current-bid-display status-neutral" id="currentBidContainer">
+                        <span id="actualBidAmount">₹0.00 Cr</span>
+                        <span class="leader-badge" id="leaderBadge">-</span>
                     </div>
-                    <div id="tab-deck" class="tab-content active"><div id="deckList" style="flex: 1; overflow-y: auto;"></div></div>
-                    <div id="tab-unsold" class="tab-content"><div id="unsoldList" style="flex: 1; overflow-y: auto;"></div></div>
-                    <div id="tab-squads" class="tab-content"><div id="squadList" style="flex: 1; overflow-y: auto;"></div></div>
+                    <button id="mainActionButton" class="action-btn-bid btn-bid-locked" onclick="placeBid()" disabled>WAITING…</button>
+                    <div class="shortcut-hint">Press <span class="key">Space</span> to place a standard bid</div>
+                    <div class="jump-bids">
+                        <button id="jumpBtn5Cr" class="jump-btn" onclick="placeJumpBid(50000000)" disabled>+₹5 CR</button>
+                        <button id="jumpBtn10Cr" class="jump-btn" onclick="placeJumpBid(100000000)" disabled>+₹10 CR</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="bottom-row" id="otherTeamsList"></div>
+        <!-- Right: Log + Tabs -->
+        <div class="col-right">
+            <div class="panel log-panel">
+                <div class="log-header">
+                    <span>📜 Live Room Activity</span>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" class="chat-input" maxlength="30" placeholder="Type message…" onkeypress="if(event.key==='Enter') sendChatMessage()">
+                        <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
+                    </div>
+                </div>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+            <div class="panel tabs-panel">
+                <div class="tabs">
+                    <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); renderDeck()">
+                        <option value="" disabled selected hidden>ON DECK</option>
+                    </select>
+                    <button id="unsoldTabBtn" class="tab-btn" onclick="switchTab('unsold',this)">UNSOLD</button>
+                    <select id="teamSelector" class="tab-btn" onchange="switchTab('squads',this); renderSquads()">
+                        <option value="" disabled selected hidden>SQUADS</option>
+                    </select>
+                </div>
+                <div id="tab-deck"   class="tab-content active"><div id="deckList"   style="flex:1; overflow-y:auto;"></div></div>
+                <div id="tab-unsold" class="tab-content">       <div id="unsoldList" style="flex:1; overflow-y:auto;"></div></div>
+                <div id="tab-squads" class="tab-content">       <div id="squadList"  style="flex:1; overflow-y:auto;"></div></div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // 🚨 PASTE YOUR FIREBASE CONFIG HERE 🚨
-        const firebaseConfig = {
-            apiKey: "AIzaSyCjJaWjPwK57YDkhPMBLmadg8iaZj5C70A",
-            authDomain: "auction-ea32b.firebaseapp.com",
-            databaseURL: "https://auction-ea32b-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "auction-ea32b",
-            storageBucket: "auction-ea32b.firebasestorage.app",
-            messagingSenderId: "621695853292",
-            appId: "1:621695853292:web:d6dcfe11ee1c7b4fea3bc9",
-            measurementId: "G-31Z19QTDEX"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        let db = firebase.database();
-        let roomRef = null;
-        let currentRoomKey = null;
+    <!-- Bottom: Other Teams -->
+    <div class="bottom-row" id="otherTeamsList"></div>
+</div>
 
-        let myTeamName = "";
-        let myTeamColor = "";
-        let myRepName = "";
-        let localCurrentBid = 0;
-        let playerPool = [];
-        
-        let allRegisteredTeams = {}; 
-        let activePresence = {};     
-        let currentAuctionState = 'idle';
-        
-        let STARTING_PURSE_CR = 100;
-        let TEAM_BUDGET = 1000000000; 
-        let myOverseasCount = 0;
+<script>
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        let pendingCode = "";
-        let pendingColor = "";
-        let isCustomFlow = false;
-        let presenceRef = null;
-        let localBidCooldown = false;
-        let lastBidAmount = 0;
-        let lastPlayerOnBlock = "";
+    // ── State ──────────────────────────────────────────────────────────────
+    let roomRef = null, presenceRef = null;
+    let currentRoomKey = '', myTeamName = '', myTeamColor = '', myRepName = '';
+    let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
+    let currentAuctionState = 'idle', myOverseasCount = 0;
+    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
+    let pendingCode = '', pendingColor = '', isCustomFlow = false;
+    let localBidCooldown = false, _modalCb = null, activePopups = {};
+    let isUserScrollingLog = false;
+    let teamBudgets = {};   // cached — only recalculated when player_pool changes
 
-        let logContainer = document.getElementById('logContainer');
-        let isUserScrollingLog = false;
-        let activePopups = {}; 
+    const logContainer = document.getElementById('logContainer');
 
-        window.onload = function() {
-            currentRoomKey = sessionStorage.getItem("roomKey");
-            if (currentRoomKey) {
-                roomRef = db.ref('rooms/' + currentRoomKey);
-                let savedTeam = sessionStorage.getItem("myAuctionTeam");
-                let savedRep = sessionStorage.getItem("myRepName");
-                let savedColor = sessionStorage.getItem("myTeamColor");
-                
-                if (savedTeam && savedRep) {
-                    myTeamName = savedTeam; myRepName = savedRep; myTeamColor = savedColor;
-                    document.getElementById('gatewayScreen').style.display = 'none';
-                    executeUIBoot();
-                } else {
-                    document.getElementById('gatewayScreen').style.display = 'none';
-                    document.getElementById('loginScreen').style.display = 'block';
-                    loadGlobalFranchises();
-                }
+    // ── Connection Monitor ─────────────────────────────────────────────────
+    db.ref('.info/connected').on('value', snap => {
+        document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
+    });
+
+    // ── Modal System ───────────────────────────────────────────────────────
+    function showAlert(title, msg, onOk) {
+        _openModal(title, msg, false);
+        document.getElementById('modalButtons').innerHTML = `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">OK</button>`;
+        _modalCb = onOk || null;
+    }
+    function _openModal(title, msg, hasInput) {
+        document.getElementById('modalTitle').textContent   = title;
+        document.getElementById('modalMessage').textContent = msg;
+        document.getElementById('modalInput').style.display = hasInput ? 'block' : 'none';
+        document.getElementById('appModal').style.display   = 'flex';
+    }
+    function closeModal(result) {
+        document.getElementById('appModal').style.display = 'none';
+        if (_modalCb) { let cb = _modalCb; _modalCb = null; cb(result); }
+    }
+
+    // ── Utilities ──────────────────────────────────────────────────────────
+    function esc(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function getPurseColor(cr, maxCr) {
+        if (cr > maxCr * 0.3) return '#28a745';
+        if (cr > maxCr * 0.1) return '#fd7e14';
+        return '#dc3545';
+    }
+    function isOverseas(p) {
+        return !['india','indian','ind'].includes((p.nationality||'Indian').trim().toLowerCase());
+    }
+    function planeIcon(p) {
+        return isOverseas(p) ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '';
+    }
+
+    // ── Boot ───────────────────────────────────────────────────────────────
+    window.onload = function() {
+        currentRoomKey = sessionStorage.getItem('roomKey') || '';
+        if (currentRoomKey) {
+            roomRef = db.ref('rooms/' + currentRoomKey);
+            let savedTeam  = sessionStorage.getItem('myAuctionTeam');
+            let savedRep   = sessionStorage.getItem('myRepName');
+            let savedColor = sessionStorage.getItem('myTeamColor');
+            if (savedTeam && savedRep) {
+                myTeamName = savedTeam; myRepName = savedRep; myTeamColor = savedColor;
+                document.getElementById('gatewayScreen').style.display = 'none';
+                executeUIBoot();
             } else {
-                document.getElementById('gatewayScreen').style.display = 'flex';
+                document.getElementById('gatewayScreen').style.display = 'none';
+                document.getElementById('loginScreen').style.display   = 'block';
+                loadGlobalFranchises();
             }
-            
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.addEventListener('dragover', handleDragOver, false);
-                zone.addEventListener('dragenter', handleDragEnterZone, false);
-                zone.addEventListener('dragleave', handleDragLeaveZone, false);
-                zone.addEventListener('drop', handleDrop, false);
-            });
-
-            logContainer.addEventListener('scroll', () => {
-                let isAtBottom = (logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight) < 15;
-                isUserScrollingLog = !isAtBottom;
-            });
-            setInterval(updateAllPopups, 500);
-        };
-
-        function showRoomKeyScreen() {
-            document.getElementById('gatewayScreen').style.display = 'none';
-            document.getElementById('roomKeyScreen').style.display = 'flex';
-        }
-        
-        function backToGateway() {
-            document.getElementById('roomKeyScreen').style.display = 'none';
+        } else {
             document.getElementById('gatewayScreen').style.display = 'flex';
         }
 
-        function verifyRoomKey() {
-            let key = document.getElementById('joinRoomKey').value.trim();
-            db.ref('rooms/' + key).once('value', snap => {
-                if(snap.exists()) {
-                    sessionStorage.setItem("roomKey", key); currentRoomKey = key; roomRef = db.ref('rooms/' + currentRoomKey);
-                    document.getElementById('roomKeyScreen').style.display = 'none'; document.getElementById('loginScreen').style.display = 'block'; 
-                    loadGlobalFranchises(); 
-                } else alert("Invalid Room Key! Please check with the Auctioneer.");
-            });
-        }
-        
-        window.sendChatMessage = function() {
-            let input = document.getElementById('chatInput'); let msg = input.value.trim();
-            if (msg && myTeamName && roomRef) {
-                roomRef.child('chat_events').push({ team: myTeamName, text: msg, time: Date.now() });
-                input.value = "";
-            }
-        };
-
-        function triggerChatPopup(teamCode, text) { activePopups[teamCode] = { text: text, expiry: Date.now() + 5000 }; updateAllPopups(); }
-
-        function updateAllPopups() {
-            let now = Date.now();
-            let myPopup = document.getElementById('msg-popup-myteam');
-            if (myPopup) {
-                if (activePopups[myTeamName] && activePopups[myTeamName].expiry > now) {
-                    myPopup.innerText = activePopups[myTeamName].text; myPopup.classList.add('show');
-                } else myPopup.classList.remove('show');
-            }
-            Object.keys(allRegisteredTeams).forEach(t => {
-                if (t !== myTeamName) {
-                    let popup = document.getElementById('msg-popup-' + t);
-                    if (popup) {
-                        if (activePopups[t] && activePopups[t].expiry > now) {
-                            popup.innerText = activePopups[t].text; popup.classList.add('show');
-                        } else popup.classList.remove('show');
-                    }
-                }
-            });
-        }
-
-        function loadGlobalFranchises() {
-            db.ref('global_teams').once('value', snap => {
-                let teams = snap.val(); let grid = document.getElementById('globalTeamsGrid'); let html = "";
-                if(!teams) return grid.innerHTML = '<p style="grid-column: span 2; color:#dc3545; font-size:11px;">Error: No global franchises found.</p>';
-                for (let code in teams) { let t = teams[code]; html += `<button class="team-btn" style="background-color: ${t.color}" onclick="prepareLogin('${code}', '${t.color}')">${code}</button>`; }
-                grid.innerHTML = html;
-            });
-        }
-
-        function prepareLogin(code, color) {
-            pendingCode = code; pendingColor = color; isCustomFlow = false;
-            document.getElementById('presetSelection').style.display = 'none'; document.getElementById('pinEntryDiv').style.display = 'block';
-            document.getElementById('customFields').style.display = 'none'; document.getElementById('loginTitle').innerText = "Claim " + code; document.getElementById('loginSub').innerText = "Enter a PIN to lock this franchise.";
-        }
-
-        function prepareCustomLogin() {
-            isCustomFlow = true; document.getElementById('presetSelection').style.display = 'none'; document.getElementById('pinEntryDiv').style.display = 'block';
-            document.getElementById('customFields').style.display = 'block'; document.getElementById('loginTitle').innerText = "New Franchise"; document.getElementById('loginSub').innerText = "Register your custom team details.";
-        }
-
-        function backToSelection() {
-            document.getElementById('presetSelection').style.display = 'block'; document.getElementById('pinEntryDiv').style.display = 'none';
-            document.getElementById('loginTitle').innerText = "Franchise Access"; document.getElementById('loginSub').innerText = "Select or create a team."; document.getElementById('pinInput').value = "";
-        }
-
-        function submitAuth() {
-            let repName = document.getElementById('repNameInput').value.trim(); let pin = document.getElementById('pinInput').value.trim();
-            if(!repName || !pin) return alert("Please fill out your Name and PIN.");
-            if(pin.length < 4) return alert("PIN must be at least 4 digits.");
-            let finalCode = pendingCode; let finalColor = pendingColor;
-            if (isCustomFlow) {
-                finalCode = document.getElementById('customCodeInput').value.trim().toUpperCase(); finalColor = document.getElementById('customColorInput').value;
-                if(!finalCode) return alert("Please enter a Franchise Code.");
-            }
-            roomRef.child('teams_auth/' + finalCode).once('value').then(snap => {
-                let existingAuth = snap.val();
-                if (existingAuth) {
-                    if (existingAuth.pin === pin) {
-                        myTeamName = finalCode; myTeamColor = existingAuth.color; myRepName = existingAuth.repName;
-                        sessionStorage.setItem("myAuctionTeam", myTeamName); sessionStorage.setItem("myRepName", myRepName); sessionStorage.setItem("myTeamColor", myTeamColor); 
-                        executeUIBoot();
-                    } else alert(`Incorrect PIN! ${finalCode} is already claimed.`);
-                } else {
-                    roomRef.child('teams_auth/' + finalCode).set({ repName: repName, pin: pin, color: finalColor, playingXI: [], bench: [], playerRoles: {} }).then(() => {
-                        myTeamName = finalCode; myTeamColor = finalColor; myRepName = repName;
-                        sessionStorage.setItem("myAuctionTeam", myTeamName); sessionStorage.setItem("myRepName", myRepName); sessionStorage.setItem("myTeamColor", myTeamColor); 
-                        executeUIBoot();
-                    });
-                }
-            });
-        }
-
-        function executeUIBoot() {
-            document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'flex';
-            document.getElementById('myTeamDisplay').innerText = myTeamName; document.getElementById('myTeamDisplay').style.color = myTeamColor;
-            document.getElementById('myTeamBox').style.borderColor = myTeamColor;
-            presenceRef = roomRef.child('logged_in_teams/' + myTeamName);
-            presenceRef.set(true); presenceRef.onDisconnect().remove();
-            logAction(`✅ <strong>${myRepName}</strong> connected as ${myTeamName}.`);
-            attachFirebaseListeners();
-        }
-
-        function logout() { if(presenceRef) presenceRef.remove(); sessionStorage.clear(); window.location.reload(); }
-
-        function logAction(msg) {
-            let time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            logContainer.innerHTML += `<div class="log-entry"><span class="log-time">[${time}]</span> ${msg}</div>`;
-            if (!isUserScrollingLog) logContainer.scrollTop = logContainer.scrollHeight;
-        }
-
-        function getPurseColor(cr, maxCr) { if (cr > maxCr * 0.3) return '#28a745'; if (cr > maxCr * 0.1) return '#fd7e14'; return '#dc3545'; }
-
-        let currentRolePlayer = "";
-        window.openRolePopup = function(event, playerName) { 
-            event.stopPropagation(); currentRolePlayer = playerName; let popup = document.getElementById('rolePopup'); popup.style.display = 'flex';
-            let rect = event.target.getBoundingClientRect(); popup.style.top = rect.top + 'px'; popup.style.left = rect.left + 'px';
-        };
-
-        window.setRole = function(role) {
-            if(currentRolePlayer) {
-                let currentRoles = allRegisteredTeams[myTeamName]?.playerRoles || {}; let updates = {};
-                let activeRolesStr = currentRoles[currentRolePlayer] || ""; let activeRoles = activeRolesStr ? activeRolesStr.split(',') : [];
-                if (role === "") { updates[currentRolePlayer] = null; } 
-                else {
-                    if (role === 'WK') {
-                        if (activeRoles.includes('WK')) activeRoles = activeRoles.filter(r => r !== 'WK'); else activeRoles.push('WK');
-                    } 
-                    else if (role === 'C' || role === 'VC') {
-                        let opposite = role === 'C' ? 'VC' : 'C'; activeRoles = activeRoles.filter(r => r !== opposite); 
-                        if (activeRoles.includes(role)) { activeRoles = activeRoles.filter(r => r !== role); } 
-                        else {
-                            activeRoles.push(role);
-                            for (let p in currentRoles) {
-                                if (p !== currentRolePlayer) { let pRoles = (currentRoles[p] || "").split(','); if (pRoles.includes(role)) { updates[p] = pRoles.filter(r => r !== role).join(',') || null; } }
-                            }
-                        }
-                    }
-                    updates[currentRolePlayer] = activeRoles.join(',') || null;
-                }
-                roomRef.child('teams_auth/' + myTeamName + '/playerRoles').update(updates);
-            }
-            document.getElementById('rolePopup').style.display = 'none';
-        };
-
-        document.addEventListener('click', function(e) {
-            let popup = document.getElementById('rolePopup');
-            if (popup.style.display === 'flex' && !popup.contains(e.target) && !e.target.classList.contains('role-badge')) popup.style.display = 'none';
+        // Drag-drop zones
+        document.querySelectorAll('.drop-zone').forEach(z => {
+            z.addEventListener('dragover',       handleDragOver,      false);
+            z.addEventListener('dragenter',      handleDragEnterZone, false);
+            z.addEventListener('dragleave',      handleDragLeaveZone, false);
+            z.addEventListener('drop',           handleDrop,          false);
         });
 
-        let dragSrcEl = null;
-        function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/html', this.innerHTML); this.style.opacity = '0.4'; }
-        function handleDragOver(e) { e.preventDefault(); return false; }
-        function handleDragEnterItem(e) { this.classList.add('over'); }
-        function handleDragLeaveItem(e) { this.classList.remove('over'); }
-        function handleDragEnterZone(e) { this.classList.add('over-zone'); }
-        function handleDragLeaveZone(e) { this.classList.remove('over-zone'); }
+        logContainer.addEventListener('scroll', () => {
+            isUserScrollingLog = (logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight) >= 15;
+        });
 
-        function handleDrop(e) {
-            e.stopPropagation();
-            if (dragSrcEl != this) {
-                let isDestXI = this.id === 'playingXIList' || this.closest('#playingXIList'); let isSourceBench = dragSrcEl.closest('#benchList');
-                if (isDestXI && isSourceBench) {
-                    let currentXiCount = document.querySelectorAll('#playingXIList .roster-item-drag').length;
-                    if (currentXiCount >= 11) { alert("Playing XI is full (11/11)."); return false; }
-                }
-                if (this.classList.contains('drop-zone')) { this.appendChild(dragSrcEl); } else { this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this); }
-                saveRosterOrder();
-            }
-            return false;
-        }
+        setInterval(updateAllPopups, 500);
+    };
 
-        function handleDragEnd(e) { this.style.opacity = '1'; document.querySelectorAll('.roster-item').forEach(item => item.classList.remove('over')); document.querySelectorAll('.drop-zone').forEach(zone => zone.classList.remove('over-zone')); }
-        function addDragEvents(item) {
-            item.addEventListener('dragstart', handleDragStart, false); item.addEventListener('dragenter', handleDragEnterItem, false);
-            item.addEventListener('dragover', handleDragOver, false); item.addEventListener('dragleave', handleDragLeaveItem, false);
-            item.addEventListener('drop', handleDrop, false); item.addEventListener('dragend', handleDragEnd, false);
-        }
-
-        function saveRosterOrder() {
-            let xiItems = document.querySelectorAll('#playingXIList .roster-item-drag'); let benchItems = document.querySelectorAll('#benchList .roster-item-drag');
-            let xi = [], bench = []; xiItems.forEach(item => xi.push(item.getAttribute('data-player'))); benchItems.forEach(item => bench.push(item.getAttribute('data-player')));
-            roomRef.child('teams_auth/' + myTeamName).update({ playingXI: xi, bench: bench });
-        }
-
-        function attachFirebaseListeners() {
-            let isChatLoaded = false;
-            
-            // 1. CHAT LISTENER
-            roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
-                if (!isChatLoaded) return; 
-                let msgData = snap.val(); triggerChatPopup(msgData.team, msgData.text);
-                let teamColor = allRegisteredTeams[msgData.team]?.color || "#fff";
-                logAction(`💬 <span style="color:${teamColor}; font-weight:bold;">${msgData.team}</span>: ${msgData.text}`);
-            });
-            roomRef.child('chat_events').once('value', () => { isChatLoaded = true; });
-
-            // 2. SETTINGS LISTENER
-            roomRef.child('settings').on('value', snap => {
-                let settings = snap.val() || {};
-                STARTING_PURSE_CR = Number(settings.starting_purse) || 100; 
-                TEAM_BUDGET = STARTING_PURSE_CR * 10000000;
-                window.isOverseasStrict = settings.overseas_limit_enabled === true; 
-            });
-
-            // 3. TEAMS & PRESENCE LISTENER
-            roomRef.child('teams_auth').on('value', snap => {
-                allRegisteredTeams = snap.val() || {};
-                let registeredKeys = Object.keys(allRegisteredTeams);
-                updateTeamDropdown(registeredKeys);
-                updateMyTeamUI(); 
-            });
-
-            roomRef.child('logged_in_teams').on('value', snap => {
-                activePresence = snap.val() || {};
-                updateMyTeamUI(); 
-            });
-
-            // 4. THE HEAVY LISTENER: PLAYER POOL (Only updates on Sold/Unsold/Reset)
-            roomRef.child('player_pool').on('value', snap => {
-                let rawPool = snap.val() || [];
-                playerPool = Array.isArray(rawPool) ? rawPool : Object.values(rawPool);
-                
-                if (playerPool.length > 0) {
-                    let isFirstLoad = (document.getElementById('setSelector').options.length <= 1); 
-                    if(isFirstLoad) populateDropdowns(); 
-                    renderRightPanel(); 
-                    updateMyTeamUI();
-                }
-            });
-
-            // 5. EVENT LOG LISTENER
-            roomRef.child('latest_event').on('value', snap => {
-                let eventStr = snap.val();
-                let lastEventLoggedFromStorage = sessionStorage.getItem("adminLastEvent") || "";
-                if (eventStr && eventStr !== lastEventLoggedFromStorage) {
-                    let eventMsg = eventStr.split('_')[0]; 
-                    logAction(eventMsg); 
-                    sessionStorage.setItem("adminLastEvent", eventStr);
-                }
-            });
-
-            // 6. THE HYPER-FAST LISTENER: LIVE BIDDING STATE
-            roomRef.child('live_state').on('value', snap => {
-                const liveData = snap.val();
-                if (!liveData) return;
-
-                currentAuctionState = liveData.auction_state || 'idle';
-                localCurrentBid = liveData.current_bid || 0;
-                let amIWinning = (liveData.highest_bidder === myTeamName);
-                
-                // Update text elements directly to prevent layout shifts
-                document.getElementById('actualBidAmount').innerText = "₹" + (localCurrentBid / 10000000).toFixed(2) + " Cr";
-                
-                let leaderBadge = document.getElementById('leaderBadge');
-                if (liveData.highest_bidder && liveData.highest_bidder !== "-" && liveData.highest_bidder !== "Base Price") {
-                    leaderBadge.style.display = "inline-block"; 
-                    leaderBadge.innerText = liveData.highest_bidder; 
-                    leaderBadge.style.color = allRegisteredTeams[liveData.highest_bidder]?.color || "#fff";
-                } else {
-                    leaderBadge.style.display = "none";
-                }
-
-                // Handle the Player on the Block UI
-                let centerPanel = document.getElementById('centerPanel'); 
-                centerPanel.classList.remove('glow-sold', 'glow-unsold'); 
-                leaderBadge.classList.remove('party-mood');
-                
-                if (currentAuctionState === 'sold') { 
-                    centerPanel.classList.add('glow-sold'); 
-                    leaderBadge.classList.add('party-mood'); 
-                } else if (currentAuctionState === 'unsold') { 
-                    centerPanel.classList.add('glow-unsold'); 
-                }
-
-                if (liveData.current_player_index !== undefined && liveData.current_player_index >= 0 && playerPool.length > 0) {
-                    let activePlayer = playerPool[liveData.current_player_index];
-                    if (activePlayer) {
-                        let pNat = (activePlayer.nationality || "Indian").trim().toLowerCase();
-                        let isOverseas = (pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind');
-                        let planeIcon = isOverseas ? `<span class="neon-plane" title="${activePlayer.nationality}">✈️</span>` : "";
-                        
-                        document.getElementById('playerName').innerHTML = activePlayer.name + planeIcon;
-                        
-                        let tagsDiv = document.getElementById('playerFranchise');
-                        if (activePlayer.franchise) { tagsDiv.innerText = activePlayer.franchise; tagsDiv.style.display = "inline-block"; } else tagsDiv.style.display = "none";
-                        
-                        let roleDiv = document.getElementById('playerRole');
-                        if (activePlayer.role) { roleDiv.innerText = activePlayer.role; roleDiv.style.display = "inline-block"; } else roleDiv.style.display = "none";
-
-                        document.getElementById('statLabel1').innerText = activePlayer.stat1_label || 'STAT 1'; document.getElementById('playerStat1').innerText = activePlayer.stat1_val || '-';
-                        document.getElementById('statLabel2').innerText = activePlayer.stat2_label || 'STAT 2'; document.getElementById('playerStat2').innerText = activePlayer.stat2_val || '-';
-                        document.getElementById('statLabel3').innerText = activePlayer.stat3_label || 'STAT 3'; document.getElementById('playerStat3').innerText = activePlayer.stat3_val || '-';
-                    }
-                } else {
-                    document.getElementById('playerName').innerText = "Waiting...";
-                    document.getElementById('playerFranchise').style.display = "none";
-                    document.getElementById('playerRole').style.display = "none";
-                    document.getElementById('statLabel1').innerText = 'STAT 1'; document.getElementById('playerStat1').innerText = '-';
-                    document.getElementById('statLabel2').innerText = 'STAT 2'; document.getElementById('playerStat2').innerText = '-';
-                    document.getElementById('statLabel3').innerText = 'STAT 3'; document.getElementById('playerStat3').innerText = '-';
-                }
-
-                // Handle Timer
-                if(window.uiTimer) clearInterval(window.uiTimer);
-                window.uiTimer = setInterval(() => {
-                    let t = liveData.timer_end ? Math.max(0, Math.ceil((liveData.timer_end - Date.now()) / 1000)) : 0;
-                    let timerEl = document.getElementById('playerTimer');
-                    timerEl.innerText = (currentAuctionState === 'idle') ? "--" : t + "s";
-                    timerEl.classList.remove('timer-green', 'timer-warn', 'timer-danger');
-                    if (currentAuctionState !== 'idle') {
-                        if (t > 10) timerEl.classList.add('timer-green');
-                        else if (t > 5) timerEl.classList.add('timer-warn');
-                        else timerEl.classList.add('timer-danger');
-                    }
-                }, 500);
-
-                // Highlight my team if leading
-                let myTeamBox = document.getElementById('myTeamBox');
-                myTeamBox.classList.remove('leader-card-glow', 'sold-card-glow');
-                if (amIWinning) { 
-                    if (currentAuctionState === 'sold') myTeamBox.classList.add('sold-card-glow'); 
-                    else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myTeamBox.classList.add('leader-card-glow'); 
-                }
-
-                // Check button status based on current state
-                evaluateBidButtonStatus(liveData, amIWinning);
-            });
-        }
-
-        // --- NEW HELPER FUNCTIONS FOR SPLIT LISTENERS ---
-
-        function updateMyTeamUI() {
-            if (!myTeamName || playerPool.length === 0 || Object.keys(allRegisteredTeams).length === 0) return;
-            
-            myTeamColor = allRegisteredTeams[myTeamName]?.color || myTeamColor || '#fff';
-            document.getElementById('myTeamBox').style.borderColor = myTeamColor; 
-            document.getElementById('myTeamDisplay').style.color = myTeamColor;
-
-            let budgets = {}; let rosters = {}; 
-            let registeredKeys = Object.keys(allRegisteredTeams);
-            registeredKeys.forEach(t => { budgets[t] = TEAM_BUDGET; rosters[t] = []; });
-            
-            playerPool.forEach(p => { 
-                if(p.status === "sold" && p.team && budgets[p.team] !== undefined) { 
-                    budgets[p.team] -= (Number(p.sold_price) || 0); rosters[p.team].push(p); 
-                } 
-            }); 
-
-            let myActualBudget = budgets[myTeamName] !== undefined ? budgets[myTeamName] : TEAM_BUDGET;
-            let myPurseCr = (myActualBudget / 10000000); 
-            let purseEl = document.getElementById('myTeamPurse');
-            purseEl.innerText = "₹" + myPurseCr.toFixed(2) + " Cr"; 
-            purseEl.style.color = getPurseColor(myPurseCr, STARTING_PURSE_CR);
-
-            // Re-render my roster lists
-            let myXIOrder = allRegisteredTeams[myTeamName]?.playingXI || []; 
-            let myBenchOrder = allRegisteredTeams[myTeamName]?.bench || [];
-            let myRoles = allRegisteredTeams[myTeamName]?.playerRoles || {}; 
-            let myRoster = rosters[myTeamName] || [];
-            
-            myOverseasCount = 0;
-            myRoster.forEach(p => {
-                let pNat = (p.nationality || "Indian").trim().toLowerCase();
-                if (pNat && pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind') myOverseasCount++;
-            });
-
-            let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(p => p > 0).sort((a,b) => b - a);
-            let myGoldPrice = myPriceRanks[0] || -1; 
-            let mySilverPrice = myPriceRanks.length > 1 ? myPriceRanks[1] : -1; 
-            let myBronzePrice = myPriceRanks.length > 2 ? myPriceRanks[2] : -1;
-
-            let xiPlayers = []; let benchPlayers = [];
-            myRoster.forEach(p => { if (myXIOrder.includes(p.name)) xiPlayers.push(p); else benchPlayers.push(p); });
-
-            xiPlayers.sort((a,b) => myXIOrder.indexOf(a.name) - myXIOrder.indexOf(b.name)); 
-            benchPlayers.sort((a,b) => myBenchOrder.indexOf(a.name) - myBenchOrder.indexOf(b.name));
-
-            let buildPlayerHtml = (p) => {
-                let roleHtml = '<span style="color: rgba(255,255,255,0.2)">+</span>'; let rRaw = myRoles[p.name];
-                if (rRaw) {
-                    roleHtml = rRaw.split(',').map(r => {
-                        let rColor = (r === 'WK') ? '#0dcaf0' : '#ffc107'; let rShadow = (r === 'WK') ? 'rgba(13,202,240,0.4)' : 'rgba(255,193,7,0.4)';
-                        return `<span style="color: ${rColor}; text-shadow: 0 0 8px ${rShadow}; margin: 0 2px;">${r}</span>`;
-                    }).join(' ');
-                }
-                
-                let pNat = (p.nationality || "Indian").trim().toLowerCase();
-                let isOverseas = (pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind');
-                let plane = isOverseas ? `<span class="neon-plane" style="font-size:0.7em;">✈️</span>` : ``;
-
-                let pPrice = p.sold_price; let pColor = '#aaa'; let isMedal = false;
-                if (myPriceRanks.length > 1 || pPrice >= 10000000) {
-                    if (pPrice === myGoldPrice) { pColor = '#eab308'; isMedal = true; } else if (pPrice === mySilverPrice) { pColor = '#c0c0c0'; isMedal = true; } else if (pPrice === myBronzePrice) { pColor = '#cd7f32'; isMedal = true; }
-                }
-                let priceStyle = `color: ${pColor}; font-weight: ${isMedal ? 'bold' : 'normal'};`;
-                return `<div class="roster-item roster-item-drag" draggable="true" data-player="${p.name}"><div style="display:flex; align-items:center;"><span>${p.name} ${plane}</span><button class="role-badge" onclick="openRolePopup(event, '${p.name}')">${roleHtml}</button></div><span style="${priceStyle}">₹${(pPrice/10000000).toFixed(2)}Cr</span></div>`;
-            };
-
-            let xiHtml = "", benchHtml = "", xiCount = 0;
-            xiPlayers.forEach(p => { xiHtml += buildPlayerHtml(p); xiCount++; }); 
-            
-            for(let i = xiCount + 1; i <= 11; i++) {
-                xiHtml += `<div class="roster-item" style="border: 1px dashed #333; background: transparent; color: #444; justify-content: center; font-style: italic;">Slot ${i}</div>`;
-            }
-            
-            benchPlayers.forEach(p => { benchHtml += buildPlayerHtml(p); });
-            
-            document.getElementById('playingXIList').innerHTML = xiHtml; document.getElementById('benchList').innerHTML = benchHtml;
-            document.getElementById('xiCount').innerText = `(${xiCount}/11)`; 
-            document.querySelectorAll('.roster-item-drag').forEach(addDragEvents);
-
-            // Re-render the bottom horizontal list of other teams
-            let othersHtml = "";
-            registeredKeys.forEach(t => {
-                if(t !== myTeamName) {
-                    let isOnline = activePresence[t]; 
-                    let dotHtml = isOnline ? `<span class="live-dot" title="Online"></span>` : `<span class="offline-dot" title="Offline"></span>`;
-                    let tColor = allRegisteredTeams[t]?.color || '#fff'; 
-                    let tRep = allRegisteredTeams[t]?.repName || "Unknown"; 
-                    let rCr = (budgets[t] / 10000000); 
-                    let count = (rosters[t] || []).length;
-                    
-                    let leaderClass = "";
-                    // To get the leader class we have to check the DOM text for the leader badge, or just leave it for the live_state listener.
-                    // Doing a quick grab from the UI since live_state isn't in this function's scope.
-                    let currentWinning = document.getElementById('leaderBadge').innerText;
-                    if (t === currentWinning && (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown' || currentAuctionState === 'sold')) {
-                        leaderClass = (currentAuctionState === 'sold') ? " sold-card-glow" : " leader-card-glow";
-                    }
-
-                    othersHtml += `<div class="other-team-card-hz${leaderClass}" style="border-top-color: ${tColor};"><div class="team-msg-popup" id="msg-popup-${t}"></div><div style="font-weight:bold; font-size:13px; margin-bottom: 2px;">${t} ${dotHtml}</div><div class="other-team-rep-name">${tRep}</div><div class="purse-val" style="color:${getPurseColor(rCr, STARTING_PURSE_CR)};">₹${rCr.toFixed(2)} Cr</div><div style="font-size:9px; color:#666; text-transform:uppercase; margin-top:2px;">${count} Players</div></div>`;
-                }
-            });
-            document.getElementById('otherTeamsList').innerHTML = othersHtml || "<div style='color:#666; font-size:12px; width:100%; text-align:center; padding: 20px 0;'>No other franchises logged in.</div>";
-            updateAllPopups();
-        }
-
-        function evaluateBidButtonStatus(liveData, amIWinning) {
-            let actionBtn = document.getElementById('mainActionButton'); 
-            let bidZone = document.getElementById('bidZoneBox'); 
-            let jumpBtns = document.querySelectorAll('.jump-btn');
-            
-            let myPurseCr = document.getElementById('myTeamPurse') ? parseFloat(document.getElementById('myTeamPurse').innerText.replace("₹", "").replace(" Cr", "")) : STARTING_PURSE_CR;
-            let nextBidRequiredCr = (localCurrentBid + 2000000) / 10000000;
-            let isInsufficient = nextBidRequiredCr > myPurseCr;
-
-            let isOverseasMaxed = false;
-            if (window.isOverseasStrict && liveData.current_player_index !== undefined && playerPool.length > 0) {
-                let pNat = (playerPool[liveData.current_player_index]?.nationality || "Indian").trim().toLowerCase();
-                if (pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind') {
-                    if (myOverseasCount >= 8) isOverseasMaxed = true;
-                }
-            }
-
-            if (currentAuctionState === 'idle') {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-neutral"; bidZone.style.borderColor = "#222";
-                actionBtn.className = "action-btn btn-bid-locked"; actionBtn.disabled = true; actionBtn.innerText = "WAITING..."; jumpBtns.forEach(btn => btn.disabled = true);
-            } else if (currentAuctionState === 'sold') {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-winning"; bidZone.style.borderColor = "#39ff14";
-                actionBtn.className = "action-btn btn-bid-locked"; actionBtn.disabled = true; actionBtn.innerText = `SOLD TO ${liveData.highest_bidder}`; jumpBtns.forEach(btn => btn.disabled = true);
-            } else if (currentAuctionState === 'unsold') {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-losing"; bidZone.style.borderColor = "#ff073a";
-                actionBtn.className = "action-btn btn-bid-unsold"; actionBtn.disabled = true; actionBtn.innerText = "UNSOLD"; jumpBtns.forEach(btn => btn.disabled = true);
-            } else if (currentAuctionState === 'cooldown') {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-neutral"; bidZone.style.borderColor = "#444";
-                actionBtn.className = "action-btn btn-cooldown"; actionBtn.disabled = true; actionBtn.innerText = "COOLDOWN..."; jumpBtns.forEach(btn => btn.disabled = true);
-            } else if (amIWinning) {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-winning"; bidZone.style.borderColor = "rgba(40,167,69,0.3)";
-                actionBtn.className = "action-btn btn-bid-locked"; actionBtn.disabled = true; actionBtn.innerText = "BID"; jumpBtns.forEach(btn => btn.disabled = true);
-            } else if (isOverseasMaxed) {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-losing"; bidZone.style.borderColor = "rgba(220,53,69,0.3)";
-                actionBtn.className = "action-btn btn-bid-insufficient"; actionBtn.disabled = true; actionBtn.innerText = "MAX OVERSEAS (8/8)"; jumpBtns.forEach(btn => btn.disabled = true);
-            } else if (isInsufficient) {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-losing"; bidZone.style.borderColor = "rgba(220,53,69,0.3)";
-                actionBtn.className = "action-btn btn-bid-insufficient"; actionBtn.disabled = true; actionBtn.innerText = "INSUFFICIENT FUNDS"; jumpBtns.forEach(btn => btn.disabled = true);
+    // ── Gateway / Room Key ─────────────────────────────────────────────────
+    function showRoomKeyScreen() {
+        document.getElementById('gatewayScreen').style.display  = 'none';
+        document.getElementById('roomKeyScreen').style.display  = 'flex';
+    }
+    function backToGateway() {
+        document.getElementById('roomKeyScreen').style.display  = 'none';
+        document.getElementById('gatewayScreen').style.display  = 'flex';
+    }
+    function verifyRoomKey() {
+        let key = document.getElementById('joinRoomKey').value.trim();
+        if (!key) { showAlert('Missing PIN', 'Enter the Room PIN.'); return; }
+        db.ref('rooms/' + key).once('value', snap => {
+            if (snap.exists()) {
+                sessionStorage.setItem('roomKey', key);
+                currentRoomKey = key; roomRef = db.ref('rooms/' + currentRoomKey);
+                document.getElementById('roomKeyScreen').style.display = 'none';
+                document.getElementById('loginScreen').style.display   = 'block';
+                loadGlobalFranchises();
             } else {
-                document.getElementById('currentBidContainer').className = "current-bid-display status-losing"; bidZone.style.borderColor = "rgba(220,53,69,0.3)";
-                actionBtn.className = "action-btn btn-bid-active"; actionBtn.disabled = false; actionBtn.innerText = "BID"; jumpBtns.forEach(btn => btn.disabled = false);
+                showAlert('Invalid Key', 'Room not found. Check the PIN with your auctioneer.');
             }
+        });
+    }
+
+    // ── Login ──────────────────────────────────────────────────────────────
+    function loadGlobalFranchises() {
+        db.ref('global_teams').once('value', snap => {
+            let teams = snap.val(), grid = document.getElementById('globalTeamsGrid');
+            if (!teams) { grid.innerHTML = '<p style="grid-column:span 2; color:#dc3545; font-size:11px;">No global franchises found. Contact your Admin.</p>'; return; }
+            let html = '';
+            for (let code in teams) {
+                let t = teams[code];
+                html += `<button class="team-btn" style="background:${t.color};" onclick="prepareLogin('${esc(code)}','${esc(t.color)}')">${esc(code)}</button>`;
+            }
+            grid.innerHTML = html;
+        });
+    }
+    function prepareLogin(code, color) {
+        pendingCode = code; pendingColor = color; isCustomFlow = false;
+        document.getElementById('presetSelection').style.display = 'none';
+        document.getElementById('pinEntryDiv').style.display     = 'block';
+        document.getElementById('customFields').style.display    = 'none';
+        document.getElementById('loginTitle').textContent = 'Claim ' + code;
+        document.getElementById('loginSub').textContent   = 'Enter a PIN to lock this franchise.';
+    }
+    function prepareCustomLogin() {
+        isCustomFlow = true;
+        document.getElementById('presetSelection').style.display = 'none';
+        document.getElementById('pinEntryDiv').style.display     = 'block';
+        document.getElementById('customFields').style.display    = 'block';
+        document.getElementById('loginTitle').textContent = 'New Franchise';
+        document.getElementById('loginSub').textContent   = 'Register your custom team.';
+    }
+    function backToSelection() {
+        document.getElementById('presetSelection').style.display = 'block';
+        document.getElementById('pinEntryDiv').style.display     = 'none';
+        document.getElementById('loginTitle').textContent = 'Franchise Access';
+        document.getElementById('loginSub').textContent   = 'Select or create a team to enter the room.';
+        document.getElementById('pinInput').value = '';
+    }
+
+    function submitAuth() {
+        let repName = document.getElementById('repNameInput').value.trim();
+        let pin     = document.getElementById('pinInput').value.trim();
+        if (!repName || !pin) { showAlert('Missing Fields', 'Fill in your Name and PIN.'); return; }
+        if (pin.length < 4)   { showAlert('Short PIN', 'PIN must be at least 4 digits.'); return; }
+        let finalCode  = pendingCode;
+        let finalColor = pendingColor;
+        if (isCustomFlow) {
+            finalCode  = document.getElementById('customCodeInput').value.trim().toUpperCase();
+            finalColor = document.getElementById('customColorInput').value;
+            if (!finalCode) { showAlert('Missing Code', 'Enter a Franchise Code.'); return; }
         }
-
-        function placeBid() { placeJumpBid(2000000); }
-
-        function placeJumpBid(amount) {
-            let actionBtn = document.getElementById('mainActionButton');
-            if (!myTeamName || actionBtn.disabled || localBidCooldown) return;
-            localBidCooldown = true; setTimeout(() => { localBidCooldown = false; }, 500);
-
-            // Pull my local trusted budget so we can check it securely inside the live_state transaction
-            let myPurseStr = document.getElementById('myTeamPurse').innerText.replace("₹", "").replace(" Cr", "");
-            let myAvailableBudget = parseFloat(myPurseStr) * 10000000;
-
-            // Transact ONLY against the tiny live_state node to ensure sub-millisecond execution speeds
-            roomRef.child('live_state').transaction((liveData) => {
-                if (liveData && (liveData.auction_state === 'bidding' || liveData.auction_state === 'cooldown')) {
-                    let newBid = (liveData.current_bid || 0) + amount; 
-                    if (newBid <= myAvailableBudget && liveData.highest_bidder !== myTeamName) {
-                        liveData.current_bid = newBid;
-                        liveData.highest_bidder = myTeamName;
-                        liveData.timer_end = Date.now() + 15000;
-                        liveData.auction_state = 'bidding';
-                    }
+        roomRef.child('teams_auth/' + finalCode).once('value').then(snap => {
+            let existing = snap.val();
+            if (existing) {
+                if (existing.pin === pin) {
+                    _saveAndBoot(finalCode, existing.color, existing.repName);
+                } else {
+                    showAlert('Wrong PIN', `${finalCode} is already claimed. Incorrect PIN.`);
                 }
-                return liveData;
-            }, (error, committed) => { if (error) console.error("Bid transaction failed", error); });
-        }
+            } else {
+                roomRef.child('teams_auth/' + finalCode).set({
+                    repName: repName, pin, color: finalColor,
+                    playingXI: [], bench: [], playerRoles: {}
+                }).then(() => _saveAndBoot(finalCode, finalColor, repName));
+            }
+        });
+    }
 
-        document.addEventListener('keydown', function(event) {
-            if (event.code === 'Space' && document.getElementById('mainDashboard').style.display !== 'none') {
-                if(document.activeElement.tagName === "INPUT") return;
-                event.preventDefault(); if (!document.getElementById('mainActionButton').disabled) placeBid();
+    function _saveAndBoot(code, color, rep) {
+        myTeamName = code; myTeamColor = color; myRepName = rep;
+        sessionStorage.setItem('myAuctionTeam', myTeamName);
+        sessionStorage.setItem('myRepName',     myRepName);
+        sessionStorage.setItem('myTeamColor',   myTeamColor);
+        executeUIBoot();
+    }
+
+    function executeUIBoot() {
+        document.getElementById('loginScreen').style.display    = 'none';
+        document.getElementById('mainDashboard').style.display  = 'flex';
+        document.getElementById('myTeamDisplay').textContent    = myTeamName;
+        document.getElementById('myTeamDisplay').style.color    = myTeamColor;
+        document.getElementById('myTeamBox').style.borderColor  = myTeamColor;
+        presenceRef = roomRef.child('logged_in_teams/' + myTeamName);
+        presenceRef.set(true);
+        presenceRef.onDisconnect().remove();
+        logAction(`✅ <strong>${esc(myRepName)}</strong> connected as ${esc(myTeamName)}.`);
+        attachFirebaseListeners();
+    }
+
+    function logout() {
+        if (presenceRef) presenceRef.remove();
+        sessionStorage.clear();
+        window.location.reload();
+    }
+
+    // ── Firebase Listeners ─────────────────────────────────────────────────
+    function attachFirebaseListeners() {
+        // 1. Chat
+        let isChatLoaded = false;
+        roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
+            if (!isChatLoaded) return;
+            let d = snap.val();
+            triggerChatPopup(d.team, d.text);
+            let col = allRegisteredTeams[d.team]?.color || '#fff';
+            logAction(`💬 <span style="color:${col}; font-weight:bold;">${esc(d.team)}</span>: ${esc(d.text)}`);
+        });
+        roomRef.child('chat_events').once('value', () => { isChatLoaded = true; });
+
+        // 2. Persistent Auction Log — load history then stream new events
+        let isLogLoaded = false;
+        roomRef.child('auction_log').limitToLast(100).once('value', snap => {
+            let entries = snap.val() || {};
+            Object.values(entries).sort((a,b) => a.t - b.t).forEach(e => logAction(e.msg, new Date(e.t)));
+            isLogLoaded = true;
+        });
+        roomRef.child('auction_log').limitToLast(100).on('child_added', snap => {
+            if (!isLogLoaded) return;
+            let e = snap.val(); logAction(e.msg, new Date(e.t));
+        });
+
+        // 3. Settings
+        roomRef.child('settings').on('value', snap => {
+            let s = snap.val() || {};
+            STARTING_PURSE_CR = Number(s.starting_purse) || 100;
+            TEAM_BUDGET = STARTING_PURSE_CR * CRORE;
+            window.isOverseasStrict = s.overseas_limit_enabled === true;
+        });
+
+        // 4. Teams & Presence
+        roomRef.child('teams_auth').on('value', snap => {
+            allRegisteredTeams = snap.val() || {};
+            updateTeamDropdown();
+            recalculateBudgets();
+            updateMyTeamUI();
+        });
+        roomRef.child('logged_in_teams').on('value', snap => {
+            activePresence = snap.val() || {};
+            updateMyTeamUI();
+        });
+
+        // 5a. Player Pool — full load ONCE (avoids re-downloading entire pool on every bid)
+        roomRef.child('player_pool').once('value', snap => {
+            let raw = snap.val() || [];
+            playerPool = Array.isArray(raw) ? raw : Object.values(raw);
+            populateSetDropdown();
+            recalculateBudgets();
+            renderDeck(); renderUnsold(); renderSquads();
+            updateMyTeamUI();
+        });
+
+        // 5b. Player Pool — per-player patches only (fires on sold/unsold/reset, NOT on every bid)
+        roomRef.child('player_pool').on('child_changed', snap => {
+            let idx = parseInt(snap.key);
+            if (!isNaN(idx)) {
+                playerPool[idx] = snap.val();
+                recalculateBudgets();
+                renderDeck(); renderUnsold(); renderSquads();
+                updateMyTeamUI();
             }
         });
 
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).classList.add('active'); if(element) element.classList.add('active');
-            renderRightPanel();
+        // 6. Live State (hyper-fast — only live_state, not the whole room)
+        roomRef.child('live_state').on('value', snap => {
+            let data = snap.val(); if (!data) return;
+            currentAuctionState = data.auction_state || 'idle';
+            localCurrentBid     = data.current_bid || 0;
+            let amIWinning      = (data.highest_bidder === myTeamName);
+            updateLiveUI(data, amIWinning);
+        });
+    }
+
+    // ── Budget Cache ───────────────────────────────────────────────────────
+    // Only recalculated when playerPool changes — not on every bid tick
+    function recalculateBudgets() {
+        let keys = Object.keys(allRegisteredTeams);
+        keys.forEach(t => { teamBudgets[t] = TEAM_BUDGET; });
+        playerPool.forEach(p => {
+            if (p.status === 'sold' && p.team && teamBudgets[p.team] !== undefined) {
+                teamBudgets[p.team] -= (Number(p.sold_price) || 0);
+            }
+        });
+        myOverseasCount = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName && isOverseas(p)).length;
+    }
+
+    // ── Live UI ────────────────────────────────────────────────────────────
+    function updateLiveUI(data, amIWinning) {
+        // Bid amount
+        document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
+
+        // Leader badge
+        let leaderBadge = document.getElementById('leaderBadge');
+        let bidderName  = data.highest_bidder;
+        if (bidderName && bidderName !== '-' && bidderName !== 'Base Price') {
+            leaderBadge.style.display = 'inline-block';
+            leaderBadge.textContent   = bidderName;
+            leaderBadge.style.color   = allRegisteredTeams[bidderName]?.color || '#fff';
+        } else {
+            leaderBadge.style.display = 'none';
         }
 
-        function populateDropdowns() {
-            let sets = new Set(); playerPool.forEach(p => { if(p.set) sets.add(p.set); });
-            let selector = document.getElementById('setSelector'); let currentVal = selector.value;
-            selector.innerHTML = "<option value='' disabled hidden>ON DECK</option>";
-            sets.forEach(s => { let opt = document.createElement('option'); opt.value = s; opt.text = s; selector.appendChild(opt); });
-            if (currentVal && sets.has(currentVal)) selector.value = currentVal; else if (sets.size > 0) selector.value = Array.from(sets)[0]; else selector.value = "";
-        }
+        // Center panel glow
+        let centerPanel = document.getElementById('centerPanel');
+        centerPanel.classList.remove('glow-sold', 'glow-unsold');
+        leaderBadge.classList.remove('party-mood');
+        if (currentAuctionState === 'sold')   { centerPanel.classList.add('glow-sold');   leaderBadge.classList.add('party-mood'); }
+        if (currentAuctionState === 'unsold') { centerPanel.classList.add('glow-unsold'); }
 
-        function updateTeamDropdown(registeredKeys) {
-            let squadSel = document.getElementById('teamSelector'); let currentSelection = squadSel.value;
-            squadSel.innerHTML = "<option value='' disabled hidden>SQUADS</option>";
-            registeredKeys.forEach(t => { 
-                let tColor = allRegisteredTeams[t]?.color || '#fff'; let opt = document.createElement('option'); 
-                opt.value = t; opt.text = t; opt.style.color = tColor; squadSel.appendChild(opt); 
+        // Player on block
+        if (data.current_player_index >= 0 && playerPool.length > 0) {
+            let p = playerPool[data.current_player_index];
+            if (p) {
+                document.getElementById('playerName').innerHTML = esc(p.name) + planeIcon(p);
+                let fr = document.getElementById('playerFranchise');
+                let rl = document.getElementById('playerRole');
+                if (p.franchise) { fr.textContent = p.franchise; fr.style.display = 'inline-block'; } else fr.style.display = 'none';
+                if (p.role)      { rl.textContent = p.role;      rl.style.display = 'inline-block'; } else rl.style.display = 'none';
+                document.getElementById('statLabel1').textContent = p.stat1_label || 'STAT 1'; document.getElementById('playerStat1').textContent = p.stat1_val || '-';
+                document.getElementById('statLabel2').textContent = p.stat2_label || 'STAT 2'; document.getElementById('playerStat2').textContent = p.stat2_val || '-';
+                document.getElementById('statLabel3').textContent = p.stat3_label || 'STAT 3'; document.getElementById('playerStat3').textContent = p.stat3_val || '-';
+            }
+        } else {
+            document.getElementById('playerName').textContent = 'Waiting…';
+            document.getElementById('playerFranchise').style.display = 'none';
+            document.getElementById('playerRole').style.display      = 'none';
+            ['statLabel1','playerStat1','statLabel2','playerStat2','statLabel3','playerStat3'].forEach((id,i) => {
+                document.getElementById(id).textContent = ['STAT 1','-','STAT 2','-','STAT 3','-'][i];
             });
-            if (registeredKeys.includes(currentSelection)) squadSel.value = currentSelection; else if (registeredKeys.length > 0) squadSel.value = registeredKeys[0]; else squadSel.value = ""; 
         }
 
-        function renderRightPanel() { renderDeck(); renderUnsold(); renderSquads(); }
+        // Timer
+        if (window.uiTimer) clearInterval(window.uiTimer);
+        window.uiTimer = setInterval(() => {
+            let el = document.getElementById('playerTimer');
+            el.classList.remove('timer-green','timer-warn','timer-danger','timer-paused');
+            if (currentAuctionState === 'idle')   { el.textContent = '--'; return; }
+            if (currentAuctionState === 'paused') { el.textContent = '⏸'; el.classList.add('timer-paused'); return; }
+            let t = data.timer_end ? Math.max(0, Math.ceil((data.timer_end - Date.now()) / 1000)) : 0;
+            el.textContent = t + 's';
+            if (t > 10) el.classList.add('timer-green');
+            else if (t > 5) el.classList.add('timer-warn');
+            else el.classList.add('timer-danger');
+        }, 500);
 
-        function renderDeck() {
-            let activeSet = document.getElementById('setSelector').value; let html = "";
-            playerPool.forEach((p) => {
-                if(p.set === activeSet && p.status !== "sold" && p.status !== "unsold") {
-                    let pNat = (p.nationality || "Indian").trim().toLowerCase();
-                    let isOverseas = (pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind');
-                    let plane = isOverseas ? `<span class="neon-plane" style="font-size:0.8em;">✈️</span>` : ``;
-                    html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name" style="margin-bottom:0;">${p.name} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr</span></div></div>`;
+        // My team glow
+        let myBox = document.getElementById('myTeamBox');
+        myBox.classList.remove('leader-card-glow','sold-card-glow');
+        if (amIWinning) {
+            if (currentAuctionState === 'sold') myBox.classList.add('sold-card-glow');
+            else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow');
+        }
+
+        evaluateBidButtonStatus(data, amIWinning);
+    }
+
+    // ── My Team UI ─────────────────────────────────────────────────────────
+    function updateMyTeamUI() {
+        if (!myTeamName || !Object.keys(allRegisteredTeams).length) return;
+
+        myTeamColor = allRegisteredTeams[myTeamName]?.color || myTeamColor || '#fff';
+        document.getElementById('myTeamBox').style.borderColor = myTeamColor;
+        document.getElementById('myTeamDisplay').style.color   = myTeamColor;
+
+        let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
+        let myPurseCr = myBudget / CRORE;
+        let purseEl = document.getElementById('myTeamPurse');
+        purseEl.textContent = `₹${myPurseCr.toFixed(2)} Cr`;
+        purseEl.style.color = getPurseColor(myPurseCr, STARTING_PURSE_CR);
+
+        let myRoster = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName);
+        let myXIOrder    = allRegisteredTeams[myTeamName]?.playingXI || [];
+        let myBenchOrder = allRegisteredTeams[myTeamName]?.bench      || [];
+        let myRoles      = allRegisteredTeams[myTeamName]?.playerRoles || {};
+
+        let xiPlayers    = myXIOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
+        let benchPlayers = myBenchOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
+        // Any newly sold player not yet in either order goes to bench
+        myRoster.forEach(p => { if (!myXIOrder.includes(p.name) && !myBenchOrder.includes(p.name)) benchPlayers.push(p); });
+
+        let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
+        let [gold,silver,bronze] = [myPriceRanks[0]||-1, myPriceRanks[1]||-1, myPriceRanks[2]||-1];
+
+        let buildRow = p => {
+            let rawR   = myRoles[p.name] || '';
+            let roleHtml = rawR ? rawR.split(',').map(r => `<span style="font-size:9px; color:${r==='WK'?'#0dcaf0':'#ffc107'}; font-weight:bold;">${r}</span>`).join(' ') : '·';
+            let pc = p.sold_price===gold?'#eab308': p.sold_price===silver?'#c0c0c0': p.sold_price===bronze?'#cd7f32':'#aaa';
+            return `<div class="roster-item roster-item-drag" draggable="true" data-player="${esc(p.name)}">
+                <div style="display:flex; align-items:center;">
+                    <span>${esc(p.name)} ${planeIcon(p)}</span>
+                    <button class="role-badge" onclick="openRolePopup(event,'${esc(p.name)}')">${roleHtml}</button>
+                </div>
+                <span style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}Cr</span>
+            </div>`;
+        };
+
+        let xiHtml = xiPlayers.map(buildRow).join('');
+        let xiCount = xiPlayers.length;
+        for (let i = xiCount + 1; i <= 11; i++) xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
+        document.getElementById('playingXIList').innerHTML = xiHtml;
+        document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
+        document.getElementById('xiCount').textContent     = `(${xiCount}/11)`;
+        document.querySelectorAll('.roster-item-drag').forEach(addDragEvents);
+
+        // Other teams bottom row
+        let othersHtml = '';
+        Object.keys(allRegisteredTeams).forEach(t => {
+            if (t === myTeamName) return;
+            let tData  = allRegisteredTeams[t] || {};
+            let tColor = tData.color || '#fff';
+            let tRep   = tData.repName || 'Unknown';
+            let rCr    = (teamBudgets[t] !== undefined ? teamBudgets[t] : TEAM_BUDGET) / CRORE;
+            let count  = playerPool.filter(p => p.status === 'sold' && p.team === t).length;
+            let isOnline = activePresence[t];
+            let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
+            let lBadge  = document.getElementById('leaderBadge');
+            let curWin  = lBadge ? lBadge.textContent : '';
+            let lgClass = (t === curWin && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow' :
+                          (t === curWin && currentAuctionState==='sold') ? ' sold-card-glow' : '';
+            othersHtml += `
+            <div class="other-team-card-hz${lgClass}" style="border-top-color:${tColor};">
+                <div class="team-msg-popup" id="msg-popup-${esc(t)}"></div>
+                <div style="font-weight:bold; font-size:13px; margin-bottom:2px;">${esc(t)} ${dot}</div>
+                <div class="other-team-rep-name">${esc(tRep)}</div>
+                <div class="purse-val" style="color:${getPurseColor(rCr,STARTING_PURSE_CR)};">₹${rCr.toFixed(2)} Cr</div>
+                <div style="font-size:9px; color:#666; text-transform:uppercase; margin-top:2px;">${count} Players</div>
+            </div>`;
+        });
+        document.getElementById('otherTeamsList').innerHTML =
+            othersHtml || "<div style='color:#666; font-size:12px; width:100%; text-align:center; padding:20px 0;'>No other franchises connected.</div>";
+        updateAllPopups();
+    }
+
+    // ── Bid Button Status ──────────────────────────────────────────────────
+    function evaluateBidButtonStatus(data, amIWinning) {
+        let btn = document.getElementById('mainActionButton');
+        let bidZone = document.getElementById('bidZoneBox');
+        let jumps   = document.querySelectorAll('.jump-btn');
+        let myBudget  = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
+        let nextBidCr = (localCurrentBid + BID_INCREMENT) / CRORE;
+        let isInsufficient = nextBidCr > myBudget / CRORE;
+        let isOvMaxed = window.isOverseasStrict && data.current_player_index >= 0 && playerPool.length > 0 &&
+                        isOverseas(playerPool[data.current_player_index]||{}) && myOverseasCount >= 8;
+
+        const setBtn = (cls, text, enabled) => {
+            btn.className = `action-btn-bid ${cls}`; btn.textContent = text; btn.disabled = !enabled;
+            jumps.forEach(j => { j.disabled = !enabled; });
+            bidZone.style.borderColor = enabled ? 'rgba(220,53,69,.3)' : '#222';
+        };
+        const setStatus = cls => { document.getElementById('currentBidContainer').className = `current-bid-display ${cls}`; };
+
+        if (currentAuctionState === 'idle') {
+            setStatus('status-neutral'); setBtn('btn-bid-locked','WAITING…',false);
+        } else if (currentAuctionState === 'sold') {
+            setStatus('status-winning'); btn.className='action-btn-bid btn-bid-locked'; btn.disabled=true;
+            btn.textContent=`SOLD TO ${data.highest_bidder}`; jumps.forEach(j=>j.disabled=true);
+        } else if (currentAuctionState === 'unsold') {
+            setStatus('status-losing');  setBtn('btn-bid-unsold','UNSOLD',false);
+        } else if (currentAuctionState === 'cooldown') {
+            setStatus('status-neutral'); setBtn('btn-cooldown','COOLDOWN…',false);
+        } else if (currentAuctionState === 'paused') {
+            setStatus('status-neutral'); setBtn('btn-cooldown','PAUSED…',false);
+        } else if (amIWinning) {
+            setStatus('status-winning'); bidZone.style.borderColor='rgba(40,167,69,.3)';
+            btn.className='action-btn-bid btn-bid-locked'; btn.textContent='BID'; btn.disabled=true;
+            jumps.forEach(j=>j.disabled=true);
+        } else if (isOvMaxed) {
+            setStatus('status-losing');  setBtn('btn-bid-insufficient','MAX OVERSEAS (8/8)',false);
+        } else if (isInsufficient) {
+            setStatus('status-losing');  setBtn('btn-bid-insufficient','INSUFFICIENT FUNDS',false);
+        } else {
+            setStatus('status-losing');  setBtn('btn-bid-active','BID',true);
+        }
+    }
+
+    // ── Bidding ────────────────────────────────────────────────────────────
+    function placeBid()            { placeJumpBid(BID_INCREMENT); }
+    function placeJumpBid(amount) {
+        let btn = document.getElementById('mainActionButton');
+        if (!myTeamName || btn.disabled || localBidCooldown) return;
+        localBidCooldown = true; setTimeout(() => { localBidCooldown = false; }, 500);
+
+        let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
+
+        // Firebase transaction — atomic update on the tiny live_state node only.
+        // This prevents race conditions when multiple teams bid simultaneously.
+        roomRef.child('live_state').transaction(liveData => {
+            if (!liveData) return liveData;
+            let state = liveData.auction_state;
+            if (state !== 'bidding' && state !== 'cooldown') return liveData; // abort if not biddable
+            let newBid = (liveData.current_bid || 0) + amount;
+            if (newBid > myBudget || liveData.highest_bidder === myTeamName) return liveData; // abort, no change
+            liveData.current_bid     = newBid;
+            liveData.highest_bidder  = myTeamName;
+            liveData.timer_end       = Date.now() + 15000;
+            liveData.auction_state   = 'bidding';
+            return liveData;
+        }, (err) => { if (err) console.error('Bid transaction failed:', err); });
+    }
+
+    // ── Chat ───────────────────────────────────────────────────────────────
+    window.sendChatMessage = function() {
+        let inp = document.getElementById('chatInput'), msg = inp.value.trim();
+        if (msg && myTeamName && roomRef) {
+            roomRef.child('chat_events').push({ team: myTeamName, text: msg, time: Date.now() });
+            inp.value = '';
+        }
+    };
+
+    // ── Chat Popups ────────────────────────────────────────────────────────
+    function triggerChatPopup(team, text) { activePopups[team] = { text, expiry: Date.now() + 5000 }; }
+    function updateAllPopups() {
+        let now = Date.now();
+        [myTeamName, ...Object.keys(allRegisteredTeams)].forEach(t => {
+            let el = document.getElementById('msg-popup-' + t) || document.getElementById('msg-popup-myteam');
+            // use correct id
+            let pop = t === myTeamName ? document.getElementById('msg-popup-myteam') : document.getElementById('msg-popup-'+t);
+            if (!pop) return;
+            if (activePopups[t] && activePopups[t].expiry > now) {
+                pop.textContent = activePopups[t].text; pop.classList.add('show');
+            } else { pop.classList.remove('show'); }
+        });
+    }
+
+    // ── Log ────────────────────────────────────────────────────────────────
+    function logAction(msg, date) {
+        let time = (date || new Date()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        let entry = document.createElement('div'); entry.className = 'log-entry';
+        entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+        logContainer.appendChild(entry);
+        if (!isUserScrollingLog) logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    // ── Role System ────────────────────────────────────────────────────────
+    let currentRolePlayer = '';
+    window.openRolePopup = function(e, playerName) {
+        e.stopPropagation(); currentRolePlayer = playerName;
+        let popup = document.getElementById('rolePopup');
+        popup.style.display = 'flex';
+        let rect = e.target.getBoundingClientRect();
+        popup.style.top  = rect.top + 'px';
+        popup.style.left = rect.left + 'px';
+    };
+    window.setRole = function(role) {
+        if (!currentRolePlayer) return;
+        let curRoles = allRegisteredTeams[myTeamName]?.playerRoles || {};
+        let updates  = {};
+        let activeArr = (curRoles[currentRolePlayer] || '').split(',').filter(Boolean);
+        if (role === '') {
+            updates[currentRolePlayer] = null;
+        } else if (role === 'WK') {
+            if (activeArr.includes('WK')) activeArr = activeArr.filter(r => r !== 'WK');
+            else activeArr.push('WK');
+            updates[currentRolePlayer] = activeArr.join(',') || null;
+        } else if (role === 'C' || role === 'VC') {
+            let opp = role === 'C' ? 'VC' : 'C';
+            activeArr = activeArr.filter(r => r !== opp);
+            if (activeArr.includes(role)) { activeArr = activeArr.filter(r => r !== role); }
+            else {
+                activeArr.push(role);
+                // Remove this role from any other player who has it
+                for (let p in curRoles) {
+                    if (p !== currentRolePlayer) {
+                        let pArr = (curRoles[p] || '').split(',').filter(r => r !== role);
+                        updates[p] = pArr.join(',') || null;
+                    }
                 }
-            });
-            document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size: 11px; text-align: center; margin-top: 10px;'>No players left in this set.</p>";
+            }
+            updates[currentRolePlayer] = activeArr.join(',') || null;
         }
+        roomRef.child('teams_auth/' + myTeamName + '/playerRoles').update(updates);
+        document.getElementById('rolePopup').style.display = 'none';
+    };
+    document.addEventListener('click', e => {
+        let popup = document.getElementById('rolePopup');
+        if (popup.style.display === 'flex' && !popup.contains(e.target) && !e.target.classList.contains('role-badge'))
+            popup.style.display = 'none';
+    });
 
-        function renderUnsold() {
-            let html = "";
-            playerPool.forEach((p) => {
-                if(p.status === "unsold") {
-                    let pNat = (p.nationality || "Indian").trim().toLowerCase();
-                    let isOverseas = (pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind');
-                    let plane = isOverseas ? `<span class="neon-plane" style="font-size:0.8em;">✈️</span>` : ``;
-                    html += `<div class="list-item" style="border-left-color: #dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name" style="margin-bottom:0;">${p.name} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr | Set: ${p.set}</span></div></div>`;
-                }
-            });
-            document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size: 11px; text-align: center; margin-top: 10px;'>No unsold players yet.</p>";
+    // ── Drag & Drop ────────────────────────────────────────────────────────
+    let dragSrcEl = null;
+    function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.style.opacity = '.4'; }
+    function handleDragOver(e)  { e.preventDefault(); return false; }
+    function handleDragEnterItem(e) { this.classList.add('over'); }
+    function handleDragLeaveItem(e) { this.classList.remove('over'); }
+    function handleDragEnterZone(e) { this.classList.add('over-zone'); }
+    function handleDragLeaveZone(e) { this.classList.remove('over-zone'); }
+    function handleDrop(e) {
+        e.stopPropagation();
+        if (dragSrcEl === this) return false;
+        let destIsXI    = this.id === 'playingXIList' || !!this.closest('#playingXIList');
+        let srcIsBench  = !!dragSrcEl.closest('#benchList');
+        if (destIsXI && srcIsBench) {
+            let xiCount = document.querySelectorAll('#playingXIList .roster-item-drag').length;
+            if (xiCount >= 11) { showAlert('XI Full','Playing XI already has 11 players.'); return false; }
         }
+        if (this.classList.contains('drop-zone')) this.appendChild(dragSrcEl);
+        else this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this);
+        saveRosterOrder();
+        return false;
+    }
+    function handleDragEnd(e) {
+        this.style.opacity = '1';
+        document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('over'));
+        document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('over-zone'));
+    }
+    function addDragEvents(item) {
+        item.addEventListener('dragstart',   handleDragStart,    false);
+        item.addEventListener('dragenter',   handleDragEnterItem,false);
+        item.addEventListener('dragover',    handleDragOver,     false);
+        item.addEventListener('dragleave',   handleDragLeaveItem,false);
+        item.addEventListener('drop',        handleDrop,         false);
+        item.addEventListener('dragend',     handleDragEnd,      false);
+    }
+    function saveRosterOrder() {
+        let xi    = [...document.querySelectorAll('#playingXIList .roster-item-drag')].map(i => i.getAttribute('data-player'));
+        let bench = [...document.querySelectorAll('#benchList .roster-item-drag')].map(i => i.getAttribute('data-player'));
+        roomRef.child('teams_auth/' + myTeamName).update({ playingXI: xi, bench });
+    }
 
-        function renderSquads() {
-            let activeTeam = document.getElementById('teamSelector').value;
-            if(!activeTeam) return document.getElementById('squadList').innerHTML = "<p style='color:#666; font-size: 11px; text-align: center; margin-top: 10px;'>Select a team.</p>";
-            let html = ""; let targetRoster = []; playerPool.forEach(p => { if(p.status === "sold" && p.team === activeTeam) targetRoster.push(p); });
-            
-            let activeRoles = allRegisteredTeams[activeTeam]?.playerRoles || {};
-            let xiOrder = allRegisteredTeams[activeTeam]?.playingXI || [];
-            let teamOrder = allRegisteredTeams[activeTeam]?.rosterOrder || [];
-            
-            targetRoster.sort((a, b) => {
-                let aIdx = teamOrder.indexOf(a.name); let bIdx = teamOrder.indexOf(b.name);
-                if(aIdx === -1) aIdx = 999; if(bIdx === -1) bIdx = 999; return aIdx - bIdx;
-            });
-            
-            let priceRanks = [...new Set(targetRoster.map(p => p.sold_price))].filter(p => p > 0).sort((a,b) => b - a);
-            let goldPrice = priceRanks[0] || -1; let silverPrice = priceRanks.length > 1 ? priceRanks[1] : -1; let bronzePrice = priceRanks.length > 2 ? priceRanks[2] : -1;
+    // ── Tab / Dropdowns ────────────────────────────────────────────────────
+    function switchTab(name, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${name}`).classList.add('active');
+        if (el) el.classList.add('active');
+    }
 
-            targetRoster.forEach(p => {
-                let tColor = allRegisteredTeams[activeTeam]?.color || '#333';
-                let rawRoles = activeRoles[p.name]; let roleSpans = [];
-                if (rawRoles) {
-                    rawRoles.split(',').forEach(r => {
-                        let rColor = (r === 'WK') ? '#0dcaf0' : '#ffc107'; roleSpans.push(`<span style="font-size: 9px; color: ${rColor}; padding: 0 2px; font-weight: bold;">${r}</span>`);
-                    });
-                }
-                
-                let pNat = (p.nationality || "Indian").trim().toLowerCase();
-                let isOverseas = (pNat !== 'india' && pNat !== 'indian' && pNat !== 'ind');
-                let plane = isOverseas ? `<span class="neon-plane" style="font-size:0.7em;">✈️</span>` : ``;
+    function populateSetDropdown() {
+        let sets = new Set(); playerPool.forEach(p => { if (p.set) sets.add(p.set); });
+        let sel  = document.getElementById('setSelector'), prev = sel.value;
+        sel.innerHTML = '<option value="" disabled hidden>ON DECK</option>';
+        sets.forEach(s => { let o = document.createElement('option'); o.value = s; o.text = s; sel.appendChild(o); });
+        if (prev && sets.has(prev)) sel.value = prev; else if (sets.size > 0) sel.value = Array.from(sets)[0];
+    }
 
-                let isXi = xiOrder.includes(p.name); let roleHtml = roleSpans.length > 0 ? `<span style="margin-left: 5px;">${roleSpans.join(' ')}</span>` : "";
-                let statusHtml = isXi ? `<span style="font-size: 8px; color: #28a745; border: 1px solid #28a745; padding: 1px 3px; border-radius: 3px; margin-left: 6px;">XI</span>` : `<span style="font-size: 8px; color: #666; border: 1px solid #444; padding: 1px 3px; border-radius: 3px; margin-left: 6px;">BENCH</span>`;
-                
-                let priceColor = '#aaa'; let isMedal = false;
-                if (priceRanks.length > 1 || p.sold_price >= 10000000) {
-                    if (p.sold_price === goldPrice) { priceColor = '#eab308'; isMedal = true; } else if (p.sold_price === silverPrice) { priceColor = '#c0c0c0'; isMedal = true; } else if (p.sold_price === bronzePrice) { priceColor = '#cd7f32'; isMedal = true; }
-                }
-                let priceStyle = `color: ${priceColor}; font-weight: ${isMedal ? 'bold' : 'normal'};`;
-                html += `<div class="list-item" style="border-left-color: ${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name" style="margin-bottom:0;">${p.name} ${plane}</span> ${roleHtml} ${statusHtml}</div><span class="item-price" style="${priceStyle}">₹${(p.sold_price/10000000).toFixed(2)} Cr</span></div></div>`;
-            });
-            document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size: 11px; text-align: center; margin-top: 10px;'>Squad is empty.</p>`;
-        }
-    </script>
+    function updateTeamDropdown() {
+        let keys = Object.keys(allRegisteredTeams);
+        let sel  = document.getElementById('teamSelector'), prev = sel.value;
+        sel.innerHTML = '<option value="" disabled hidden>SQUADS</option>';
+        keys.forEach(t => {
+            let o = document.createElement('option'); o.value = t; o.text = t;
+            o.style.color = allRegisteredTeams[t]?.color || '#fff';
+            sel.appendChild(o);
+        });
+        if (keys.includes(prev)) sel.value = prev; else if (keys.length > 0) sel.value = keys[0];
+    }
+
+    // ── List Renders ───────────────────────────────────────────────────────
+    function renderDeck() {
+        let set  = document.getElementById('setSelector').value;
+        let html = '';
+        playerPool.forEach(p => {
+            if (p.set !== set || p.status === 'sold' || p.status === 'unsold') return;
+            html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+        });
+        document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players left in this set.</p>";
+    }
+
+    function renderUnsold() {
+        let html = '';
+        playerPool.forEach(p => {
+            if (p.status !== 'unsold') return;
+            html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
+        });
+        document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players yet.</p>";
+    }
+
+    function renderSquads() {
+        let team = document.getElementById('teamSelector').value;
+        if (!team) { document.getElementById('squadList').innerHTML = "<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; return; }
+        let roster = playerPool.filter(p => p.status === 'sold' && p.team === team);
+        let order  = allRegisteredTeams[team]?.rosterOrder || [];
+        roster.sort((a,b) => { let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi; });
+        let ranks  = [...new Set(roster.map(p=>p.sold_price))].filter(v=>v>0).sort((a,b)=>b-a);
+        let [gold,silver,bronze] = [ranks[0]||-1, ranks[1]||-1, ranks[2]||-1];
+        let tColor = allRegisteredTeams[team]?.color || '#333';
+        let roles  = allRegisteredTeams[team]?.playerRoles || {};
+        let xiOrder = allRegisteredTeams[team]?.playingXI || [];
+        let html = roster.map(p => {
+            let rawR = roles[p.name] || '';
+            let roleHtml = rawR.split(',').filter(Boolean).map(r => `<span style="font-size:9px; color:${r==='WK'?'#0dcaf0':'#ffc107'}; font-weight:bold; margin-left:3px;">${r}</span>`).join('');
+            let pc = p.sold_price===gold?'#eab308': p.sold_price===silver?'#c0c0c0': p.sold_price===bronze?'#cd7f32':'#aaa';
+            let isXI = xiOrder.includes(p.name);
+            let xiBadge = isXI
+                ? `<span style="font-size:8px; color:#28a745; border:1px solid #28a745; padding:1px 3px; border-radius:3px; margin-left:6px;">XI</span>`
+                : `<span style="font-size:8px; color:#666; border:1px solid #444; padding:1px 3px; border-radius:3px; margin-left:6px;">BENCH</span>`;
+            return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleHtml}${xiBadge}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+        }).join('');
+        document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
+    }
+
+    // ── Keyboard Shortcut ──────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (document.getElementById('mainDashboard').style.display === 'none') return;
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+        if (e.code === 'Space') { e.preventDefault(); if (!document.getElementById('mainActionButton').disabled) placeBid(); }
+    });
+</script>
 </body>
 </html>
