@@ -141,7 +141,6 @@
 <body>
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
 
-<!-- Gateway Screen -->
 <div id="adminGatewayScreen" class="gateway-container">
     <div class="gateway-card">
         <h1 style="color:#fff; font-size:28px; margin-bottom:30px; letter-spacing:2px;">🔨 <span style="color:#ffc107;">AUCTIONEER</span></h1>
@@ -152,7 +151,6 @@
     </div>
 </div>
 
-<!-- Create Room Screen -->
 <div id="createRoomScreen" class="gateway-container" style="display:none;">
     <div class="gateway-card">
         <h2 style="color:#fff; margin-bottom:10px;">Create New Room</h2>
@@ -172,7 +170,6 @@
     </div>
 </div>
 
-<!-- Join Room Screen -->
 <div id="joinAdminRoomScreen" class="gateway-container" style="display:none;">
     <div class="gateway-card">
         <h2 style="color:#fff; margin-bottom:10px;">Join Existing Room</h2>
@@ -182,7 +179,6 @@
     </div>
 </div>
 
-<!-- Settings Overlay -->
 <div id="settingsOverlay" class="settings-overlay">
     <div class="settings-card">
         <h2 style="color:#fff; margin-top:0; margin-bottom:25px; text-align:center; letter-spacing:1px; font-size:22px;">⚙️ AUCTION SETTINGS</h2>
@@ -198,13 +194,28 @@
             <div class="setting-label">Starting Purse (Cr)</div>
             <input type="number" id="set-purse" class="setting-input" value="100" min="1">
         </div>
-        <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px;">
-            <div class="setting-label">Strict Overseas Limit (Max 8)</div>
-            <select id="set-overseas-rule" class="setting-input wide" style="width:120px; color:#fff; text-align:right;">
+        
+        <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px; flex-wrap:wrap; gap:10px;">
+            <div class="setting-label" style="width:100%;">Differential Bid Increments (Lakhs)</div>
+            <input type="number" id="set-inc-base" class="setting-input" value="20" title="Base Tier (0-2Cr)">
+            <input type="number" id="set-inc-mid" class="setting-input" value="50" title="Mid Tier (2-5Cr)">
+            <input type="number" id="set-inc-high" class="setting-input" value="100" title="High Tier (5Cr+)">
+        </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Strict Overseas Limit</div>
+            <select id="set-overseas-rule" class="setting-input wide" style="width:100px;">
                 <option value="true">Enabled</option>
                 <option value="false">Disabled</option>
             </select>
+            <input type="number" id="set-max-ov" class="setting-input" value="8" style="width:60px;" title="Max Foreigners">
         </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Squad Size Limits</div>
+            <input type="number" id="set-min-squad" class="setting-input" value="18" style="width:60px;" title="Minimum Squad">
+            <span style="color:#666;">to</span>
+            <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;" title="Maximum Squad">
+        </div>
+
         <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px; margin-top:20px; border-top:1px solid #222; padding-top:15px;">
             <div class="setting-label">Export Auction Data</div>
             <div style="display:flex; gap:10px; width:100%;">
@@ -220,7 +231,6 @@
     </div>
 </div>
 
-<!-- App Modal -->
 <div id="appModal" class="modal-overlay">
     <div class="modal-card">
         <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
@@ -230,14 +240,12 @@
     </div>
 </div>
 
-<!-- Main Dashboard -->
 <div id="adminDashboardWrapper">
     <div style="position:relative; width:100%; max-width:1400px; margin:0 auto; text-align:center; padding-top:15px; margin-bottom:15px;">
         <h1 class="main-title">🔨 <span id="headerRoomName">IPL AUCTIONEER</span> COMMAND CENTER</h1>
         <button class="gear-btn" onclick="openSettings()">⚙️ Settings</button>
     </div>
     <div class="dashboard">
-        <!-- Left Column -->
         <div class="col-left">
             <div class="panel" style="flex:0 0 auto;">
                 <div class="hotkey-hint">
@@ -285,9 +293,7 @@
             </div>
         </div>
 
-        <!-- Right Column -->
         <div class="col-right">
-            <!-- Master Clocks + Pause -->
             <div class="panel" style="flex:0 0 auto;">
                 <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:12px; display:block; font-weight:bold; text-align:center;">Master Clocks</label>
                 <div class="flex-row" style="margin-bottom:10px;">
@@ -295,17 +301,17 @@
                     <button class="btn-clock master-clock" onclick="startTimer(30,'bidding')">30s</button>
                     <button class="btn-clock master-clock" onclick="startTimer(60,'bidding')">60s</button>
                 </div>
-                <!-- PAUSE button — new workflow control -->
+                
+                <button class="btn-push" style="width:100%; margin-top:5px; margin-bottom:10px; font-size:13px; padding:10px;" onclick="bypassCooldown()">⏩ FORCE START (Skip Cooldown)</button>
+
                 <button id="btnPause" class="btn-pause" style="width:100%;" onclick="togglePause()">⏸ PAUSE</button>
             </div>
-            <!-- Undo / Reset -->
             <div class="panel" style="flex:0 0 auto;">
                 <div class="flex-row">
                     <button class="btn-undo" onclick="undoLastSale()">⏪ Undo Sale</button>
                     <button class="btn-outline-danger" onclick="confirmResetAuction()">☢️ Reset</button>
                 </div>
             </div>
-            <!-- Tabs: Deck / Unsold / Squads / Logs -->
             <div class="panel tabs-panel">
                 <input type="text" id="auctioneerSearch" class="login-input" placeholder="🔍 Search Player…" style="padding:8px; margin-bottom:12px; font-size:13px;">
                 <div class="tabs">
@@ -511,7 +517,7 @@
         });
         roomRef.child('chat_events').once('value', () => { isChatLoaded=true; });
 
-        // 2. Persistent Auction Log (replaces latest_event hack)
+        // 2. Persistent Auction Log
         let isLogLoaded=false;
         roomRef.child('auction_log').limitToLast(100).once('value', snap => {
             let entries=snap.val()||{};
@@ -540,15 +546,14 @@
             activePresence=snap.val()||{}; updateBudgetTracker();
         });
 
-        // 5a. Player Pool — full load ONCE to avoid bandwidth on every bid
+        // 5a. Player Pool
         roomRef.child('player_pool').once('value', snap => {
             let raw=snap.val()||[];
             playerPool=Array.isArray(raw)?raw:Object.values(raw);
             populateDropdowns(); recalculateBudgets(); scheduleRender();
         });
 
-        // 5b. Player Pool — only fires when a player's status changes (sold/unsold/reset)
-        //     Each event delivers ONE player object instead of the entire pool.
+        // 5b. Player Pool Child Updates
         roomRef.child('player_pool').on('child_changed', snap => {
             let idx=parseInt(snap.key);
             if (!isNaN(idx)) {
@@ -557,7 +562,7 @@
             }
         });
 
-        // 6. Live State (hyper-fast — fires on every bid)
+        // 6. Live State
         roomRef.child('live_state').on('value', snap => {
             let data=snap.val()||{};
             _liveStateData=data;
@@ -569,10 +574,8 @@
         });
     }
 
-    // Debounced render so child_changed bursts (e.g. on reset) don't thrash the DOM
     function scheduleRender() { clearTimeout(_renderTimer); _renderTimer=setTimeout(()=>{ renderDeck(); renderUnsold(); renderSquads(); }, 60); }
 
-    // Recompute budgets from pool — only called when player_pool changes, not on every bid
     function recalculateBudgets() {
         let keys=Object.keys(allRegisteredTeams);
         keys.forEach(t => { teamBudgets[t]=TEAM_BUDGET; });
@@ -619,7 +622,6 @@
             if (t>10) timerEl.classList.add('timer-green');
             else if (t>5) timerEl.classList.add('timer-orange');
             else timerEl.classList.add('timer-red');
-            // Auto-transition from cooldown to bidding
             if (currentAuctionState==='cooldown'&&t===0) { clearInterval(window.uiTimer); startTimer(15,'bidding'); }
         }, 500);
 
@@ -640,7 +642,7 @@
             _setBtn(pauseBtn, active||isPaused);
             diceBtn.style.opacity='0.3';
         }
-        // Pause button label
+        
         if (isPaused) { pauseBtn.textContent='▶ RESUME'; pauseBtn.classList.add('is-paused'); }
         else { pauseBtn.textContent='⏸ PAUSE'; pauseBtn.classList.remove('is-paused'); }
 
@@ -694,7 +696,6 @@
     }
 
     // ── Persistent Log ────────────────────────────────────────────────────
-    // Significant events are pushed to Firebase so the log survives refresh
     function persistEvent(msg) {
         if (roomRef) roomRef.child('auction_log').push({ msg, t: Date.now() });
     }
@@ -748,11 +749,20 @@
     function startTimer(seconds, state='bidding') {
         roomRef.child('live_state').update({ timer_end:Date.now()+(seconds*1000), auction_state:state });
     }
+    
+    function bypassCooldown() {
+        if (currentAuctionState === 'cooldown') {
+            roomRef.child('live_state').update({ 
+                auction_state: 'bidding', 
+                timer_end: Date.now() + 15000 
+            });
+            persistEvent('⏩ Cooldown bypassed. Bidding is LIVE!');
+        }
+    }
 
     // ── PAUSE / RESUME ────────────────────────────────────────────────────
     function togglePause() {
         if (currentAuctionState==='paused') {
-            // Resume — restore timer from stored remaining time
             let remaining=_liveStateData.paused_remaining||15000;
             roomRef.child('live_state').update({ auction_state:'bidding', timer_end:Date.now()+remaining, paused_remaining:null });
             persistEvent('▶️ Auction <strong>RESUMED</strong>.');
@@ -796,7 +806,7 @@
                     let resetPool=playerPool.map(p=>{p.status='available'; p.team=null; p.sold_price=null; return p;});
                     roomRef.update({ player_pool:resetPool, logged_in_teams:null, teams_auth:null });
                     roomRef.child('live_state').update({ current_bid:0, highest_bidder:'-', timer_end:0, current_player_index:-1, last_sold_index:-1, auction_state:'idle' });
-                    roomRef.child('auction_log').remove(); // clear old log on full reset
+                    roomRef.child('auction_log').remove(); 
                     persistEvent('🔄 <strong>FULL AUCTION RESET</strong> performed by auctioneer.');
                 } else { showAlert('Cancelled','Incorrect confirmation. Reset cancelled.'); }
             })
@@ -838,6 +848,13 @@
             document.getElementById('set-room-name').value=s.room_name||'IPL Auction';
             document.getElementById('set-purse').value=s.starting_purse||100;
             document.getElementById('set-overseas-rule').value=s.overseas_limit_enabled!==false?'true':'false';
+            
+            document.getElementById('set-inc-base').value = s.inc_base || 20;
+            document.getElementById('set-inc-mid').value = s.inc_mid || 50;
+            document.getElementById('set-inc-high').value = s.inc_high || 100;
+            document.getElementById('set-max-ov').value = s.max_overseas || 8;
+            document.getElementById('set-min-squad').value = s.min_squad || 18;
+            document.getElementById('set-max-squad').value = s.max_squad || 25;
         });
         let exp=document.getElementById('exportTeamSelector');
         exp.innerHTML='<option value="ALL">All Teams</option>';
@@ -848,8 +865,25 @@
         let rName=document.getElementById('set-room-name').value.trim();
         let purse=parseInt(document.getElementById('set-purse').value)||100;
         let oLimit=document.getElementById('set-overseas-rule').value==='true';
+        let incBase = parseInt(document.getElementById('set-inc-base').value) || 20;
+        let incMid = parseInt(document.getElementById('set-inc-mid').value) || 50;
+        let incHigh = parseInt(document.getElementById('set-inc-high').value) || 100;
+        let maxOv = parseInt(document.getElementById('set-max-ov').value) || 8;
+        let minSq = parseInt(document.getElementById('set-min-squad').value) || 18;
+        let maxSq = parseInt(document.getElementById('set-max-squad').value) || 25;
+
         if (roomRef&&rName) {
-            roomRef.child('settings').update({room_name:rName, starting_purse:purse, overseas_limit_enabled:oLimit});
+            roomRef.child('settings').update({
+                room_name:rName, 
+                starting_purse:purse, 
+                overseas_limit_enabled:oLimit,
+                inc_base: incBase,
+                inc_mid: incMid,
+                inc_high: incHigh,
+                max_overseas: maxOv,
+                min_squad: minSq,
+                max_squad: maxSq
+            });
             document.getElementById('settingsOverlay').style.display='none';
             persistEvent('⚙️ Auction settings updated.');
         }
