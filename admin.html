@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="firebase-config.js"></script>
     <style>
-        /* ─ Admin Specific UI (Shared UI removed) ─────────────────────── */
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #050508; color: #e0e0e0; margin: 0; padding: 20px; min-height: 100vh; overflow-x: hidden; }
         
         .pin-input { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #444; color: #ffc107; border-radius: 8px; font-size: 24px; text-align: center; letter-spacing: 8px; outline: none; }
@@ -279,8 +278,9 @@
     function esc(str) {
         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
+    // FIX 2: Case Insensitive Global Image Key
     function sanitizeKey(name) {
-        return name.replace(/[.#$\[\]\/]/g, '_');
+        return name.toLowerCase().replace(/[.#$\[\]\/]/g, '_');
     }
 
     // ── Auth ──────────────────────────────────────────────────────────────
@@ -377,7 +377,6 @@
 
     function openUploadModal() { document.getElementById('uploadModal').style.display = 'flex'; }
 
-    // FIX: Refactored to use PapaParse instead of Regex for robust CSV processing
     function parseCSV(text) {
         let parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
         let result = [];
