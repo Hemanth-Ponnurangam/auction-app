@@ -83,8 +83,12 @@
         
         @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
+        @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
+
         .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
+        .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
+
         .delete-team-btn { position: absolute; top: 2px; right: 4px; background: transparent; border: none; color: #dc3545; font-size: 14px; cursor: pointer; padding: 0; opacity: .6; transition: .2s; }
         .delete-team-btn:hover { opacity: 1; transform: scale(1.2); }
         .pin-eye { cursor: pointer; opacity: .5; transition: .2s; font-size: 11px; }
@@ -655,7 +659,6 @@
             diceBtn.style.opacity='0.3';
         }
         
-        // PAUSE/RESUME with horizontal layout (icon next to text)
         if (isPaused) { 
             pauseBtn.innerHTML='<span style="font-size:14px;">▶</span> RESUME'; 
             pauseBtn.classList.add('is-paused'); 
@@ -680,6 +683,8 @@
         let keys=Object.keys(allRegisteredTeams);
         let totalSlots=Math.max(10, Math.ceil(keys.length/5)*5);
         let html='';
+        let isValidLeader = currentLeader !== '-' && currentLeader !== 'Base Price' && currentLeader !== '';
+
         for (let i=0;i<totalSlots;i++) {
             if (i<keys.length) {
                 let team=keys[i], tData=allRegisteredTeams[team]||{};
@@ -690,10 +695,13 @@
                 let dot=isOnline?'<span class="live-dot"></span>':'<span class="offline-dot"></span>';
                 let tColor=tData.color||'#fff';
                 let leaderClass='';
-                if (team===currentLeader) {
-                    if (currentAuctionState==='sold') leaderClass=' sold-card-glow';
-                    else if (currentAuctionState==='bidding'||currentAuctionState==='cooldown') leaderClass=' leader-card-glow';
+                
+                // UNIFIED GLOW LOGIC
+                if (team === currentLeader && isValidLeader) {
+                    if (currentAuctionState === 'sold') leaderClass = ' sold-card-glow';
+                    else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') leaderClass = ' leader-card-glow-silver';
                 }
+
                 html+=`<div class="budget-card${leaderClass}">
                     <button class="delete-team-btn" onclick="confirmDeleteTeam('${esc(team)}')" title="Delete Team">&times;</button>
                     <div>
