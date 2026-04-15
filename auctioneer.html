@@ -224,10 +224,29 @@
         </div>
         
         <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px; flex-wrap:wrap; gap:10px;">
-            <div class="setting-label" style="width:100%;">Differential Bid Increments (Lakhs)</div>
-            <input type="number" id="set-inc-base" class="setting-input" value="20" title="Base Tier (0-2Cr)">
-            <input type="number" id="set-inc-mid" class="setting-input" value="50" title="Mid Tier (2-5Cr)">
-            <input type="number" id="set-inc-high" class="setting-input" value="100" title="High Tier (5Cr+)">
+            <div class="setting-label" style="width:100%;">Differential Bid Slabs (Cr &rarr; L)</div>
+            <div style="display:flex; width:100%; gap:5px; align-items:center;">
+                <span style="color:#aaa; font-size:11px;">0 to</span>
+                <input type="number" id="set-limit-mid" class="setting-input" value="2" style="width:50px;" oninput="document.getElementById('label-mid-start').textContent=this.value">
+                <span style="color:#aaa; font-size:11px;">Cr: +</span>
+                <input type="number" id="set-inc-base" class="setting-input" value="20" style="width:50px;" title="Base Tier Increment">
+                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+            </div>
+            <div style="display:flex; width:100%; gap:5px; align-items:center;">
+                <span id="label-mid-start" style="color:#ffc107; font-weight:bold; width:20px; text-align:center;">2</span>
+                <span style="color:#aaa; font-size:11px;">to</span>
+                <input type="number" id="set-limit-high" class="setting-input" value="5" style="width:50px;" oninput="document.getElementById('label-high-start').textContent=this.value">
+                <span style="color:#aaa; font-size:11px;">Cr: +</span>
+                <input type="number" id="set-inc-mid" class="setting-input" value="50" style="width:50px;" title="Mid Tier Increment">
+                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+            </div>
+            <div style="display:flex; width:100%; gap:5px; align-items:center;">
+                <span style="color:#aaa; font-size:11px;">Above</span>
+                <span id="label-high-start" style="color:#ffc107; font-weight:bold; width:20px; text-align:center;">5</span>
+                <span style="color:#aaa; font-size:11px;">Cr: +</span>
+                <input type="number" id="set-inc-high" class="setting-input" value="100" style="width:50px;" title="High Tier Increment">
+                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+            </div>
         </div>
         <div class="setting-row" style="margin-top:10px;">
             <div class="setting-label">Strict Overseas Limit</div>
@@ -914,9 +933,12 @@
                 let incMid = (set.inc_mid || 50) * 100000;
                 let incHigh = (set.inc_high || 100) * 100000;
                 
+                let limitMid = (set.limit_mid || 2) * CRORE;
+                let limitHigh = (set.limit_high || 5) * CRORE;
+                
                 let prevBid = currentBid;
-                if (currentBid > 50000000) prevBid -= incHigh;
-                else if (currentBid > 20000000) prevBid -= incMid;
+                if (currentBid > limitHigh) prevBid -= incHigh;
+                else if (currentBid > limitMid) prevBid -= incMid;
                 else prevBid -= incBase;
                 
                 if (prevBid < base) prevBid = base;
@@ -989,6 +1011,11 @@
             document.getElementById('set-inc-base').value = s.inc_base || 20;
             document.getElementById('set-inc-mid').value = s.inc_mid || 50;
             document.getElementById('set-inc-high').value = s.inc_high || 100;
+            document.getElementById('set-limit-mid').value = s.limit_mid || 2;
+            document.getElementById('set-limit-high').value = s.limit_high || 5;
+            document.getElementById('label-mid-start').textContent = s.limit_mid || 2;
+            document.getElementById('label-high-start').textContent = s.limit_high || 5;
+            
             document.getElementById('set-max-ov').value = s.max_overseas || 8;
             document.getElementById('set-min-squad').value = s.min_squad || 18;
             document.getElementById('set-max-squad').value = s.max_squad || 25;
@@ -1005,6 +1032,8 @@
         let incBase = parseInt(document.getElementById('set-inc-base').value) || 20;
         let incMid = parseInt(document.getElementById('set-inc-mid').value) || 50;
         let incHigh = parseInt(document.getElementById('set-inc-high').value) || 100;
+        let limitMid = parseFloat(document.getElementById('set-limit-mid').value) || 2;
+        let limitHigh = parseFloat(document.getElementById('set-limit-high').value) || 5;
         let maxOv = parseInt(document.getElementById('set-max-ov').value) || 8;
         let minSq = parseInt(document.getElementById('set-min-squad').value) || 18;
         let maxSq = parseInt(document.getElementById('set-max-squad').value) || 25;
@@ -1014,6 +1043,8 @@
                 room_name:rName, 
                 starting_purse:purse, 
                 overseas_limit_enabled:oLimit,
+                limit_mid: limitMid,
+                limit_high: limitHigh,
                 inc_base: incBase,
                 inc_mid: incMid,
                 inc_high: incHigh,
