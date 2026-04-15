@@ -85,9 +85,11 @@
         /* ─ Glow States ────────────────────────────────────────────────── */
         .glow-sold    { box-shadow: 0 0 40px rgba(57,255,20,.4), inset 0 0 20px rgba(57,255,20,.2) !important; border-color: #39ff14 !important; }
         .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
+        @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
         
+        .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
         .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
         
@@ -112,7 +114,7 @@
         .logout-btn { position: absolute; top: 10px; left: 10px; background: rgba(220,53,69,.05); border: 1px solid #dc3545; color: #dc3545; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
         .logout-btn:hover { color: #fff; background: #dc3545; }
         
-        .settings-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.05); border: 1px solid #444; color: #aaa; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
+        .settings-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.05); border: 1px solid #444; color: #aaa; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: .2s; z-index: 10; display: flex; align-items: center; justify-content: center; }
         .settings-btn:hover { color: #fff; background: #444; }
         
         .team-msg-popup { position: absolute; bottom: -5px; left: 5px; right: 5px; background: rgba(0,123,255,.95); color: #fff; padding: 6px; font-size: 11px; font-weight: bold; z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; opacity: 0; transition: all .3s; pointer-events: none; backdrop-filter: blur(4px); border-radius: 6px; border: 1px solid #007bff; box-shadow: 0 4px 15px rgba(0,0,0,.5); transform: translateY(10px); }
@@ -176,10 +178,10 @@
         /* ─ Log Panel (Tightened Padding for Max Internal Space) ────────── */
         .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; padding: 10px 15px !important; }
         .log-header { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #2d2d3f; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-input-area { display: flex; gap: 5px; background: rgba(0,0,0,.3); padding: 3px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
-        .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 4px 8px; font-size: 9px; outline: none; transition: .2s; flex: 1; }
+        .chat-input-area { display: flex; gap: 6px; align-items: center; }
+        .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 6px 10px; font-size: 10px; outline: none; transition: .2s; flex: 1; }
         .chat-input:focus { border-color: #007bff; }
-        .chat-btn { background: linear-gradient(145deg,#007bff,#0056b3); color: #fff; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; padding: 4px 10px; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: 1px; }
+        .chat-btn { background: linear-gradient(145deg,#007bff,#0056b3); color: #fff; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; padding: 6px 14px; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: 1px; }
         .chat-btn:hover { transform: translateY(-1px); }
         .log-container { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
         .log-entry { font-family: 'Consolas', monospace; font-size: 11px; margin-bottom: 4px; color: #bbb; border-bottom: 1px dashed #222; padding-bottom: 4px; line-height: 1.4; }
@@ -340,7 +342,7 @@
             <div class="panel my-team-card" id="myTeamBox">
                 <div class="team-msg-popup" id="msg-popup-myteam"></div>
                 <button class="logout-btn" onclick="logout()">LEAVE</button>
-                <button class="settings-btn" onclick="openFranchiseSettings()">⚙️ SETTINGS</button>
+                <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
                 <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
                 <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
                 <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
@@ -859,6 +861,16 @@
             else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow-silver');
         }
 
+        // OTHER TEAMS GLOW UPDATE
+        document.querySelectorAll('.other-team-card-hz').forEach(card => {
+            card.classList.remove('leader-card-glow-silver', 'sold-card-glow');
+            let teamName = card.getAttribute('data-team');
+            if (teamName === currentLeader && isValidLeader) {
+                if (currentAuctionState === 'sold') card.classList.add('sold-card-glow');
+                else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') card.classList.add('leader-card-glow-silver');
+            }
+        });
+
         evaluateBidButtonStatus(data, amIWinning);
     }
 
@@ -883,6 +895,7 @@
 
         let xiPlayers    = myXIOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
         let benchPlayers = myBenchOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
+        // Any newly sold player not yet in either order goes to bench
         myRoster.forEach(p => { if (!myXIOrder.includes(p.name) && !myBenchOrder.includes(p.name)) benchPlayers.push(p); });
 
         let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
@@ -929,7 +942,7 @@
                           (t === curWin && isValidLeader && currentAuctionState==='sold') ? ' sold-card-glow' : '';
                           
             othersHtml += `
-            <div class="other-team-card-hz${lgClass}" style="border-top-color:${tColor};">
+            <div class="other-team-card-hz${lgClass}" data-team="${esc(t)}" style="border-top-color:${tColor};">
                 <div class="team-msg-popup" id="msg-popup-${esc(t)}"></div>
                 <div style="font-weight:bold; font-size:13px; margin-bottom:2px;">${esc(t)} ${dot}</div>
                 <div class="other-team-rep-name">${esc(tRep)}</div>
