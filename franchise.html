@@ -6,6 +6,7 @@
     <title>IPL Live Auction – Franchise Room</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="firebase-config.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
@@ -84,11 +85,9 @@
         /* ─ Glow States ────────────────────────────────────────────────── */
         .glow-sold    { box-shadow: 0 0 40px rgba(57,255,20,.4), inset 0 0 20px rgba(57,255,20,.2) !important; border-color: #39ff14 !important; }
         .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
-        @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
         
-        .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
         .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
         
@@ -109,8 +108,13 @@
         .roster-item:last-child { border-bottom: none; }
         #playingXIList { height: 264px; flex: 0 0 264px; overflow-y: hidden; margin-bottom: 8px; flex-shrink: 0; display: flex; flex-direction: column; }
         #benchList { flex: 1 1 0; overflow-y: auto; min-height: 0; }
+        
         .logout-btn { position: absolute; top: 10px; left: 10px; background: rgba(220,53,69,.05); border: 1px solid #dc3545; color: #dc3545; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
         .logout-btn:hover { color: #fff; background: #dc3545; }
+        
+        .settings-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.05); border: 1px solid #444; color: #aaa; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
+        .settings-btn:hover { color: #fff; background: #444; }
+        
         .team-msg-popup { position: absolute; bottom: -5px; left: 5px; right: 5px; background: rgba(0,123,255,.95); color: #fff; padding: 6px; font-size: 11px; font-weight: bold; z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; opacity: 0; transition: all .3s; pointer-events: none; backdrop-filter: blur(4px); border-radius: 6px; border: 1px solid #007bff; box-shadow: 0 4px 15px rgba(0,0,0,.5); transform: translateY(10px); }
         .team-msg-popup.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
         #myTeamBox .team-msg-popup { bottom: 10px; left: 10px; right: 10px; }
@@ -134,7 +138,7 @@
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         
         .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
-        .player-photo-box { width: 140px; height: 140px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
+        .player-photo-box { width: 160px; height: 160px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
         .player-header { flex: 1; padding-right: 70px; }
         
         .player-name { font-size: 28px; color: #fff; font-weight: bold; margin: 0 0 5px; line-height: 1.1; display: flex; align-items: center; }
@@ -169,8 +173,8 @@
         .jump-btn:not(:disabled):hover { background: rgba(255,255,255,.1); color: #fff; border-color: #555; }
         .jump-btn:disabled { opacity: .3; cursor: not-allowed; }
 
-        /* ─ Log Panel ───────────────────────────────────────────────────── */
-        .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; }
+        /* ─ Log Panel (Tightened Padding for Max Internal Space) ────────── */
+        .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; padding: 10px 15px !important; }
         .log-header { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #2d2d3f; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
         .chat-input-area { display: flex; gap: 5px; background: rgba(0,0,0,.3); padding: 3px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
         .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 4px 8px; font-size: 9px; outline: none; transition: .2s; flex: 1; }
@@ -201,15 +205,19 @@
         .other-team-rep-name { font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .5px; }
         .purse-val { font-size: 15px; font-weight: bold; transition: color .3s; }
 
-        /* ─ App Modal ────────────────────────────────────────────────────── */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
+        /* ─ Modal / Overlays ─────────────────────────────────────────────── */
+        .modal-overlay, .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px); }
         .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
         .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
         .modal-input:focus { border-color: #ffc107; }
         .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
         .action-btn:hover { background: #0056b3; }
+        .action-btn.danger { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; }
+        .action-btn.danger:hover { background: #dc3545; color: #fff; }
         .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
         .action-btn.outline:hover { background: #333; color: #fff; }
+
+        .settings-card { background: #161620; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 100%; max-width: 480px; box-shadow: 0 15px 50px rgba(0,0,0,.8); max-height: 90vh; overflow-y: auto; }
 
         .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
         ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -308,12 +316,31 @@
     </div>
 </div>
 
+<div id="franchiseSettingsOverlay" class="settings-overlay">
+    <div class="settings-card">
+        <h2 style="color:#fff; margin-top:0; margin-bottom:20px; text-align:center; font-size:20px;">⚙️ FRANCHISE SETTINGS</h2>
+        
+        <div id="rulesList" style="margin-bottom:20px; font-size:13px; line-height:1.6; color:#ccc; background:#0a0a0f; padding:15px; border-radius:8px; border:1px solid #333;">
+            </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="action-btn" onclick="exportMySquadCSV()">📥 Download My Squad (CSV)</button>
+            <button class="action-btn danger" onclick="exportMySquadPDF()">📄 Download My Squad (PDF)</button>
+            <button class="action-btn outline" onclick="exportAllSquadsCSV()">📥 Download All Squads (CSV)</button>
+            <button class="action-btn outline" onclick="exportAllSquadsPDF()">📄 Download All Squads (PDF)</button>
+        </div>
+
+        <button class="btn-massive" style="margin-top:20px; padding:12px; background:#333; color:#fff;" onclick="document.getElementById('franchiseSettingsOverlay').style.display='none'">CLOSE</button>
+    </div>
+</div>
+
 <div id="mainDashboard">
     <div class="top-row">
         <div class="col-left">
             <div class="panel my-team-card" id="myTeamBox">
                 <div class="team-msg-popup" id="msg-popup-myteam"></div>
                 <button class="logout-btn" onclick="logout()">LEAVE</button>
+                <button class="settings-btn" onclick="openFranchiseSettings()">⚙️ SETTINGS</button>
                 <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
                 <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
                 <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
@@ -329,7 +356,7 @@
                 
                 <div class="player-top-section">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                    <div class="player-header" style="margin-bottom:0;">
+                    <div class="player-header" style="margin-bottom:0; padding-right:0;">
                         <span class="label-text">On The Block</span>
                         <div class="player-name" id="playerName">Waiting…</div>
                         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -604,6 +631,74 @@
         window.location.reload();
     }
 
+    // ── Settings Modal & Exports ───────────────────────────────────────────
+    function openFranchiseSettings() {
+        let s = window.auctionSettings || {};
+        let html = `
+            <div style="margin-bottom:8px;"><strong>Starting Purse:</strong> ₹${s.starting_purse || 100} Cr</div>
+            <div style="margin-bottom:8px;"><strong>Differential Bids:</strong><br> +₹${s.inc_base || 20}L (0-2Cr), +₹${s.inc_mid || 50}L (2-5Cr), +₹${s.inc_high || 100}L (>5Cr)</div>
+            <div style="margin-bottom:8px;"><strong>Overseas Limit:</strong> ${s.overseas_limit_enabled ? '<span style="color:#dc3545;">Strict (Max ' + (s.max_overseas||8) + ')</span>' : '<span style="color:#28a745;">Disabled</span>'}</div>
+            <div><strong>Squad Size Limit:</strong> Min ${s.min_squad || 18}, Max ${s.max_squad || 25}</div>
+        `;
+        document.getElementById('rulesList').innerHTML = html;
+        document.getElementById('franchiseSettingsOverlay').style.display = 'flex';
+    }
+
+    function getSquadHTML(teamName) {
+        let sold = playerPool.filter(p => p.status === 'sold' && p.team === teamName);
+        if (!sold.length) return `<p style="color:#666; font-size:12px;">No players bought yet.</p>`;
+        let rows = sold.map(p => {
+            let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
+            return `<tr><td style="padding:8px; border:1px solid #ccc;">${p.name}</td><td style="padding:8px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}</td></tr>`;
+        }).join('');
+        return `
+        <h3 style="text-transform:uppercase; margin-bottom:10px; color:#000;">${teamName} Squad</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:20px; color:#000;">
+            <tr style="background:#eee;"><th style="padding:8px; border:1px solid #ccc;">Player</th><th style="padding:8px; border:1px solid #ccc;">Nat</th><th style="padding:8px; border:1px solid #ccc;">Role</th><th style="padding:8px; border:1px solid #ccc;">Price (Cr)</th></tr>
+            ${rows}
+        </table>`;
+    }
+
+    function exportMySquadCSV() {
+        let sold = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName);
+        let csv = `"Player","Role","Bought For (Cr)"\n` + sold.map(p => {
+            let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
+            return `"${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
+        }).join('\n');
+        downloadBlob(csv, `IPL_${myTeamName}_Squad.csv`, 'text/csv;charset=utf-8;');
+    }
+
+    function exportAllSquadsCSV() {
+        let sold = playerPool.filter(p => p.status === 'sold');
+        let csv = `"Team","Player","Role","Bought For (Cr)"\n` + sold.map(p => {
+            let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
+            return `"${p.team}","${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
+        }).join('\n');
+        downloadBlob(csv, `IPL_All_Squads.csv`, 'text/csv;charset=utf-8;');
+    }
+
+    function downloadBlob(content, filename, contentType) {
+        let blob = new Blob([content], { type: contentType });
+        let a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    function exportMySquadPDF() {
+        let div = document.createElement('div');
+        div.style.cssText = 'padding:20px; font-family:sans-serif; color:#000; background:#fff;';
+        div.innerHTML = `<h2 style="text-align:center; text-transform:uppercase; margin-bottom:20px; color:#000;">IPL Auction Result — ${myTeamName}</h2>` + getSquadHTML(myTeamName);
+        html2pdf().set({margin:10, filename:`IPL_${myTeamName}_Squad.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
+    }
+
+    function exportAllSquadsPDF() {
+        let div = document.createElement('div');
+        div.style.cssText = 'padding:20px; font-family:sans-serif; color:#000; background:#fff;';
+        let html = `<h2 style="text-align:center; text-transform:uppercase; margin-bottom:20px; color:#000;">IPL Auction Result — All Squads</h2>`;
+        Object.keys(allRegisteredTeams).forEach(team => { html += getSquadHTML(team); });
+        div.innerHTML = html;
+        html2pdf().set({margin:10, filename:`IPL_All_Squads.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
+    }
+
     // ── Firebase Listeners ─────────────────────────────────────────────────
     function attachFirebaseListeners() {
         let isChatLoaded = false;
@@ -756,10 +851,13 @@
         }, 500);
 
         let myBox = document.getElementById('myTeamBox');
-        myBox.classList.remove('leader-card-glow','sold-card-glow');
-        if (amIWinning) {
+        myBox.classList.remove('leader-card-glow-silver','sold-card-glow');
+        
+        // UNIFIED GLOW LOGIC FOR MY TEAM
+        let isValidLeader = currentLeader !== '-' && currentLeader !== 'Base Price' && currentLeader !== '';
+        if (amIWinning && isValidLeader) {
             if (currentAuctionState === 'sold') myBox.classList.add('sold-card-glow');
-            else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow');
+            else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow-silver');
         }
 
         evaluateBidButtonStatus(data, amIWinning);
@@ -786,7 +884,6 @@
 
         let xiPlayers    = myXIOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
         let benchPlayers = myBenchOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
-        // Any newly sold player not yet in either order goes to bench
         myRoster.forEach(p => { if (!myXIOrder.includes(p.name) && !myBenchOrder.includes(p.name)) benchPlayers.push(p); });
 
         let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
@@ -825,10 +922,13 @@
             let isOnline = activePresence[t];
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
             
+            // UNIFIED GLOW LOGIC FOR OTHER TEAMS
             let lBadge  = document.getElementById('leaderBadge');
             let curWin  = lBadge ? lBadge.textContent : '';
-            let lgClass = (t === curWin && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow-silver' :
-                          (t === curWin && currentAuctionState==='sold') ? ' sold-card-glow' : '';
+            let isValidLeader = curWin !== '-' && curWin !== 'Base Price' && curWin !== '';
+            
+            let lgClass = (t === curWin && isValidLeader && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow-silver' :
+                          (t === curWin && isValidLeader && currentAuctionState==='sold') ? ' sold-card-glow' : '';
                           
             othersHtml += `
             <div class="other-team-card-hz${lgClass}" style="border-top-color:${tColor};">
