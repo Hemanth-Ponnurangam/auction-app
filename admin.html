@@ -289,25 +289,14 @@
         let entered = document.getElementById('superPin').value.trim();
         if (!entered) { showAlert('Missing PIN', 'Please enter the Admin PIN.'); return; }
         
-        db.ref('platform_settings/admin_pin').once('value', snap => {
-            let stored = snap.val();
-            if (stored === null || stored === undefined) {
-                showAlert('Not Configured', 'No Admin PIN set in Firebase.\n\nGo to Firebase Realtime Database and create: platform_settings -> admin_pin');
-                return;
-            }
-            
-            // Type-safe comparison to prevent Firebase integer formatting errors
-            if (entered === String(stored).trim()) {
-                document.getElementById('adminLoginScreen').style.display = 'none';
-                document.getElementById('masterDashboard').style.display  = 'flex';
-                bootDashboard();
-            } else { 
-                showAlert('Access Denied', 'Incorrect PIN. Please try again.'); 
-            }
-        }).catch((error) => {
-            console.error("Firebase Read Error:", error);
-            showAlert('Read Error', 'Firebase blocked the request. Please check your Realtime Database Security Rules and ensure .read is true.');
-        });
+        // HARDCODED PASSKEY BYPASS
+        if (entered === '4545') {
+            document.getElementById('adminLoginScreen').style.display = 'none';
+            document.getElementById('masterDashboard').style.display  = 'flex';
+            bootDashboard();
+        } else { 
+            showAlert('Access Denied', 'Incorrect PIN. Please try again.'); 
+        }
     }
 
     // ── Tab Switching ─────────────────────────────────────────────────────
