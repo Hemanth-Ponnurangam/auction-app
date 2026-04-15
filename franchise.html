@@ -134,7 +134,7 @@
         .role-popup button.clear-btn:hover { background: #ff4444; color: #fff; border-color: #ff4444; }
 
         /* ─ Center Panel (Profile & Stats) ─────────────────────────────── */
-        #centerPanel { overflow-y: auto; overflow-x: hidden; height: 100%; }
+        #centerPanel { overflow-y: hidden; overflow-x: hidden; height: 100%; padding: 15px; }
         .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all .3s; }
         .timer-green  { background: rgba(40,167,69,.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40,167,69,.4); }
         .timer-warn   { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; box-shadow: 0 0 15px rgba(253,126,20,.4); }
@@ -142,11 +142,11 @@
         .timer-paused { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         
-        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
+        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 12px; }
         
         /* ─ Photo Box ─────────────────────────────────────────────────── */
         .player-photo-box { 
-            width: 220px; height: 220px; border: 2px dashed #444; border-radius: 12px; 
+            width: 200px; height: 200px; border: 2px dashed #444; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; color: #555; 
             font-size: 14px; font-weight: bold; flex-shrink: 0; background-color: rgba(0,0,0,.3); 
             position: relative;
@@ -184,13 +184,13 @@
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
         /* New 6-Column Stats Grid */
-        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; transition: opacity .3s; }
+        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 12px; flex-shrink: 0; transition: opacity .3s; }
         .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
         .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
 
         /* ─ Bid Zone ────────────────────────────────────────────────────── */
-        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 15px; text-align: center; transition: all .3s; flex-shrink: 0; }
+        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 12px 15px; text-align: center; transition: all .3s; flex-shrink: 0; }
         .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
         .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all .3s; }
         .status-losing  { color: #dc3545; }
@@ -805,7 +805,7 @@
         let s = window.auctionSettings || {};
         let html = `
             <div style="margin-bottom:8px;"><strong>Starting Purse:</strong> ₹${s.starting_purse || 100} Cr</div>
-            <div style="margin-bottom:8px;"><strong>Differential Bids:</strong><br> +₹${s.inc_base || 20}L (0-2Cr), +₹${s.inc_mid || 50}L (2-5Cr), +₹${s.inc_high || 100}L (>5Cr)</div>
+            <div style="margin-bottom:8px;"><strong>Differential Bids:</strong><br> +₹${s.inc_base || 20}L (0-${s.limit_mid || 2}Cr), +₹${s.inc_mid || 50}L (${s.limit_mid || 2}-${s.limit_high || 5}Cr), +₹${s.inc_high || 100}L (>${s.limit_high || 5}Cr)</div>
             <div style="margin-bottom:8px;"><strong>Overseas Limit:</strong> ${s.overseas_limit_enabled ? '<span style="color:#dc3545;">Strict (Max ' + (s.max_overseas||8) + ')</span>' : '<span style="color:#28a745;">Disabled</span>'}</div>
             <div><strong>Squad Size Limit:</strong> Min ${s.min_squad || 18}, Max ${s.max_squad || 25}</div>
         `;
@@ -966,10 +966,14 @@
         let base = (set.inc_base || 20) * 100000;
         let mid = (set.inc_mid || 50) * 100000;
         let high = (set.inc_high || 100) * 100000;
+        
+        let limitMid = set.limit_mid || 2;
+        let limitHigh = set.limit_high || 5;
+        
         let cr = localCurrentBid / CRORE;
 
-        if (cr >= 5) return high;
-        if (cr >= 2) return mid;
+        if (cr >= limitHigh) return high;
+        if (cr >= limitMid) return mid;
         return base;
     }
 
@@ -1188,7 +1192,11 @@
         let isOvMaxed = window.isOverseasStrict && data.current_player_index >= 0 && playerPool.length > 0 && isOverseas(playerPool[data.current_player_index]||{}) && myOverseasCount >= maxOv;
         let isSquadMaxed = myRosterCount >= maxSq;
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
-        let isInsufficient = (localCurrentBid + getCurrentBidIncrement()) > myBudget;
+        
+        // Check if this is the first bid
+        window.isFirstBid = data.highest_bidder === 'Base Price' || data.highest_bidder === '-' || data.highest_bidder === '';
+        let requiredBid = window.isFirstBid ? localCurrentBid : localCurrentBid + getCurrentBidIncrement();
+        let isInsufficient = requiredBid > myBudget;
 
         const setBtn = (cls, text, enabled) => {
             btn.className = `action-btn-bid ${cls}`; btn.textContent = text; btn.disabled = !enabled;
@@ -1214,12 +1222,18 @@
         } else if (isInsufficient) {
             setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
-            setStatus('status-losing');  setBtn('btn-bid-active', `BID (+₹${(getCurrentBidIncrement()/100000)}L)`, true);
+            setStatus('status-losing');  
+            // Display BID BASE if no one has bid yet
+            let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/CRORE).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
+            setBtn('btn-bid-active', btnText, true);
         }
     }
 
     // ── Bidding Logic & Long Press ─────────────────────────────────────────
-    function placeBid() { placeExactBid((localCurrentBid || 0) + getCurrentBidIncrement()); }
+    function placeBid() { 
+        let amount = window.isFirstBid ? localCurrentBid : (localCurrentBid || 0) + getCurrentBidIncrement();
+        placeExactBid(amount); 
+    }
     
     window.placeExactBid = function(amount) {
         closeJumpMenu();
@@ -1229,7 +1243,16 @@
             if (!liveData) return liveData;
             let state = liveData.auction_state;
             if (state !== 'bidding' && state !== 'cooldown') return liveData; 
-            if (amount <= (liveData.current_bid || 0)) return liveData; 
+            
+            let isDataFirstBid = liveData.highest_bidder === 'Base Price' || liveData.highest_bidder === '-' || liveData.highest_bidder === '';
+
+            // If first bid, accept amount equal to current_bid. Otherwise, strictly greater.
+            if (isDataFirstBid) {
+                if (amount < (liveData.current_bid || 0)) return liveData;
+            } else {
+                if (amount <= (liveData.current_bid || 0)) return liveData;
+            }
+
             if (amount > myBudget) return liveData; 
             
             liveData.current_bid     = amount;
@@ -1241,7 +1264,9 @@
             if (err) console.error('Bid transaction failed:', err);
             else if (!committed) {
                 let d = snap.val();
-                if (d && amount <= (d.current_bid || 0)) showAlert('Invalid Bid', 'Bid must be strictly higher than the current bid.');
+                let isDataFirstBid = d && (d.highest_bidder === 'Base Price' || d.highest_bidder === '-' || d.highest_bidder === '');
+                if (d && isDataFirstBid && amount < (d.current_bid || 0)) showAlert('Invalid Bid', 'Bid must be at least the base price.');
+                else if (d && !isDataFirstBid && amount <= (d.current_bid || 0)) showAlert('Invalid Bid', 'Bid must be strictly higher than the current bid.');
                 else if (amount > myBudget) showAlert('Insufficient Funds', 'You do not have enough purse remaining for this bid.');
             }
         });
@@ -1468,13 +1493,15 @@
     function updateTeamDropdown() {
         let keys = Object.keys(allRegisteredTeams);
         let sel  = document.getElementById('teamSelector'), prev = sel.value;
+        
         sel.innerHTML = '<option value="" disabled hidden>SQUADS</option>';
         keys.forEach(t => {
             let o = document.createElement('option'); o.value = t; o.text = t;
             o.style.color = allRegisteredTeams[t]?.color || '#fff';
             sel.appendChild(o);
         });
-        if (keys.includes(prev)) sel.value = prev; else if (keys.length > 0) sel.value = keys[0];
+        
+        if (keys.includes(prev)) sel.value = prev; else sel.value = "";
     }
 
     // ── List Renders ───────────────────────────────────────────────────────
@@ -1503,7 +1530,7 @@
         let roster = playerPool.filter(p => p.status === 'sold' && p.team === team);
         let order  = allRegisteredTeams[team]?.rosterOrder || [];
         roster.sort((a,b) => { let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi; });
-        let ranks  = [...new Set(roster.map(p=>p.sold_price))].filter(v=>v>0).sort((a,b)=>b-a);
+        let ranks  = [...new Set(roster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
         let [gold,silver,bronze] = [ranks[0]||-1, ranks[1]||-1, ranks[2]||-1];
         let tColor = allRegisteredTeams[team]?.color || '#333';
         let roles  = allRegisteredTeams[team]?.playerRoles || {};
