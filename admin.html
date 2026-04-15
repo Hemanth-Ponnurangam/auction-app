@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin – Platform Console</title>
     <link rel="stylesheet" href="shared-auction.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="firebase-config.js"></script>
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #050508; color: #e0e0e0; margin: 0; padding: 20px; min-height: 100vh; overflow-x: hidden; }
         
@@ -236,7 +238,8 @@
     let _modalCb      = null;
 
     db.ref('.info/connected').on('value', snap => {
-        document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
+        let banner = document.getElementById('connBanner');
+        if(banner) banner.style.display = snap.val() ? 'none' : 'block';
     });
 
     // ── Reusable Modal System ─────────────────────────────────────────────
@@ -279,28 +282,25 @@
         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
     
-    // Case Insensitive Global Image Key
     function sanitizeKey(name) {
         return name.toLowerCase().replace(/[.#$\[\]\/]/g, '_');
     }
 
     // ── Auth ──────────────────────────────────────────────────────────────
-    function verifySuperAdmin() {
+    window.verifySuperAdmin = function() {
         let entered = document.getElementById('superPin').value.trim();
-        if (!entered) { showAlert('Missing PIN', 'Please enter the Admin PIN.'); return; }
         
-        // HARDCODED PASSKEY BYPASS
         if (entered === '4545') {
             document.getElementById('adminLoginScreen').style.display = 'none';
             document.getElementById('masterDashboard').style.display  = 'flex';
             bootDashboard();
         } else { 
-            showAlert('Access Denied', 'Incorrect PIN. Please try again.'); 
+            alert('Access Denied: Incorrect PIN.'); 
         }
-    }
+    };
 
     // ── Tab Switching ─────────────────────────────────────────────────────
-    function switchTab(name, el) {
+    window.switchTab = function(name, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`tab-${name}`).classList.add('active');
@@ -309,7 +309,7 @@
         if (name === 'rooms') loadLiveRooms();
         if (name === 'franchises') loadGlobalFranchises();
         if (name === 'images') renderImageDirectory();
-    }
+    };
 
     // ── Database Manager ──────────────────────────────────────────────────
     function bootDashboard() {
@@ -334,26 +334,29 @@
             loadSelectedDatabase();
         });
 
-        // Listen for global images
         db.ref('global_player_images').on('value', snap => {
             globalImageMap = snap.val() || {};
-            if(document.getElementById('tab-images').classList.contains('active')) {
+            let tabImg = document.getElementById('tab-images');
+            if(tabImg && tabImg.classList.contains('active')) {
                 renderImageDirectory();
             }
         });
     }
 
-    function loadSelectedDatabase() {
+    window.loadSelectedDatabase = function() {
         currentDbId = document.getElementById('dbSelector').value;
         if (!currentDbId) return;
         db.ref('preset_databases/' + currentDbId).once('value', snap => {
             currentDbData = snap.val() || [];
             renderDbTable();
         });
-    }
+    };
 
     const renderDbTable = debounce(() => {
-        let term = document.getElementById('adminDbSearch').value.toLowerCase();
+        let searchInput = document.getElementById('adminDbSearch');
+        if (!searchInput) return;
+        
+        let term = searchInput.value.toLowerCase();
         let rows = '';
         currentDbData.forEach((p, i) => {
             if (term && !p.name.toLowerCase().includes(term)) return;
@@ -369,11 +372,19 @@
                 <td>${esc(p.set || '-')}</td>
             </tr>`;
         });
-        document.getElementById('dbTableBody').innerHTML = rows || `<tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">No players matched your search.</td></tr>`;
+        
+        let body = document.getElementById('dbTableBody');
+        if(body) {
+            body.innerHTML = rows || `<tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">No players matched your search.</td></tr>`;
+        }
     }, 120);
-    document.getElementById('adminDbSearch').addEventListener('input', renderDbTable);
+    
+    window.addEventListener('DOMContentLoaded', () => {
+        let dbSearch = document.getElementById('adminDbSearch');
+        if (dbSearch) dbSearch.addEventListener('input', renderDbTable);
+    });
 
-    function openUploadModal() { document.getElementById('uploadModal').style.display = 'flex'; }
+    window.openUploadModal = function() { document.getElementById('uploadModal').style.display = 'flex'; };
 
     function parseCSV(text) {
         let parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
@@ -411,7 +422,7 @@
         return result;
     }
 
-    function processCsvUpload() {
+    window.processCsvUpload = function() {
         let id = document.getElementById('uploadDbId').value.trim().toLowerCase().replace(/\s+/g,'_');
         let fi = document.getElementById('uploadCsvFile');
         if (!id) { showAlert('Missing ID', 'Provide a Preset ID.'); return; }
@@ -429,9 +440,9 @@
             });
         };
         reader.readAsText(fi.files[0]);
-    }
+    };
 
-    function exportCurrentDB() {
+    window.exportCurrentDB = function() {
         if (!currentDbData.length) { showAlert('Empty', 'No data to export.'); return; }
         let hdr = `"Name","Base Price (Cr)","Set","Role","Franchise","Nationality","Runs","Average","SR","Wickets","Economy","Bowling SR"`;
         let rows = currentDbData.map(p =>
@@ -443,9 +454,9 @@
         let blob = new Blob([hdr+'\n'+rows], {type:'text/csv;charset=utf-8;'});
         let a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:`${currentDbId}_export.csv`});
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    }
+    };
 
-    function confirmDeleteDB() {
+    window.confirmDeleteDB = function() {
         if (!currentDbId) return;
         showConfirm('⚠️ Delete Database', `Permanently delete '${currentDbId}'?`, () => {
             showPrompt('Type to Confirm', `Type "${currentDbId}"`, currentDbId, val => {
@@ -453,11 +464,14 @@
                 else showAlert('Mismatch', 'ID did not match.');
             });
         });
-    }
+    };
 
     // ── Image Directory Logic ─────────────────────────────────────────────
-    function renderImageDirectory() {
-        let term = document.getElementById('adminImgSearch').value.toLowerCase();
+    window.renderImageDirectory = function() {
+        let searchInput = document.getElementById('adminImgSearch');
+        if (!searchInput) return;
+        
+        let term = searchInput.value.toLowerCase();
         let html = '';
         let keys = Object.keys(globalImageMap);
         
@@ -477,17 +491,21 @@
                 </td>
             </tr>`;
         });
-        document.getElementById('imgTableBody').innerHTML = html || `<tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images found.</td></tr>`;
-    }
+        
+        let body = document.getElementById('imgTableBody');
+        if(body) {
+            body.innerHTML = html || `<tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images found.</td></tr>`;
+        }
+    };
 
-    function openSingleImageModal(existingName = '', existingUrl = '') {
+    window.openSingleImageModal = function(existingName = '', existingUrl = '') {
         document.getElementById('siName').value = existingName;
         document.getElementById('siUrl').value = existingUrl;
         document.getElementById('singleImageTitle').textContent = existingName ? 'Edit Image Mapping' : 'Add Image Mapping';
         document.getElementById('singleImageModal').style.display = 'flex';
-    }
+    };
 
-    function saveSingleImage() {
+    window.saveSingleImage = function() {
         let name = document.getElementById('siName').value.trim();
         let url = document.getElementById('siUrl').value.trim();
         if (!name || !url) { showAlert('Missing Fields', 'Provide both name and URL.'); return; }
@@ -496,15 +514,15 @@
         db.ref('global_player_images/' + key).set({ name: name, url: url }).then(() => {
             document.getElementById('singleImageModal').style.display = 'none';
         });
-    }
+    };
 
-    function deleteImage(key) {
+    window.deleteImage = function(key) {
         showConfirm('Delete Image', 'Remove this image mapping globally?', () => {
             db.ref('global_player_images/' + key).remove();
         });
-    }
+    };
 
-    function processImageCsvUpload() {
+    window.processImageCsvUpload = function() {
         let fi = document.getElementById('uploadImageFile');
         if (!fi.files.length) { showAlert('Missing File', 'Select a CSV file.'); return; }
         let reader = new FileReader();
@@ -537,10 +555,10 @@
             }
         };
         reader.readAsText(fi.files[0]);
-    }
+    };
 
     // ── Live Rooms & Franchises ───────────────────────────────────────────
-    function loadLiveRooms() {
+    window.loadLiveRooms = function() {
         db.ref('rooms').once('value', snap => {
             let rooms = snap.val() || {}, html = '';
             for (let key in rooms) {
@@ -563,11 +581,12 @@
                     <button class="action-btn danger" style="width:100%;margin-top:20px;" onclick="confirmKillRoom('${esc(key)}')">🛑 SHUT DOWN</button>
                 </div>`;
             }
-            document.getElementById('roomsContainer').innerHTML = html || "<p style='color:#666; padding:20px;'>No active rooms found.</p>";
+            let rc = document.getElementById('roomsContainer');
+            if(rc) rc.innerHTML = html || "<p style='color:#666; padding:20px;'>No active rooms found.</p>";
         });
-    }
+    };
 
-    function confirmKillRoom(key) {
+    window.confirmKillRoom = function(key) {
         showConfirm('🛑 Shut Down Room', `Permanently delete room ${key}?`, () => {
             showPrompt('Type to Confirm', `Type "${key}"`, key, val => {
                 if (val === key) {
@@ -575,11 +594,12 @@
                 } else showAlert('Mismatch', 'PIN did not match.');
             });
         });
-    }
+    };
 
-    function loadGlobalFranchises() {
+    window.loadGlobalFranchises = function() {
         db.ref('global_teams').on('value', snap => {
             let teams = snap.val(), el = document.getElementById('teamsContainer');
+            if(!el) return;
             if (!teams) { el.innerHTML = "<p style='color:#666; font-size:12px; grid-column:span 3;'>No franchises found.</p>"; return; }
             let html = '';
             for (let code in teams) {
@@ -594,9 +614,9 @@
             }
             el.innerHTML = html;
         });
-    }
+    };
 
-    function saveNewTeam() {
+    window.saveNewTeam = function() {
         let code = document.getElementById('ntCode').value.trim().toUpperCase();
         let name = document.getElementById('ntName').value.trim();
         let color = document.getElementById('ntColor').value;
@@ -605,11 +625,11 @@
             document.getElementById('addTeamModal').style.display = 'none';
             document.getElementById('ntCode').value = ''; document.getElementById('ntName').value = '';
         });
-    }
+    };
 
-    function confirmDeleteTeam(code) {
+    window.confirmDeleteTeam = function(code) {
         showConfirm('Remove Franchise', `Remove ${code}?`, () => db.ref('global_teams/'+code).remove());
-    }
+    };
 </script>
 </body>
 </html>
