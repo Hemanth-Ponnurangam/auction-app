@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPL Live Auction – Franchise Room</title>
+    <link rel="stylesheet" href="shared-auction.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="firebase-config.js"></script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; }
-
         body {
             font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
             background: #0a0a0f; color: #fff; margin: 0; padding: 15px;
@@ -18,33 +17,9 @@
             align-items: center; overflow-x: hidden;
         }
 
-        /* ─ Connection Banner ─────────────────────────────────────────── */
-        #connBanner {
-            display: none; position: fixed; top: 0; left: 0; right: 0;
-            padding: 10px; background: #dc3545; color: #fff; text-align: center;
-            font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999;
-        }
-
-        /* ─ Gateway / Login Screens ───────────────────────────────────── */
-        .gateway-container {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; width: 100%;
-            position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000;
-        }
-        .gateway-card {
-            background: #161620; padding: 40px; border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,.8); border: 1px solid #2d2d3f;
-            text-align: center; width: 100%; max-width: 420px;
-        }
-        .btn-massive {
-            width: 100%; padding: 20px; margin: 10px 0; font-size: 16px;
-            font-weight: bold; text-transform: uppercase; border-radius: 10px;
-            cursor: pointer; transition: .3s; border: none; letter-spacing: 1px;
-        }
+        /* ─ Franchise Specific UI ─────────────────────────────────────── */
         .btn-franchise { background: linear-gradient(145deg,#0056b3,#004494); color: #fff; box-shadow: 0 5px 15px rgba(0,86,179,.4); }
         .btn-franchise:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,86,179,.6); }
-        .btn-auctioneer { background: linear-gradient(145deg,#eab308,#b08605); color: #000; box-shadow: 0 5px 15px rgba(234,179,8,.4); }
-        .btn-auctioneer:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(234,179,8,.6); }
 
         #loginScreen { display: none; width: 100%; max-width: 450px; margin: auto; text-align: center; z-index: 4000; position: relative; }
         .login-card { background: #161620; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,.5); border: 1px solid #2d2d3f; }
@@ -53,18 +28,7 @@
         .team-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 4px 10px rgba(0,0,0,.3); }
         .btn-custom { background: transparent; border: 1px dashed #666; color: #aaa; width: 100%; padding: 12px; grid-column: span 2; margin-top: 5px; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 13px; }
         .btn-custom:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,.05); }
-        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0a0a0f; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
-        .login-input:focus { border-color: #ffc107; }
-        .submit-btn { width: 100%; background: #28a745; color: #fff; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .submit-btn:hover { background: #218838; }
-        .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
         .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
-        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
-
-        /* ─ Dots ──────────────────────────────────────────────────────── */
-        .live-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle; }
-        .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
-        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
 
         /* ─ Main Dashboard (Base layout without forced height) ────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; position: relative; }
@@ -152,14 +116,12 @@
             position: relative;
         }
 
-        /* Styling for when an image is loaded */
         .player-photo-box.has-photo {
             border: 1px solid #333;
             background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.6) 100%);
             box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
         }
 
-        /* Decorative Corner Accents */
         .player-photo-box.has-photo::before {
             content: ''; position: absolute; top: -2px; left: -2px; width: 30px; height: 30px;
             border-top: 2px solid #ffc107; border-left: 2px solid #ffc107; border-radius: 12px 0 0 0;
@@ -171,7 +133,6 @@
             z-index: 5; pointer-events: none; opacity: 0.8;
         }
 
-        /* The 'cover' forces the entire image to fill the box without empty gaps */
         .player-photo-box img { 
             width: 100%; height: 100%; object-fit: cover; object-position: top center; 
             border-radius: 10px; z-index: 2; position: relative;
@@ -183,7 +144,6 @@
         .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
-        /* New 6-Column Stats Grid */
         .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 12px; flex-shrink: 0; transition: opacity .3s; }
         .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
@@ -235,7 +195,7 @@
         .tab-btn { flex: 1; background: transparent; color: #777; padding: 6px 4px; border-radius: 6px; margin: 0; font-size: 10px; font-weight: 800; transition: all .2s; cursor: pointer; letter-spacing: .5px; border: 1px solid transparent; display: flex; justify-content: center; align-items: center; }
         .tab-btn:hover { color: #ccc; background: rgba(255,255,255,.03); }
         .tab-btn.active { background: #22222d; color: #ffc107; border-color: #333; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
-        select.tab-btn { appearance: none; background-color: transparent; text-align: center; text-align-last: center; background-image: none !important; padding-right: 4px; cursor: pointer; }
+        select.tab-btn { background-color: transparent; text-align: center; text-align-last: center; background-image: none !important; padding-right: 4px; cursor: pointer; }
         select.tab-btn option { background: #22222d; color: #fff; text-align: left; }
         .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
         .tab-content.active { display: flex; }
@@ -248,24 +208,6 @@
         .other-team-card-hz { background: #0a0a0f; border: 1px solid #222; border-top: 3px solid #444; border-radius: 8px; padding: 10px 5px; display: flex; flex-direction: column; flex: 0 0 auto; min-width: 140px; align-items: center; justify-content: center; text-align: center; transition: all .3s; position: relative; overflow: hidden; }
         .other-team-rep-name { font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .5px; }
         .purse-val { font-size: 15px; font-weight: bold; transition: color .3s; }
-
-        /* ─ Modal / Overlays ─────────────────────────────────────────────── */
-        .modal-overlay, .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px); }
-        .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
-        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
-        .modal-input:focus { border-color: #ffc107; }
-        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
-        .action-btn:hover { background: #0056b3; }
-        .action-btn.danger { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; }
-        .action-btn.danger:hover { background: #dc3545; color: #fff; }
-        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
-        .action-btn.outline:hover { background: #333; color: #fff; }
-
-        .settings-card { background: #161620; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 100%; max-width: 480px; box-shadow: 0 15px 50px rgba(0,0,0,.8); max-height: 90vh; overflow-y: auto; }
-
-        .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
         /* ─ MOBILE RESPONSIVENESS ──────────────────────────────────────── */
         @media (max-width: 999px) {
@@ -300,7 +242,6 @@
             .action-btn-bid { padding: 10px; font-size: 18px; }
             .shortcut-hint { font-size: 9px; margin-top: 6px; }
 
-            /* Mobile Overlays: Dynamically positioned via JS to avoid clash */
             .mobile-overlay-panel {
                 position: absolute; left: 10px; right: 10px;
                 z-index: 1000; display: none; background: rgba(15,15,21,0.98); backdrop-filter: blur(8px);
@@ -507,12 +448,21 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ── Server Time Offset Logic ───────────────────────────────────────────
+    let serverTimeOffset = 0;
+    db.ref('.info/serverTimeOffset').on('value', snap => {
+        serverTimeOffset = snap.val() || 0;
+    });
+    function getServerTime() {
+        return Date.now() + serverTimeOffset;
+    }
+
     // ── State ──────────────────────────────────────────────────────────────
     let roomRef = null, presenceRef = null;
     let currentRoomKey = '', myTeamName = '', myTeamColor = '', myRepName = '';
     let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle', myOverseasCount = 0;
-    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
+    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * 10000000;
     let teamBudgets = {};   
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
@@ -548,12 +498,10 @@
         let statsBar = document.getElementById('statsBar');
         
         if (isOpening) {
-            // Calculate dynamic safe zones to prevent any clashing
             let topRowRect = document.getElementById('mainTopRow').getBoundingClientRect();
             let headerRect = document.getElementById('playerTopSection').getBoundingClientRect();
             let bidBoxRect = document.getElementById('bidZoneBox').getBoundingClientRect();
             
-            // Calculate pixel distances from the top of the relative container (.top-row)
             let topOffset = headerRect.bottom - topRowRect.top + 10;
             let bottomOffset = topRowRect.bottom - bidBoxRect.top + 10;
             
@@ -632,7 +580,6 @@
         return isOverseas(p) ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '';
     }
 
-    // Universal image detector for the CSV object
     function getImageUrl(p) {
         let imgUrl = '';
         ['image', 'img', 'photo', 'picture', 'pic', 'url', 'link'].forEach(key => {
@@ -818,7 +765,7 @@
         if (!sold.length) return `<p style="color:#666; font-size:12px;">No players bought yet.</p>`;
         let rows = sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `<tr><td style="padding:8px; border:1px solid #ccc;">${p.name}</td><td style="padding:8px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}</td></tr>`;
+            return `<tr><td style="padding:8px; border:1px solid #ccc;">${p.name}</td><td style="padding:8px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)}</td></tr>`;
         }).join('');
         return `
         <h3 style="text-transform:uppercase; margin-bottom:10px; color:#000;">${teamName} Squad</h3>
@@ -832,7 +779,7 @@
         let sold = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName);
         let csv = `"Player","Role","Bought For (Cr)"\n` + sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `"${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
+            return `"${p.name}","${role}","${(p.sold_price/10000000).toFixed(2)}"`;
         }).join('\n');
         downloadBlob(csv, `IPL_${myTeamName}_Squad.csv`, 'text/csv;charset=utf-8;');
     };
@@ -841,7 +788,7 @@
         let sold = playerPool.filter(p => p.status === 'sold');
         let csv = `"Team","Player","Role","Bought For (Cr)"\n` + sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `"${p.team}","${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
+            return `"${p.team}","${p.name}","${role}","${(p.sold_price/10000000).toFixed(2)}"`;
         }).join('\n');
         downloadBlob(csv, `IPL_All_Squads.csv`, 'text/csv;charset=utf-8;');
     };
@@ -891,7 +838,6 @@
             let e = snap.val(); logAction(e.msg, new Date(e.t));
         });
 
-        // Online Status logic for Auctioneer
         roomRef.child('admin_presence').on('value', snap => {
             let isOnline = snap.val();
             let dot = document.getElementById('auctioneerStatus');
@@ -909,7 +855,7 @@
             let s = snap.val() || {};
             window.auctionSettings = s; 
             STARTING_PURSE_CR = Number(s.starting_purse) || 100;
-            TEAM_BUDGET = STARTING_PURSE_CR * CRORE;
+            TEAM_BUDGET = STARTING_PURSE_CR * 10000000;
             window.isOverseasStrict = s.overseas_limit_enabled === true;
         });
 
@@ -940,9 +886,6 @@
                 recalculateBudgets();
                 renderDeck(); renderUnsold(); renderSquads();
                 updateMyTeamUI();
-                // Fix sold discrepancy: when player_pool arrives after live_state in a rapid
-                // auction, re-run updateLiveUI so the badge/button use the authoritative team
-                // from player_pool rather than the potentially stale live_state.highest_bidder.
                 if (currentAuctionState === 'sold' && _latestLiveData) {
                     let soldP = playerPool[_latestLiveData.current_player_index];
                     let amIWinning = soldP?.team === myTeamName;
@@ -970,7 +913,7 @@
         let limitMid = set.limit_mid || 2;
         let limitHigh = set.limit_high || 5;
         
-        let cr = localCurrentBid / CRORE;
+        let cr = localCurrentBid / 10000000;
 
         if (cr >= limitHigh) return high;
         if (cr >= limitMid) return mid;
@@ -990,12 +933,9 @@
 
     // ── Live UI ────────────────────────────────────────────────────────────
     function updateLiveUI(data, amIWinning) {
-        document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
+        document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / 10000000).toFixed(2)} Cr`;
 
         let currentLeader = data.highest_bidder || '-';
-        // When sold, player_pool.team is authoritative — it reflects what the auctioneer
-        // actually committed, fixing the race where a late in-flight bid overwrites
-        // live_state.highest_bidder after the auctioneer already wrote player_pool.
         if (currentAuctionState === 'sold' && data.current_player_index >= 0) {
             let soldP = playerPool[data.current_player_index];
             if (soldP?.status === 'sold' && soldP.team) {
@@ -1020,7 +960,6 @@
         if (data.current_player_index >= 0 && playerPool.length > 0) {
             let p = playerPool[data.current_player_index];
             if (p) {
-                // UNIVERSAL IMAGE DETECTOR
                 let photoBox = document.getElementById('playerPhoto');
                 let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
                 let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name];
@@ -1066,7 +1005,8 @@
             el.classList.remove('timer-green','timer-warn','timer-danger','timer-paused');
             if (currentAuctionState === 'idle')   { el.textContent = '--'; return; }
             if (currentAuctionState === 'paused') { el.textContent = '⏸'; el.classList.add('timer-paused'); return; }
-            let t = data.timer_end ? Math.max(0, Math.ceil((data.timer_end - Date.now()) / 1000)) : 0;
+            // FIX: Using Server Time to prevent clock drift
+            let t = data.timer_end ? Math.max(0, Math.ceil((data.timer_end - getServerTime()) / 1000)) : 0;
             el.textContent = t + 's';
             if (t > 10) el.classList.add('timer-green');
             else if (t > 5) el.classList.add('timer-warn');
@@ -1082,7 +1022,6 @@
             else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow-silver');
         }
 
-        // OTHER TEAMS GLOW UPDATE
         document.querySelectorAll('.other-team-card-hz').forEach(card => {
             card.classList.remove('leader-card-glow-silver', 'sold-card-glow');
             let teamName = card.getAttribute('data-team');
@@ -1104,7 +1043,7 @@
         document.getElementById('myTeamDisplay').style.color   = myTeamColor;
 
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
-        let myPurseCr = myBudget / CRORE;
+        let myPurseCr = myBudget / 10000000;
         let purseEl = document.getElementById('myTeamPurse');
         purseEl.textContent = `₹${myPurseCr.toFixed(2)} Cr`;
         purseEl.style.color = getPurseColor(myPurseCr, STARTING_PURSE_CR);
@@ -1130,15 +1069,14 @@
                     <span>${esc(p.name)} ${planeIcon(p)}</span>
                     <button class="role-badge" onclick="openRolePopup(event,'${esc(p.name)}')">${roleHtml}</button>
                 </div>
-                <span style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}Cr</span>
+                <span style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)}Cr</span>
             </div>`;
         };
 
         let xiHtml = xiPlayers.map(buildRow).join('');
         let xiCount = xiPlayers.length;
         for (let i = xiCount + 1; i <= 11; i++) xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
-        // Do not replace roster innerHTML while a drag is in progress — doing so detaches
-        // the element the browser is currently tracking, causing duplication on drop.
+        
         if (!isDragging) {
             document.getElementById('playingXIList').innerHTML = xiHtml;
             document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
@@ -1146,14 +1084,13 @@
         }
         document.getElementById('xiCount').textContent = `(${xiCount}/11)`;
 
-        // Other teams bottom row
         let othersHtml = '';
         Object.keys(allRegisteredTeams).forEach(t => {
             if (t === myTeamName) return;
             let tData  = allRegisteredTeams[t] || {};
             let tColor = tData.color || '#fff';
             let tRep   = tData.repName || 'Unknown';
-            let rCr    = (teamBudgets[t] !== undefined ? teamBudgets[t] : TEAM_BUDGET) / CRORE;
+            let rCr    = (teamBudgets[t] !== undefined ? teamBudgets[t] : TEAM_BUDGET) / 10000000;
             let count  = playerPool.filter(p => p.status === 'sold' && p.team === t).length;
             let isOnline = activePresence[t];
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
@@ -1193,7 +1130,6 @@
         let isSquadMaxed = myRosterCount >= maxSq;
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
         
-        // Check if this is the first bid
         window.isFirstBid = data.highest_bidder === 'Base Price' || data.highest_bidder === '-' || data.highest_bidder === '';
         let requiredBid = window.isFirstBid ? localCurrentBid : localCurrentBid + getCurrentBidIncrement();
         let isInsufficient = requiredBid > myBudget;
@@ -1223,8 +1159,7 @@
             setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
             setStatus('status-losing');  
-            // Display BID BASE if no one has bid yet
-            let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/CRORE).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
+            let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/10000000).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
             setBtn('btn-bid-active', btnText, true);
         }
     }
@@ -1237,7 +1172,15 @@
     
     window.placeExactBid = function(amount) {
         closeJumpMenu();
+        
+        // FIX: Force a fresh budget calculation before pushing the transaction
+        recalculateBudgets();
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
+        
+        if (amount > myBudget) {
+            showAlert('Insufficient Funds', 'You do not have enough purse remaining for this bid.');
+            return; 
+        }
 
         roomRef.child('live_state').transaction(liveData => {
             if (!liveData) return liveData;
@@ -1246,18 +1189,18 @@
             
             let isDataFirstBid = liveData.highest_bidder === 'Base Price' || liveData.highest_bidder === '-' || liveData.highest_bidder === '';
 
-            // If first bid, accept amount equal to current_bid. Otherwise, strictly greater.
             if (isDataFirstBid) {
                 if (amount < (liveData.current_bid || 0)) return liveData;
             } else {
                 if (amount <= (liveData.current_bid || 0)) return liveData;
             }
 
-            if (amount > myBudget) return liveData; 
+            if (amount > myBudget) return liveData; // Keep the secondary guard
             
             liveData.current_bid     = amount;
             liveData.highest_bidder  = myTeamName;
-            liveData.timer_end       = Date.now() + 15000;
+            // FIX: Using Server Time to prevent clock drift
+            liveData.timer_end       = getServerTime() + 15000;
             liveData.auction_state   = 'bidding';
             return liveData;
         }, (err, committed, snap) => {
@@ -1277,14 +1220,13 @@
         showPrompt('Manual Bid', 'Enter exact bid amount in Crores (e.g. 7.5)', '', val => {
             let cr = parseFloat(val);
             if (!isNaN(cr) && cr > 0) {
-                placeExactBid(Math.round(cr * CRORE));
+                placeExactBid(Math.round(cr * 10000000));
             } else {
                 showAlert('Invalid', 'Please enter a valid number.');
             }
         });
     };
 
-    // Long Press Event Listeners for Main Bid Button
     const mainBtn = document.getElementById('mainActionButton');
     let bidPressTimer;
     let isLongPress = false;
@@ -1316,7 +1258,7 @@
         bidPressTimer = setTimeout(() => {
             isLongPress = true;
             openJumpMenu(e);
-        }, 600); // 600ms long press
+        }, 600);
     };
 
     const onPointerUp = (e) => {
@@ -1333,13 +1275,13 @@
     mainBtn.addEventListener('touchend', onPointerUp);
     mainBtn.addEventListener('mouseleave', () => clearTimeout(bidPressTimer));
     mainBtn.addEventListener('touchcancel', () => clearTimeout(bidPressTimer));
-    mainBtn.oncontextmenu = function() { return false; }; // Prevent native context menu on long press
+    mainBtn.oncontextmenu = function() { return false; }; 
 
     // ── Chat ───────────────────────────────────────────────────────────────
     window.sendChatMessage = function() {
         let inp = document.getElementById('chatInput'), msg = inp.value.trim();
         if (msg && myTeamName && roomRef) {
-            roomRef.child('chat_events').push({ team: myTeamName, text: msg, time: Date.now() });
+            roomRef.child('chat_events').push({ team: myTeamName, text: msg, time: getServerTime() });
             inp.value = '';
         }
     };
@@ -1402,7 +1344,7 @@
                 if (role === 'C' || role === 'VC') {
                     let title = role === 'C' ? 'Captain' : 'Vice Captain';
                     let msg = `👑 ${esc(currentRolePlayer)} has been appointed as the ${title} of ${myTeamName}!`;
-                    roomRef.child('chat_events').push({ team: 'SYSTEM', text: msg, time: Date.now() });
+                    roomRef.child('chat_events').push({ team: 'SYSTEM', text: msg, time: getServerTime() });
                 }
             }
             updates[currentRolePlayer] = activeArr.join(',') || null;
@@ -1443,8 +1385,6 @@
         if (this.classList.contains('drop-zone')) {
             this.appendChild(dragSrcEl);
         } else {
-            // insertBefore(node, null) appends to end — do NOT use `|| this` fallback
-            // which incorrectly inserts before the target when dropping on the last item.
             this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
         }
         saveRosterOrder();
@@ -1456,8 +1396,6 @@
         dragSrcEl = null;
         document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('over'));
         document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('over-zone'));
-        // Re-render from latest Firebase data now that drag is complete.
-        // This clears any stale DOM state and re-attaches drag events cleanly.
         updateMyTeamUI();
     }
     function addDragEvents(item) {
@@ -1510,7 +1448,7 @@
         let html = '';
         playerPool.forEach(p => {
             if (p.set !== set || p.status === 'sold' || p.status === 'unsold') return;
-            html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+            html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr</span></div></div>`;
         });
         document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players left in this set.</p>";
     }
@@ -1519,7 +1457,7 @@
         let html = '';
         playerPool.forEach(p => {
             if (p.status !== 'unsold') return;
-            html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
+            html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
         });
         document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players yet.</p>";
     }
@@ -1543,12 +1481,11 @@
             let xiBadge = isXI
                 ? `<span style="font-size:8px; color:#28a745; border:1px solid #28a745; padding:1px 3px; border-radius:3px; margin-left:6px;">XI</span>`
                 : `<span style="font-size:8px; color:#666; border:1px solid #444; padding:1px 3px; border-radius:3px; margin-left:6px;">BENCH</span>`;
-            return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleHtml}${xiBadge}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+            return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleHtml}${xiBadge}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)} Cr</span></div></div>`;
         }).join('');
         document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
     }
 
-    // ── Keyboard Shortcut ──────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
         if (document.getElementById('mainDashboard').style.display === 'none') return;
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
