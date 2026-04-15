@@ -146,16 +146,40 @@
         
         /* ─ Photo Box ─────────────────────────────────────────────────── */
         .player-photo-box { 
-            width: 160px; height: 160px; border: 2px dashed #444; border-radius: 8px; 
+            width: 220px; height: 220px; border: 2px dashed #444; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; color: #555; 
-            font-size: 12px; font-weight: bold; flex-shrink: 0; background-color: rgba(0,0,0,.3); 
-            overflow: hidden;
+            font-size: 14px; font-weight: bold; flex-shrink: 0; background-color: rgba(0,0,0,.3); 
+            position: relative;
         }
+
+        /* Styling for when an image is loaded */
+        .player-photo-box.has-photo {
+            border: 1px solid #333;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.6) 100%);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Decorative Corner Accents */
+        .player-photo-box.has-photo::before {
+            content: ''; position: absolute; top: -2px; left: -2px; width: 30px; height: 30px;
+            border-top: 2px solid #ffc107; border-left: 2px solid #ffc107; border-radius: 12px 0 0 0;
+            z-index: 5; pointer-events: none; opacity: 0.8;
+        }
+        .player-photo-box.has-photo::after {
+            content: ''; position: absolute; bottom: -2px; right: -2px; width: 30px; height: 30px;
+            border-bottom: 2px solid #ffc107; border-right: 2px solid #ffc107; border-radius: 0 0 12px 0;
+            z-index: 5; pointer-events: none; opacity: 0.8;
+        }
+
         /* The 'contain' forces the entire image to fit inside without cropping */
-        .player-photo-box img { width: 100%; height: 100%; object-fit: contain; object-position: center; border-radius: 6px; }
+        .player-photo-box img { 
+            width: 100%; height: 100%; object-fit: contain; object-position: center; 
+            border-radius: 10px; z-index: 2; position: relative;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); 
+        }
         
-        .player-header { flex: 1; padding-right: 70px; }
-        .player-name { font-size: 28px; color: #fff; font-weight: bold; margin: 0 0 5px; line-height: 1.1; display: flex; align-items: center; }
+        .player-header { flex: 1; padding-right: 70px; display: flex; flex-direction: column; justify-content: center; }
+        .player-name { font-size: 34px; color: #fff; font-weight: bold; margin: 0 0 8px; line-height: 1.1; display: flex; align-items: center; }
         .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
@@ -259,9 +283,11 @@
             #centerPanel { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
             
             .player-top-section { margin-bottom: 5px; align-items: flex-start; flex-shrink: 0; }
-            .player-photo-box { width: 90px; height: 90px; font-size: 10px; border-width: 1px; }
-            .player-header { padding-right: 30px; }
-            .player-name { font-size: 22px; justify-content: flex-start; text-align: left; }
+            .player-photo-box { width: 120px; height: 120px; font-size: 10px; border-width: 1px; }
+            .player-photo-box.has-photo::before, .player-photo-box.has-photo::after { width: 15px; height: 15px; border-width: 2px; }
+
+            .player-header { padding-right: 20px; }
+            .player-name { font-size: 24px; justify-content: flex-start; text-align: left; }
             
             .stats-bar { margin: auto 0 !important; grid-template-columns: repeat(6, 1fr); gap: 1px; }
             .stat-box { padding: 6px 2px; }
@@ -414,7 +440,7 @@
                 
                 <div class="player-top-section" id="playerTopSection">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                    <div class="player-header" style="margin-bottom:0;">
+                    <div class="player-header">
                         <span class="label-text">On The Block</span>
                         <div class="player-name" id="playerName">Waiting…</div>
                         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -998,12 +1024,10 @@
                 
                 if (foundImgUrl) {
                     photoBox.innerHTML = `<img src="${esc(foundImgUrl)}" alt="Player">`;
-                    photoBox.style.border = 'none';
-                    photoBox.style.backgroundColor = 'transparent';
+                    photoBox.classList.add('has-photo');
                 } else {
                     photoBox.innerHTML = 'PHOTO';
-                    photoBox.style.border = '2px dashed #444';
-                    photoBox.style.backgroundColor = 'rgba(0,0,0,.3)';
+                    photoBox.classList.remove('has-photo');
                 }
 
                 document.getElementById('playerName').innerHTML = esc(p.name) + planeIcon(p);
@@ -1022,8 +1046,7 @@
         } else {
             let photoBox = document.getElementById('playerPhoto');
             photoBox.innerHTML = 'PHOTO';
-            photoBox.style.border = '2px dashed #444';
-            photoBox.style.backgroundColor = 'rgba(0,0,0,.3)';
+            photoBox.classList.remove('has-photo');
 
             document.getElementById('playerName').textContent = 'Waiting…';
             document.getElementById('playerFranchise').style.display = 'none';
