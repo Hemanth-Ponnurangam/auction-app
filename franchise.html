@@ -59,16 +59,20 @@
         .submit-btn:hover { background: #218838; }
         .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
         .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
+        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
 
         /* ─ Dots ──────────────────────────────────────────────────────── */
         .live-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle; }
         .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
 
-        /* ─ Main Dashboard ─────────────────────────────────────────────── */
+        /* ─ Main Dashboard (Base layout without forced height) ────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
         
+        .mobile-nav { display: none; } /* Hidden on desktop */
+
+        /* ─ DESKTOP SPECIFIC RULES ────────────────────────────────────── */
         @media (min-width: 1000px) {
             #mainDashboard { height: calc(100vh - 30px); }
             .top-row { flex-direction: row; align-items: stretch; }
@@ -83,11 +87,9 @@
         /* ─ Glow States ────────────────────────────────────────────────── */
         .glow-sold    { box-shadow: 0 0 40px rgba(57,255,20,.4), inset 0 0 20px rgba(57,255,20,.2) !important; border-color: #39ff14 !important; }
         .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
-        @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
         
-        .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
         .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
         
@@ -137,7 +139,7 @@
         .timer-paused { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         
-        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 10px; }
+        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
         .player-photo-box { width: 160px; height: 160px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
         .player-header { flex: 1; padding-right: 70px; }
         
@@ -146,20 +148,18 @@
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
         /* New 6-Column Stats Grid */
-        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 10px; flex-shrink: 0; }
+        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; }
         .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
         .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
 
         /* ─ Bid Zone ────────────────────────────────────────────────────── */
-        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 12px; text-align: center; transition: all .3s; flex-shrink: 0; }
-        .current-bid-display { font-size: 45px; font-weight: bold; margin: 2px 0 8px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 15px; text-align: center; transition: all .3s; flex-shrink: 0; }
+        .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
         .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all .3s; }
         .status-losing  { color: #dc3545; }
         .status-winning { color: #28a745; text-shadow: 0 0 25px rgba(40,167,69,.4); }
         .status-neutral { color: #fff; }
-        
-        /* Bid Button Tweaks */
         .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         .btn-bid-active       { background: #dc3545; color: #fff; box-shadow: 0 6px 20px rgba(220,53,69,.4); }
         .btn-bid-active:hover { background: #c82333; transform: translateY(-2px); }
@@ -168,7 +168,7 @@
         .btn-bid-insufficient { background: #333; color: #888; border: 2px solid #444; cursor: not-allowed; }
         .btn-cooldown         { background: #22222d; color: #aaa; border: 1px solid #444; cursor: not-allowed; }
         .btn-bid-unsold       { background: rgba(255,7,58,.15); color: #ff073a; border: 2px solid #ff073a; cursor: not-allowed; }
-        .shortcut-hint { font-size: 11px; color: #666; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000; }
 
         /* Jump Bid Popup Menu */
@@ -233,30 +233,49 @@
 
         /* ─ MOBILE RESPONSIVENESS ──────────────────────────────────────── */
         @media (max-width: 999px) {
-            body { overflow-y: auto; height: auto; min-height: 100vh; display: block; }
-            #mainDashboard { height: auto; margin-bottom: 20px; }
-            .top-row { height: auto; flex: none; }
-            .col-left, .col-center, .col-right { height: auto; flex: none; }
-            .panel { height: auto; min-height: unset; flex: none; }
+            body { overflow: hidden; height: 100vh; padding: 5px; margin: 0; }
+            #mainDashboard { height: calc(100vh - 10px); padding: 0; display: flex; flex-direction: column; gap: 8px; position: relative; }
             
-            #playingXIList { height: auto; max-height: 280px; overflow-y: auto; }
-            #benchList { min-height: 80px; max-height: 200px; overflow-y: auto; }
+            .mobile-nav { display: flex; gap: 6px; flex-shrink: 0; width: 100%; z-index: 1001; }
+            .mobile-nav-btn { flex: 1; padding: 12px 0; font-size: 11px; font-weight: 900; background: #161620; color: #888; border: 1px solid #2d2d3f; border-radius: 8px; text-transform: uppercase; cursor: pointer; transition: .2s; }
+            .mobile-nav-btn.active { background: #007bff; color: #fff; border-color: #0056b3; box-shadow: 0 4px 15px rgba(0,123,255,.4); }
+
+            .top-row { flex: 1; display: flex; flex-direction: column; gap: 0; min-height: 0; }
+            .col-left, .col-right { display: none; }
             
-            /* Center block adjustments */
-            #centerPanel { min-height: 450px; display: flex; flex-direction: column; }
-            .timer-pill { position: static; display: table; margin: 0 0 15px auto; float: none; }
-            .player-top-section { flex-direction: column; align-items: center; text-align: center; }
-            .player-header { padding-right: 0; display: flex; flex-direction: column; align-items: center; }
-            .player-name { justify-content: center; text-align: center; }
+            .col-center { flex: 1; display: flex; flex-direction: column; min-height: 0; width: 100%; }
+            #centerPanel { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
             
-            .stats-bar { margin-top: 20px; grid-template-columns: repeat(6, 1fr); gap: 1px; }
-            .stat-box { padding: 8px 2px; }
-            .stat-val { font-size: 13px; }
-            .current-bid-display { font-size: 36px; flex-direction: column; gap: 5px; }
+            .player-top-section { margin-bottom: 8px; }
+            .player-photo-box { width: 90px; height: 90px; font-size: 10px; }
+            .player-name { font-size: 22px; }
+            .stats-bar { margin-bottom: 8px; }
+            .stat-box { padding: 6px 2px; }
+            .stat-val { font-size: 14px; }
             
-            /* Logs and Tabs */
-            .log-panel { min-height: 250px; max-height: 350px; }
-            .tabs-panel { min-height: 400px; }
+            .bidding-zone { padding: 12px; border-width: 1px; z-index: 50; }
+            .current-bid-display { font-size: 32px; flex-direction: row; justify-content: space-between; margin: 0 0 8px; }
+            .leader-badge { font-size: 12px; padding: 4px 8px; }
+            .action-btn-bid { padding: 12px; font-size: 18px; }
+
+            /* Mobile Overlays */
+            #myTeamBox, #logPanelMobile, #tabsPanelMobile, #otherTeamsList {
+                position: absolute; top: 55px; left: 0; right: 0; bottom: 145px;
+                z-index: 1000; display: none; background: rgba(15,15,21,0.96); backdrop-filter: blur(8px);
+                border: 1px solid #444; border-radius: 12px; padding: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+                overflow-y: auto; margin: 0; flex-direction: column;
+            }
+            
+            #otherTeamsList { flex-direction: column; gap: 10px; align-items: stretch; justify-content: flex-start; }
+            .other-team-card-hz { width: 100%; min-width: 0; flex-direction: row; justify-content: space-between; align-items: center; padding: 12px; text-align: left; }
+            .other-team-card-hz > div { margin: 0 !important; }
+            .other-team-card-hz .other-team-rep-name { font-size: 10px; max-width: 100px; }
+
+            #myTeamBox.show, #logPanelMobile.show, #tabsPanelMobile.show, #otherTeamsList.show { display: flex !important; }
+
+            #playingXIList { height: auto; flex: 1 1 0; overflow-y: auto; }
+            #benchList { flex: 0 0 120px; }
+            .log-panel { padding: 10px !important; }
         }
     </style>
 </head>
@@ -350,60 +369,64 @@
 </div>
 
 <div id="mainDashboard">
+    
+    <div class="mobile-nav">
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('myTeamBox', this)">🏏 Squad</button>
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('logPanelMobile', this)">📜 Logs</button>
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('tabsPanelMobile', this)">📋 Deck</button>
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('otherTeamsList', this)">🌐 Teams</button>
+    </div>
+
     <div class="top-row">
-        <div class="col-left">
-            <div class="panel my-team-card" id="myTeamBox">
-                <div class="team-msg-popup" id="msg-popup-myteam"></div>
-                <button class="logout-btn" onclick="logout()">LEAVE</button>
-                <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
-                <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
-                <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
-                <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
-                <div class="roster-list drop-zone" id="playingXIList"></div>
-                <div class="roster-header" style="margin-top:6px;">BENCH</div>
-                <div class="roster-list drop-zone" id="benchList"></div>
+        <div class="col-left panel my-team-card" id="myTeamBox">
+            <div class="team-msg-popup" id="msg-popup-myteam"></div>
+            <button class="logout-btn" onclick="logout()">LEAVE</button>
+            <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
+            <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
+            <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
+            <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
+            <div class="roster-list drop-zone" id="playingXIList"></div>
+            <div class="roster-header" style="margin-top:6px;">BENCH</div>
+            <div class="roster-list drop-zone" id="benchList"></div>
+        </div>
+
+        <div class="col-center panel" id="centerPanel">
+            <div class="timer-pill" id="playerTimer">--</div>
+            
+            <div class="player-top-section">
+                <div class="player-photo-box" id="playerPhoto">PHOTO</div>
+                <div class="player-header" style="margin-bottom:0; padding-right:0;">
+                    <span class="label-text">On The Block</span>
+                    <div class="player-name" id="playerName">Waiting…</div>
+                    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                        <div class="past-teams" id="playerFranchise" style="display:none;"></div>
+                        <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
+                <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
+                <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
+                <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
+                <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
+                <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
+            </div>
+
+            <div class="bidding-zone" id="bidZoneBox">
+                <span class="label-text" style="font-size:12px;">Current Bid</span>
+                <div class="current-bid-display status-neutral" id="currentBidContainer">
+                    <span id="actualBidAmount">₹0.00 Cr</span>
+                    <span class="leader-badge" id="leaderBadge">-</span>
+                </div>
+                <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
+                <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
             </div>
         </div>
 
-        <div class="col-center">
-            <div class="panel" id="centerPanel">
-                <div class="timer-pill" id="playerTimer">--</div>
-                
-                <div class="player-top-section">
-                    <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                    <div class="player-header" style="margin-bottom:0; padding-right:0;">
-                        <span class="label-text">On The Block</span>
-                        <div class="player-name" id="playerName">Waiting…</div>
-                        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                            <div class="past-teams" id="playerFranchise" style="display:none;"></div>
-                            <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stats-bar">
-                    <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
-                    <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
-                    <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
-                    <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
-                    <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
-                    <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
-                </div>
-
-                <div class="bidding-zone" id="bidZoneBox">
-                    <span class="label-text" style="font-size:12px;">Current Bid</span>
-                    <div class="current-bid-display status-neutral" id="currentBidContainer">
-                        <span id="actualBidAmount">₹0.00 Cr</span>
-                        <span class="leader-badge" id="leaderBadge">-</span>
-                    </div>
-                    <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
-                    <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-right">
-            <div class="panel log-panel">
+        <div class="col-right" style="background:transparent; border:none; padding:0; box-shadow:none;">
+            <div class="panel log-panel" id="logPanelMobile">
                 <div class="log-header">
                     <span>📜 Live Activity <span id="auctioneerStatus" class="offline-dot" title="Auctioneer Offline"></span></span>
                     <div class="chat-input-area">
@@ -413,7 +436,8 @@
                 </div>
                 <div class="log-container" id="logContainer"></div>
             </div>
-            <div class="panel tabs-panel">
+            
+            <div class="panel tabs-panel" id="tabsPanelMobile">
                 <div class="tabs">
                     <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); renderDeck()">
                         <option value="" disabled selected hidden>ON DECK</option>
@@ -539,6 +563,28 @@
         setInterval(updateAllPopups, 500);
     };
 
+    // ── Mobile Menu Toggle ─────────────────────────────────────────────────
+    window.toggleMobilePanel = function(panelId, btnEl) {
+        // Only run on mobile size
+        if (window.innerWidth >= 1000) return;
+        
+        let panels = ['myTeamBox', 'logPanelMobile', 'tabsPanelMobile', 'otherTeamsList'];
+        let targetPanel = document.getElementById(panelId);
+        
+        let isOpening = !targetPanel.classList.contains('show');
+        
+        panels.forEach(p => { 
+            let el = document.getElementById(p); 
+            if(el) el.classList.remove('show'); 
+        });
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+        
+        if (isOpening) {
+            targetPanel.classList.add('show');
+            if (btnEl) btnEl.classList.add('active');
+        }
+    };
+
     // ── Gateway / Room Key ─────────────────────────────────────────────────
     function showRoomKeyScreen() {
         document.getElementById('gatewayScreen').style.display  = 'none';
@@ -658,7 +704,7 @@
     }
 
     // ── Settings Modal & Exports ───────────────────────────────────────────
-    function openFranchiseSettings() {
+    window.openFranchiseSettings = function() {
         let s = window.auctionSettings || {};
         let html = `
             <div style="margin-bottom:8px;"><strong>Starting Purse:</strong> ₹${s.starting_purse || 100} Cr</div>
@@ -668,7 +714,7 @@
         `;
         document.getElementById('rulesList').innerHTML = html;
         document.getElementById('franchiseSettingsOverlay').style.display = 'flex';
-    }
+    };
 
     function getSquadHTML(teamName) {
         let sold = playerPool.filter(p => p.status === 'sold' && p.team === teamName);
@@ -685,23 +731,23 @@
         </table>`;
     }
 
-    function exportMySquadCSV() {
+    window.exportMySquadCSV = function() {
         let sold = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName);
         let csv = `"Player","Role","Bought For (Cr)"\n` + sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
             return `"${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
         }).join('\n');
         downloadBlob(csv, `IPL_${myTeamName}_Squad.csv`, 'text/csv;charset=utf-8;');
-    }
+    };
 
-    function exportAllSquadsCSV() {
+    window.exportAllSquadsCSV = function() {
         let sold = playerPool.filter(p => p.status === 'sold');
         let csv = `"Team","Player","Role","Bought For (Cr)"\n` + sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
             return `"${p.team}","${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
         }).join('\n');
         downloadBlob(csv, `IPL_All_Squads.csv`, 'text/csv;charset=utf-8;');
-    }
+    };
 
     function downloadBlob(content, filename, contentType) {
         let blob = new Blob([content], { type: contentType });
@@ -709,21 +755,21 @@
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
-    function exportMySquadPDF() {
+    window.exportMySquadPDF = function() {
         let div = document.createElement('div');
         div.style.cssText = 'padding:20px; font-family:sans-serif; color:#000; background:#fff;';
         div.innerHTML = `<h2 style="text-align:center; text-transform:uppercase; margin-bottom:20px; color:#000;">IPL Auction Result — ${myTeamName}</h2>` + getSquadHTML(myTeamName);
         html2pdf().set({margin:10, filename:`IPL_${myTeamName}_Squad.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
-    }
+    };
 
-    function exportAllSquadsPDF() {
+    window.exportAllSquadsPDF = function() {
         let div = document.createElement('div');
         div.style.cssText = 'padding:20px; font-family:sans-serif; color:#000; background:#fff;';
         let html = `<h2 style="text-align:center; text-transform:uppercase; margin-bottom:20px; color:#000;">IPL Auction Result — All Squads</h2>`;
         Object.keys(allRegisteredTeams).forEach(team => { html += getSquadHTML(team); });
         div.innerHTML = html;
         html2pdf().set({margin:10, filename:`IPL_All_Squads.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
-    }
+    };
 
     // ── Firebase Listeners ─────────────────────────────────────────────────
     function attachFirebaseListeners() {
@@ -929,6 +975,7 @@
 
         let xiPlayers    = myXIOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
         let benchPlayers = myBenchOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
+        // Any newly sold player not yet in either order goes to bench
         myRoster.forEach(p => { if (!myXIOrder.includes(p.name) && !myBenchOrder.includes(p.name)) benchPlayers.push(p); });
 
         let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
