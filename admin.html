@@ -4,40 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin – Platform Console</title>
-    <link rel="stylesheet" href="shared-auction.css">
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="firebase-config.js"></script>
-    
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #050508; color: #e0e0e0; margin: 0; padding: 20px; min-height: 100vh; overflow-x: hidden; }
-        
-        /* FIX: Changed display:none to display:flex so it shows immediately */
-        #masterDashboard { display: flex; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
+        #connBanner { display: none; position: fixed; top: 0; left: 0; right: 0; padding: 10px; background: #dc3545; color: #fff; text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999; }
+        .gateway-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #050508; z-index: 5000; }
+        .gateway-card { background: #0f0f15; padding: 40px; border-radius: 15px; box-shadow: 0 10px 50px rgba(0,0,0,.9); border: 1px solid #333; text-align: center; width: 100%; max-width: 400px; }
+        .pin-input { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #444; color: #ffc107; border-radius: 8px; font-size: 24px; text-align: center; letter-spacing: 8px; outline: none; }
+        .pin-input:focus { border-color: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,.2); }
+        .submit-btn { width: 100%; background: linear-gradient(145deg, #eab308, #b08605); color: #000; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: .2s; }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(234,179,8,.4); }
+        #masterDashboard { display: none; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 15px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
         .main-title { color: #fff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; display: flex; align-items: center; gap: 10px; }
         .main-title span { color: #ffc107; }
         .badge { background: #dc3545; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 1px; }
-        
         .tabs { display: flex; gap: 10px; background: #0f0f15; padding: 10px; border-radius: 12px; border: 1px solid #222; }
         .tab-btn { flex: 1; padding: 12px; background: transparent; border: none; color: #888; font-weight: bold; cursor: pointer; border-radius: 8px; transition: .3s; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
         .tab-btn:hover { color: #fff; background: rgba(255,255,255,.05); }
         .tab-btn.active { background: #22222d; color: #ffc107; box-shadow: 0 4px 15px rgba(0,0,0,.3); border: 1px solid #333; }
-        
         .tab-content { display: none; flex-direction: column; gap: 20px; animation: fadeIn .3s; }
         .tab-content.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
         .panel { background: #0f0f15; border: 1px solid #222; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .panel-title { font-size: 16px; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
-        
+        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
+        .action-btn:hover { background: #0056b3; }
+        .action-btn.danger { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; }
+        .action-btn.danger:hover { background: #dc3545; color: #fff; }
+        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
+        .action-btn.outline:hover { background: #333; color: #fff; }
         select.admin-select { background: #000; color: #ffc107; border: 1px solid #333; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; outline: none; appearance: none; cursor: pointer; min-width: 250px; }
         input.admin-search { background: #000; color: #fff; border: 1px solid #333; padding: 10px 15px; border-radius: 6px; font-size: 14px; outline: none; width: 250px; }
         input.admin-search:focus { border-color: #007bff; }
-        
         .room-grid, .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .room-card { background: #000; border: 1px solid #333; border-radius: 10px; padding: 20px; transition: .3s; }
         .room-card:hover { border-color: #555; transform: translateY(-3px); }
@@ -45,7 +48,6 @@
         .r-pin { color: #ffc107; font-family: monospace; background: #222; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
         .r-stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #222; font-size: 12px; color: #aaa; }
         .r-stat span:last-child { color: #fff; font-weight: bold; }
-        
         .team-card { background: #000; border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #222; }
         .t-code { font-size: 24px; font-weight: 900; margin-bottom: 5px; }
         .t-name { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
@@ -54,19 +56,37 @@
         .db-table th { background: #0a0a0f; color: #888; padding: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
         .db-table td { padding: 12px; border-bottom: 1px solid #222; color: #ccc; vertical-align: middle; }
         .db-table tr:hover td { background: #111; color: #fff; }
-
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
+        .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 500px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
         .modal-label { display: block; font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; letter-spacing: .5px; }
+        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
+        .modal-input:focus { border-color: #ffc107; }
+        .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; margin-left: 5px; }
+
         .img-preview { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; border: 1px solid #444; background: #000; display: inline-block; }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
 
+<div id="adminLoginScreen" class="gateway-container">
+    <div class="gateway-card">
+        <h1 style="color:#fff; font-size:24px; margin-bottom:10px; letter-spacing:2px;">👑 GOD MODE</h1>
+        <p style="color:#aaa; margin-bottom:25px; font-size:12px;">Super Admin Access Only</p>
+        <input type="password" id="superPin" class="pin-input" placeholder="PIN" maxlength="8"
+               onkeypress="if(event.key==='Enter') verifySuperAdmin()">
+        <button class="submit-btn" onclick="verifySuperAdmin()">AUTHENTICATE</button>
+    </div>
+</div>
+
 <div id="masterDashboard">
     <div class="header">
         <h1 class="main-title">🛡️ <span>PLATFORM CONSOLE</span> <span class="badge">SUPER ADMIN</span></h1>
-        </div>
+        <button class="action-btn outline" onclick="window.location.reload()">🔒 LOCK CONSOLE</button>
+    </div>
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('databases',this)">🗄️ Database Manager</button>
         <button class="tab-btn" onclick="switchTab('images',this)">📸 Image Directory</button>
@@ -91,7 +111,7 @@
             <div style="max-height:600px; overflow-y:auto; border:1px solid #222; border-radius:8px;">
                 <table class="db-table">
                     <thead><tr><th>#</th><th>Player Name</th><th>Role</th><th>Nat.</th><th>Base Price</th><th>Set</th></tr></thead>
-                    <tbody id="dbTableBody"><tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">Loading database...</td></tr></tbody>
+                    <tbody id="dbTableBody"><tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">Select a database to view players.</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -225,8 +245,7 @@
     let _modalCb      = null;
 
     db.ref('.info/connected').on('value', snap => {
-        let banner = document.getElementById('connBanner');
-        if (banner) banner.style.display = snap.val() ? 'none' : 'block';
+        document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
     // ── Reusable Modal System ─────────────────────────────────────────────
@@ -268,13 +287,30 @@
     function esc(str) {
         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
-    
     function sanitizeKey(name) {
-        return name.toLowerCase().replace(/[.#$\[\]\/]/g, '_');
+        return name.replace(/[.#$\[\]\/]/g, '_');
+    }
+
+    // ── Auth ──────────────────────────────────────────────────────────────
+    function verifySuperAdmin() {
+        let entered = document.getElementById('superPin').value.trim();
+        if (!entered) { showAlert('Missing PIN', 'Please enter the Admin PIN.'); return; }
+        db.ref('platform_settings/admin_pin').once('value', snap => {
+            let stored = snap.val();
+            if (!stored) {
+                showAlert('Not Configured', 'No Admin PIN set in Firebase.\n\nSet platform_settings → admin_pin');
+                return;
+            }
+            if (entered === stored) {
+                document.getElementById('adminLoginScreen').style.display = 'none';
+                document.getElementById('masterDashboard').style.display  = 'flex';
+                bootDashboard();
+            } else { showAlert('Access Denied', 'Incorrect PIN.'); }
+        }).catch(() => showAlert('Read Error', 'Cannot read platform_settings. Check Firebase Rules.'));
     }
 
     // ── Tab Switching ─────────────────────────────────────────────────────
-    window.switchTab = function(name, el) {
+    function switchTab(name, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`tab-${name}`).classList.add('active');
@@ -283,7 +319,7 @@
         if (name === 'rooms') loadLiveRooms();
         if (name === 'franchises') loadGlobalFranchises();
         if (name === 'images') renderImageDirectory();
-    };
+    }
 
     // ── Database Manager ──────────────────────────────────────────────────
     function bootDashboard() {
@@ -308,29 +344,26 @@
             loadSelectedDatabase();
         });
 
+        // Listen for global images
         db.ref('global_player_images').on('value', snap => {
             globalImageMap = snap.val() || {};
-            let tabImg = document.getElementById('tab-images');
-            if(tabImg && tabImg.classList.contains('active')) {
+            if(document.getElementById('tab-images').classList.contains('active')) {
                 renderImageDirectory();
             }
         });
     }
 
-    window.loadSelectedDatabase = function() {
+    function loadSelectedDatabase() {
         currentDbId = document.getElementById('dbSelector').value;
         if (!currentDbId) return;
         db.ref('preset_databases/' + currentDbId).once('value', snap => {
             currentDbData = snap.val() || [];
             renderDbTable();
         });
-    };
+    }
 
     const renderDbTable = debounce(() => {
-        let searchInput = document.getElementById('adminDbSearch');
-        if (!searchInput) return;
-        
-        let term = searchInput.value.toLowerCase();
+        let term = document.getElementById('adminDbSearch').value.toLowerCase();
         let rows = '';
         currentDbData.forEach((p, i) => {
             if (term && !p.name.toLowerCase().includes(term)) return;
@@ -346,52 +379,47 @@
                 <td>${esc(p.set || '-')}</td>
             </tr>`;
         });
-        
-        let body = document.getElementById('dbTableBody');
-        if(body) {
-            body.innerHTML = rows || `<tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">No players matched your search.</td></tr>`;
-        }
+        document.getElementById('dbTableBody').innerHTML = rows || `<tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">No players matched your search.</td></tr>`;
     }, 120);
+    document.getElementById('adminDbSearch').addEventListener('input', renderDbTable);
 
-    window.openUploadModal = function() { document.getElementById('uploadModal').style.display = 'flex'; };
+    function openUploadModal() { document.getElementById('uploadModal').style.display = 'flex'; }
 
+    // 12-Column Specific CSV Parser
     function parseCSV(text) {
-        let parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        let lines = text.split('\n'), raw = lines[0].split(',');
+        let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
         let result = [];
-        let hdrsMap = {};
         
-        if (parsed.meta.fields) {
-            parsed.meta.fields.forEach(h => {
-                hdrsMap[h.trim().toLowerCase().replace(/[^a-z0-9]/g,'')] = h;
-            });
-        }
-        
-        parsed.data.forEach(row => {
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             let obj = { status: 'available' };
-            for (let cleanHdr in hdrsMap) {
-                let origHdr = hdrsMap[cleanHdr];
-                let v = String(row[origHdr] || '').trim();
+            
+            for (let j = 0; j < hdrs.length; j++) {
+                let v = (cols[j]||'').replace(/['"]+/g,'').trim();
+                let h = hdrs[j];
                 
-                if (cleanHdr === 'baseprice') {
-                    let num = Number(v.replace(/,/g, '')) || 0;
-                    obj.base_price = (num > 0 && num <= 100) ? num * CRORE : num;
-                } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(cleanHdr)) {
-                    let key = cleanHdr;
-                    if(cleanHdr === 'avg') key = 'average';
-                    if(cleanHdr === 'strikerate' || cleanHdr === 'sr') key = 'bat_sr';
-                    if(cleanHdr === 'econ') key = 'economy';
-                    if(cleanHdr === 'bowlingsr') key = 'bowl_sr';
+                if (h === 'baseprice') {
+                    let num = Number(v)||0;
+                    obj.base_price = (num>0&&num<=100) ? num*CRORE : num;
+                } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(h)) {
+                    let key = h;
+                    if(h==='avg') key='average';
+                    if(h==='strikerate' || h==='sr') key='bat_sr';
+                    if(h==='econ') key='economy';
+                    if(h==='bowlingsr') key='bowl_sr';
                     obj[key] = v || '-';
-                } else if (['name','set','role','franchise','nationality'].includes(cleanHdr)) {
-                    obj[cleanHdr] = v;
+                } else if (['name','set','role','franchise','nationality'].includes(h)) {
+                    obj[h] = v;
                 }
             }
-            if (obj.name) result.push(obj);
-        });
+            result.push(obj);
+        }
         return result;
     }
 
-    window.processCsvUpload = function() {
+    function processCsvUpload() {
         let id = document.getElementById('uploadDbId').value.trim().toLowerCase().replace(/\s+/g,'_');
         let fi = document.getElementById('uploadCsvFile');
         if (!id) { showAlert('Missing ID', 'Provide a Preset ID.'); return; }
@@ -409,9 +437,9 @@
             });
         };
         reader.readAsText(fi.files[0]);
-    };
+    }
 
-    window.exportCurrentDB = function() {
+    function exportCurrentDB() {
         if (!currentDbData.length) { showAlert('Empty', 'No data to export.'); return; }
         let hdr = `"Name","Base Price (Cr)","Set","Role","Franchise","Nationality","Runs","Average","SR","Wickets","Economy","Bowling SR"`;
         let rows = currentDbData.map(p =>
@@ -423,9 +451,9 @@
         let blob = new Blob([hdr+'\n'+rows], {type:'text/csv;charset=utf-8;'});
         let a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:`${currentDbId}_export.csv`});
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    };
+    }
 
-    window.confirmDeleteDB = function() {
+    function confirmDeleteDB() {
         if (!currentDbId) return;
         showConfirm('⚠️ Delete Database', `Permanently delete '${currentDbId}'?`, () => {
             showPrompt('Type to Confirm', `Type "${currentDbId}"`, currentDbId, val => {
@@ -433,14 +461,11 @@
                 else showAlert('Mismatch', 'ID did not match.');
             });
         });
-    };
+    }
 
     // ── Image Directory Logic ─────────────────────────────────────────────
-    window.renderImageDirectory = function() {
-        let searchInput = document.getElementById('adminImgSearch');
-        if (!searchInput) return;
-        
-        let term = searchInput.value.toLowerCase();
+    function renderImageDirectory() {
+        let term = document.getElementById('adminImgSearch').value.toLowerCase();
         let html = '';
         let keys = Object.keys(globalImageMap);
         
@@ -460,21 +485,17 @@
                 </td>
             </tr>`;
         });
-        
-        let body = document.getElementById('imgTableBody');
-        if(body) {
-            body.innerHTML = html || `<tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images found.</td></tr>`;
-        }
-    };
+        document.getElementById('imgTableBody').innerHTML = html || `<tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images found.</td></tr>`;
+    }
 
-    window.openSingleImageModal = function(existingName = '', existingUrl = '') {
+    function openSingleImageModal(existingName = '', existingUrl = '') {
         document.getElementById('siName').value = existingName;
         document.getElementById('siUrl').value = existingUrl;
         document.getElementById('singleImageTitle').textContent = existingName ? 'Edit Image Mapping' : 'Add Image Mapping';
         document.getElementById('singleImageModal').style.display = 'flex';
-    };
+    }
 
-    window.saveSingleImage = function() {
+    function saveSingleImage() {
         let name = document.getElementById('siName').value.trim();
         let url = document.getElementById('siUrl').value.trim();
         if (!name || !url) { showAlert('Missing Fields', 'Provide both name and URL.'); return; }
@@ -483,36 +504,30 @@
         db.ref('global_player_images/' + key).set({ name: name, url: url }).then(() => {
             document.getElementById('singleImageModal').style.display = 'none';
         });
-    };
+    }
 
-    window.deleteImage = function(key) {
+    function deleteImage(key) {
         showConfirm('Delete Image', 'Remove this image mapping globally?', () => {
             db.ref('global_player_images/' + key).remove();
         });
-    };
+    }
 
-    window.processImageCsvUpload = function() {
+    function processImageCsvUpload() {
         let fi = document.getElementById('uploadImageFile');
         if (!fi.files.length) { showAlert('Missing File', 'Select a CSV file.'); return; }
         let reader = new FileReader();
         reader.onload = e => {
-            let parsed = Papa.parse(e.target.result, { skipEmptyLines: true });
+            let lines = e.target.result.split('\n');
             let updates = {};
-            let isFirstRow = true;
-            
-            parsed.data.forEach(cols => {
-                if (isFirstRow && cols[0] && cols[0].toLowerCase().includes('name')) {
-                    isFirstRow = false; return;
-                }
-                isFirstRow = false;
-                
-                let name = (cols[0]||'').trim();
-                let url = (cols[1]||'').trim();
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                let name = (cols[0]||'').replace(/['"]+/g,'').trim();
+                let url = (cols[1]||'').replace(/['"]+/g,'').trim();
                 if (name && url) {
                     updates[sanitizeKey(name)] = { name: name, url: url };
                 }
-            });
-            
+            }
             if(Object.keys(updates).length > 0) {
                 db.ref('global_player_images').update(updates).then(() => {
                     document.getElementById('uploadImageCsvModal').style.display = 'none';
@@ -524,10 +539,10 @@
             }
         };
         reader.readAsText(fi.files[0]);
-    };
+    }
 
     // ── Live Rooms & Franchises ───────────────────────────────────────────
-    window.loadLiveRooms = function() {
+    function loadLiveRooms() {
         db.ref('rooms').once('value', snap => {
             let rooms = snap.val() || {}, html = '';
             for (let key in rooms) {
@@ -550,12 +565,11 @@
                     <button class="action-btn danger" style="width:100%;margin-top:20px;" onclick="confirmKillRoom('${esc(key)}')">🛑 SHUT DOWN</button>
                 </div>`;
             }
-            let rc = document.getElementById('roomsContainer');
-            if(rc) rc.innerHTML = html || "<p style='color:#666; padding:20px;'>No active rooms found.</p>";
+            document.getElementById('roomsContainer').innerHTML = html || "<p style='color:#666; padding:20px;'>No active rooms found.</p>";
         });
-    };
+    }
 
-    window.confirmKillRoom = function(key) {
+    function confirmKillRoom(key) {
         showConfirm('🛑 Shut Down Room', `Permanently delete room ${key}?`, () => {
             showPrompt('Type to Confirm', `Type "${key}"`, key, val => {
                 if (val === key) {
@@ -563,12 +577,11 @@
                 } else showAlert('Mismatch', 'PIN did not match.');
             });
         });
-    };
+    }
 
-    window.loadGlobalFranchises = function() {
+    function loadGlobalFranchises() {
         db.ref('global_teams').on('value', snap => {
             let teams = snap.val(), el = document.getElementById('teamsContainer');
-            if(!el) return;
             if (!teams) { el.innerHTML = "<p style='color:#666; font-size:12px; grid-column:span 3;'>No franchises found.</p>"; return; }
             let html = '';
             for (let code in teams) {
@@ -583,9 +596,9 @@
             }
             el.innerHTML = html;
         });
-    };
+    }
 
-    window.saveNewTeam = function() {
+    function saveNewTeam() {
         let code = document.getElementById('ntCode').value.trim().toUpperCase();
         let name = document.getElementById('ntName').value.trim();
         let color = document.getElementById('ntColor').value;
@@ -594,20 +607,14 @@
             document.getElementById('addTeamModal').style.display = 'none';
             document.getElementById('ntCode').value = ''; document.getElementById('ntName').value = '';
         });
-    };
+    }
 
-    window.confirmDeleteTeam = function(code) {
+    function confirmDeleteTeam(code) {
         showConfirm('Remove Franchise', `Remove ${code}?`, () => db.ref('global_teams/'+code).remove());
-    };
-
-    // ── DIRECT BOOT BYPASS ────────────────────────────────────────────────
-    window.addEventListener('DOMContentLoaded', () => {
-        let dbSearch = document.getElementById('adminDbSearch');
-        if (dbSearch) dbSearch.addEventListener('input', renderDbTable);
-        
-        // Immediately load the dashboard when the file opens
-        bootDashboard();
-    });
+    }
 </script>
 </body>
 </html>
+
+
+
