@@ -59,14 +59,13 @@
         .submit-btn:hover { background: #218838; }
         .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
         .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
-        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
 
         /* ─ Dots ──────────────────────────────────────────────────────── */
         .live-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle; }
         .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
 
-        /* ─ Main Dashboard ─────────────────────────────────────────────── */
+        /* ─ Main Dashboard (Base layout without forced height) ────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
         
@@ -148,7 +147,7 @@
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
         /* New 6-Column Stats Grid */
-        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; }
+        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; transition: opacity .3s; }
         .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
         .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
@@ -160,8 +159,6 @@
         .status-losing  { color: #dc3545; }
         .status-winning { color: #28a745; text-shadow: 0 0 25px rgba(40,167,69,.4); }
         .status-neutral { color: #fff; }
-        
-        /* Bid Button Tweaks */
         .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         .btn-bid-active       { background: #dc3545; color: #fff; box-shadow: 0 6px 20px rgba(220,53,69,.4); }
         .btn-bid-active:hover { background: #c82333; transform: translateY(-2px); }
@@ -170,7 +167,7 @@
         .btn-bid-insufficient { background: #333; color: #888; border: 2px solid #444; cursor: not-allowed; }
         .btn-cooldown         { background: #22222d; color: #aaa; border: 1px solid #444; cursor: not-allowed; }
         .btn-bid-unsold       { background: rgba(255,7,58,.15); color: #ff073a; border: 2px solid #ff073a; cursor: not-allowed; }
-        .shortcut-hint { font-size: 11px; color: #666; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000; }
 
         /* Jump Bid Popup Menu */
@@ -235,40 +232,45 @@
 
         /* ─ MOBILE RESPONSIVENESS ──────────────────────────────────────── */
         @media (max-width: 999px) {
-            body { overflow: hidden; height: 100vh; height: 100dvh; padding: 10px; margin: 0; }
-            #mainDashboard { height: calc(100dvh - 20px); padding: 0; display: flex; flex-direction: column; gap: 8px; position: relative; }
+            /* 1. Prevent completely any body scroll */
+            body { overflow: hidden; height: 100dvh; padding: 6px; margin: 0; }
+            
+            #mainDashboard { height: calc(100dvh - 12px); padding: 0; display: flex; flex-direction: column; gap: 6px; position: relative; }
             
             .mobile-nav { display: flex; gap: 6px; flex-shrink: 0; width: 100%; z-index: 1001; }
-            .mobile-nav-btn { flex: 1; padding: 12px 0; font-size: 11px; font-weight: 900; background: #161620; color: #888; border: 1px solid #2d2d3f; border-radius: 8px; text-transform: uppercase; cursor: pointer; transition: .2s; }
+            .mobile-nav-btn { flex: 1; padding: 10px 0; font-size: 11px; font-weight: 900; background: #161620; color: #888; border: 1px solid #2d2d3f; border-radius: 8px; text-transform: uppercase; cursor: pointer; transition: .2s; }
             .mobile-nav-btn.active { background: #007bff; color: #fff; border-color: #0056b3; box-shadow: 0 4px 15px rgba(0,123,255,.4); }
 
             .top-row { flex: 1; display: flex; flex-direction: column; gap: 0; min-height: 0; position: relative; }
-            .col-left, .col-right { display: contents; } /* Allows overlays to pop out */
             
+            /* Remove left and right structural columns on mobile so panels float */
+            .col-left, .col-right { display: contents; } 
             .col-center { flex: 1; display: flex; flex-direction: column; min-height: 0; width: 100%; display: contents; }
-            #centerPanel { flex: 1; padding: 15px; display: flex; flex-direction: column; justify-content: flex-start; position: relative; padding-bottom: 140px; }
             
-            .player-top-section { margin-bottom: 10px; align-items: flex-start; }
+            #centerPanel { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+            
+            .player-top-section { margin-bottom: 0; align-items: flex-start; flex-shrink: 0; }
             .player-photo-box { width: 90px; height: 90px; font-size: 10px; }
-            .player-header { padding-right: 40px; }
-            .player-name { font-size: 20px; }
+            .player-header { padding-right: 35px; } 
+            .player-name { font-size: 22px; justify-content: flex-start; text-align: left; }
             
-            .stats-bar { margin-top: 15px !important; margin-bottom: 0 !important; grid-template-columns: repeat(6, 1fr); gap: 1px; }
+            /* 2. Center the stats perfectly in the void */
+            .stats-bar { margin: auto 0 !important; grid-template-columns: repeat(6, 1fr); gap: 1px; }
             .stat-box { padding: 8px 2px; }
-            .stat-label { font-size: 8px; }
-            .stat-val { font-size: 13px; }
+            .stat-label { font-size: 8px; margin-bottom: 2px;}
+            .stat-val { font-size: 14px; }
             
-            /* Bottom anchored bidding zone */
-            .bidding-zone { position: absolute; bottom: 15px; left: 15px; right: 15px; margin: 0 !important; z-index: 1005; padding: 12px; }
-            .current-bid-display { font-size: 32px; flex-direction: row; justify-content: space-between; margin: 0 0 10px; }
+            /* 3. Anchored bidding zone */
+            .bidding-zone { margin: 0 !important; padding: 12px; flex-shrink: 0; z-index: 10; border-width: 1px; }
+            .current-bid-display { font-size: 34px; flex-direction: row; justify-content: space-between; margin: 0 0 8px; }
             .leader-badge { font-size: 12px; padding: 4px 8px; }
             .action-btn-bid { padding: 12px; font-size: 18px; }
 
-            /* Overlays (Squad, Logs, Deck, Teams) */
+            /* 4. Overlays injected perfectly over the stats void */
             #myTeamBox, #logPanelMobile, #tabsPanelMobile, #otherTeamsList {
-                position: absolute; top: 50px; left: 0; right: 0; bottom: 145px;
+                position: absolute; top: 105px; left: 10px; right: 10px; bottom: 145px;
                 z-index: 1000; display: none; background: rgba(15,15,21,0.98); backdrop-filter: blur(8px);
-                border: 1px solid #444; border-radius: 12px; padding: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+                border: 1px solid #444; border-radius: 12px; padding: 12px; box-shadow: 0 10px 50px rgba(0,0,0,0.9);
                 overflow-y: auto; margin: 0; flex-direction: column;
             }
             
@@ -280,9 +282,9 @@
             #myTeamBox.show, #logPanelMobile.show, #tabsPanelMobile.show, #otherTeamsList.show { display: flex !important; }
 
             #playingXIList { height: auto; flex: 1 1 0; overflow-y: auto; }
-            #benchList { flex: 0 0 120px; }
+            #benchList { flex: 0 0 100px; }
             .log-panel { padding: 10px !important; }
-            .timer-pill { position: absolute; top: 15px; right: 15px; padding: 4px 10px; font-size: 14px; }
+            .timer-pill { position: absolute; top: 10px; right: 10px; padding: 4px 10px; font-size: 14px; }
         }
     </style>
 </head>
@@ -360,14 +362,17 @@
 <div id="franchiseSettingsOverlay" class="settings-overlay">
     <div class="settings-card">
         <h2 style="color:#fff; margin-top:0; margin-bottom:20px; text-align:center; font-size:20px;">⚙️ FRANCHISE SETTINGS</h2>
+        
         <div id="rulesList" style="margin-bottom:20px; font-size:13px; line-height:1.6; color:#ccc; background:#0a0a0f; padding:15px; border-radius:8px; border:1px solid #333;">
             </div>
+
         <div style="display:flex; flex-direction:column; gap:10px;">
             <button class="action-btn" onclick="exportMySquadCSV()">📥 Download My Squad (CSV)</button>
             <button class="action-btn danger" onclick="exportMySquadPDF()">📄 Download My Squad (PDF)</button>
             <button class="action-btn outline" onclick="exportAllSquadsCSV()">📥 Download All Squads (CSV)</button>
             <button class="action-btn outline" onclick="exportAllSquadsPDF()">📄 Download All Squads (PDF)</button>
         </div>
+
         <button class="btn-massive" style="margin-top:20px; padding:12px; background:#333; color:#fff;" onclick="document.getElementById('franchiseSettingsOverlay').style.display='none'">CLOSE</button>
     </div>
 </div>
@@ -399,7 +404,7 @@
             
             <div class="player-top-section">
                 <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                <div class="player-header" style="margin-bottom:0; padding-right:0;">
+                <div class="player-header" style="margin-bottom:0;">
                     <span class="label-text">On The Block</span>
                     <div class="player-name" id="playerName">Waiting…</div>
                     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -429,7 +434,7 @@
             </div>
         </div>
 
-        <div class="col-right" id="rightColumnWrapper">
+        <div class="col-right" style="background:transparent; border:none; padding:0; box-shadow:none;">
             <div class="panel log-panel" id="logPanelMobile">
                 <div class="log-header">
                     <span>📜 Live Activity <span id="auctioneerStatus" class="offline-dot" title="Auctioneer Offline"></span></span>
@@ -440,6 +445,7 @@
                 </div>
                 <div class="log-container" id="logContainer"></div>
             </div>
+            
             <div class="panel tabs-panel" id="tabsPanelMobile">
                 <div class="tabs">
                     <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); renderDeck()">
@@ -488,7 +494,6 @@
         
         let panels = ['myTeamBox', 'logPanelMobile', 'tabsPanelMobile', 'otherTeamsList'];
         let targetPanel = document.getElementById(panelId);
-        
         let isOpening = !targetPanel.classList.contains('show');
         
         panels.forEach(p => { 
@@ -497,9 +502,14 @@
         });
         document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
         
+        let statsBar = document.querySelector('.stats-bar');
+        
         if (isOpening) {
             targetPanel.classList.add('show');
             if (btnEl) btnEl.classList.add('active');
+            if (statsBar) statsBar.style.opacity = '0';
+        } else {
+            if (statsBar) statsBar.style.opacity = '1';
         }
     };
 
