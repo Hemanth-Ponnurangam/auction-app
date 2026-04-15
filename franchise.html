@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPL Live Auction – Franchise Room</title>
     <link rel="stylesheet" href="shared-auction.css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/scroll-behaviour.min.js"></script>
+    <script>
+        window.onload = function() {
+            MobileDragDrop.polyfill({
+                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+            });
+            window.addEventListener('touchmove', function() {}, {passive: false});
+        }
+    </script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -17,7 +30,6 @@
             align-items: center; overflow-x: hidden;
         }
 
-        /* ─ Franchise Specific UI ─────────────────────────────────────── */
         .btn-franchise { background: linear-gradient(145deg,#0056b3,#004494); color: #fff; box-shadow: 0 5px 15px rgba(0,86,179,.4); }
         .btn-franchise:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,86,179,.6); }
 
@@ -30,13 +42,11 @@
         .btn-custom:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,.05); }
         .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
 
-        /* ─ Main Dashboard (Base layout without forced height) ────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; position: relative; }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
         
-        .mobile-nav { display: none; } /* Hidden on desktop */
+        .mobile-nav { display: none; } 
 
-        /* ─ DESKTOP SPECIFIC RULES ────────────────────────────────────── */
         @media (min-width: 1000px) {
             #mainDashboard { height: calc(100vh - 30px); }
             .top-row { flex-direction: row; align-items: stretch; }
@@ -51,7 +61,6 @@
         .bottom-row { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: #161620; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.4); flex-shrink: 0; }
         .panel { background: #161620; border: 1px solid #2d2d3f; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.4); position: relative; transition: all .3s ease; box-sizing: border-box; min-height: 0; display: flex; flex-direction: column; }
 
-        /* ─ Glow States ────────────────────────────────────────────────── */
         .glow-sold    { box-shadow: 0 0 40px rgba(57,255,20,.4), inset 0 0 20px rgba(57,255,20,.2) !important; border-color: #39ff14 !important; }
         .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
@@ -63,7 +72,6 @@
         .party-mood { animation: partyText .5s infinite alternate; text-shadow: 0 0 15px currentColor; transform: scale(1.1); display: inline-block; }
         @keyframes partyText { 0% { filter: hue-rotate(0deg) brightness(1); } 100% { filter: hue-rotate(40deg) brightness(1.5); } }
 
-        /* ─ My Team Card ───────────────────────────────────────────────── */
         .my-team-card { background: #111118; border: 2px solid #444; border-radius: 10px; padding: 10px 12px; text-align: center; flex: 1; min-height: 0; position: relative; transition: all .3s; overflow: hidden; display: flex; flex-direction: column; }
         .my-team-name { font-size: 18px; font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .my-team-purse { font-size: 22px; font-weight: bold; margin-bottom: 6px; transition: color .3s; flex-shrink: 0; }
@@ -88,7 +96,6 @@
         .team-msg-popup.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
         #myTeamBox .team-msg-popup { bottom: 10px; left: 10px; right: 10px; }
 
-        /* ─ Role Badge ─────────────────────────────────────────────────── */
         .role-badge { font-size: 10px; padding: 0 4px; border: none; background: transparent; cursor: pointer; user-select: none; margin-left: 8px; font-weight: bold; transition: all .2s; }
         .role-badge:hover { filter: brightness(1.2); }
         .role-popup { position: fixed; display: none; background: #22222d; border: 1px solid #444; border-radius: 20px; padding: 6px; box-shadow: 0 5px 15px rgba(0,0,0,.8); z-index: 9999; gap: 6px; align-items: center; transform: translate(-50%,-100%); margin-top: -12px; }
@@ -97,7 +104,6 @@
         .role-popup button.clear-btn { color: #ff4444; }
         .role-popup button.clear-btn:hover { background: #ff4444; color: #fff; border-color: #ff4444; }
 
-        /* ─ Center Panel (Profile & Stats) ─────────────────────────────── */
         #centerPanel { overflow-y: hidden; overflow-x: hidden; height: 100%; padding: 15px; }
         .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all .3s; }
         .timer-green  { background: rgba(40,167,69,.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40,167,69,.4); }
@@ -108,7 +114,6 @@
         
         .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 12px; }
         
-        /* ─ Photo Box ─────────────────────────────────────────────────── */
         .player-photo-box { 
             width: 200px; height: 200px; border: 2px dashed #444; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; color: #555; 
@@ -149,7 +154,6 @@
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
         .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
 
-        /* ─ Bid Zone ────────────────────────────────────────────────────── */
         .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 12px 15px; text-align: center; transition: all .3s; flex-shrink: 0; }
         .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
         .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all .3s; }
@@ -167,7 +171,6 @@
         .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000; }
 
-        /* Jump Bid Popup Menu */
         #jumpBidPopup { position: fixed; display: none; background: #161620; border: 1px solid #444; border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.8); z-index: 9999; flex-direction: column; gap: 8px; width: 140px; transform: translate(-50%, -110%); }
         #jumpBidPopup button { border: none; font-size: 14px; font-weight: bold; cursor: pointer; padding: 10px; border-radius: 6px; color: #fff; text-transform: uppercase; transition: .2s; }
         #jumpBidPopup button:hover { filter: brightness(1.2); transform: translateY(-1px); }
@@ -177,7 +180,6 @@
         .jb-cancel { background: transparent !important; color: #888 !important; border: 1px solid #444 !important; font-size: 11px !important; padding: 6px !important; }
         .jb-cancel:hover { background: #222 !important; color: #fff !important; }
 
-        /* ─ Log Panel ───────────────────────────────────────────────────── */
         .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; padding: 10px 15px !important; }
         .log-header { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #2d2d3f; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
         .chat-input-area { display: flex; gap: 6px; align-items: center; }
@@ -189,7 +191,6 @@
         .log-entry { font-family: 'Consolas', monospace; font-size: 11px; margin-bottom: 4px; color: #bbb; border-bottom: 1px dashed #222; padding-bottom: 4px; line-height: 1.4; }
         .log-time { color: #555; margin-right: 6px; }
 
-        /* ─ Right Tabs ──────────────────────────────────────────────────── */
         .tabs-panel { flex: 1.5; display: flex; flex-direction: column; overflow: hidden; min-height: 250px; }
         .tabs { display: flex; margin-bottom: 8px; background: #0a0a0f; border-radius: 8px; padding: 4px; border: 1px solid #222; flex-shrink: 0; gap: 4px; }
         .tab-btn { flex: 1; background: transparent; color: #777; padding: 6px 4px; border-radius: 6px; margin: 0; font-size: 10px; font-weight: 800; transition: all .2s; cursor: pointer; letter-spacing: .5px; border: 1px solid transparent; display: flex; justify-content: center; align-items: center; }
@@ -204,12 +205,10 @@
         .item-name { font-weight: bold; font-size: 12px; color: #eee; margin-bottom: 1px; }
         .item-price { font-size: 9px; color: #888; }
 
-        /* ─ Other Teams Row ─────────────────────────────────────────────── */
         .other-team-card-hz { background: #0a0a0f; border: 1px solid #222; border-top: 3px solid #444; border-radius: 8px; padding: 10px 5px; display: flex; flex-direction: column; flex: 0 0 auto; min-width: 140px; align-items: center; justify-content: center; text-align: center; transition: all .3s; position: relative; overflow: hidden; }
         .other-team-rep-name { font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .5px; }
         .purse-val { font-size: 15px; font-weight: bold; transition: color .3s; }
 
-        /* ─ MOBILE RESPONSIVENESS ──────────────────────────────────────── */
         @media (max-width: 999px) {
             body { overflow: hidden; height: 100dvh; padding: 6px; margin: 0; box-sizing: border-box; }
             #mainDashboard { height: calc(100dvh - 12px); padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; position: relative; }
@@ -448,7 +447,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ── Server Time Offset Logic ───────────────────────────────────────────
     let serverTimeOffset = 0;
     db.ref('.info/serverTimeOffset').on('value', snap => {
         serverTimeOffset = snap.val() || 0;
@@ -457,7 +455,6 @@
         return Date.now() + serverTimeOffset;
     }
 
-    // ── State ──────────────────────────────────────────────────────────────
     let roomRef = null, presenceRef = null;
     let currentRoomKey = '', myTeamName = '', myTeamColor = '', myRepName = '';
     let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
@@ -473,12 +470,10 @@
 
     const logContainer = document.getElementById('logContainer');
 
-    // ── Connection Monitor ─────────────────────────────────────────────────
     db.ref('.info/connected').on('value', snap => {
         document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
-    // ── Mobile Menu Toggle (Dynamic Safe-Zone Positioning) ─────────────────
     window.toggleMobilePanel = function(panelId, btnEl) {
         if (window.innerWidth >= 1000) return;
         
@@ -532,7 +527,6 @@
         }
     });
 
-    // ── Modal System ───────────────────────────────────────────────────────
     function showAlert(title, msg, onOk) {
         _openModal(title, msg, false);
         document.getElementById('modalButtons').innerHTML = `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">OK</button>`;
@@ -564,7 +558,6 @@
         if (_modalCb) { let cb = _modalCb; _modalCb = null; cb(result); }
     }
 
-    // ── Utilities ──────────────────────────────────────────────────────────
     function esc(s) {
         return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
@@ -594,8 +587,7 @@
         return imgUrl;
     }
 
-    // ── Boot ───────────────────────────────────────────────────────────────
-    window.onload = function() {
+    window.addEventListener('DOMContentLoaded', () => {
         currentRoomKey = sessionStorage.getItem('roomKey') || '';
         if (currentRoomKey) {
             roomRef = db.ref('rooms/' + currentRoomKey);
@@ -627,9 +619,8 @@
         });
 
         setInterval(updateAllPopups, 500);
-    };
+    });
 
-    // ── Gateway / Room Key ─────────────────────────────────────────────────
     function showRoomKeyScreen() {
         document.getElementById('gatewayScreen').style.display  = 'none';
         document.getElementById('roomKeyScreen').style.display  = 'flex';
@@ -654,7 +645,6 @@
         });
     }
 
-    // ── Login ──────────────────────────────────────────────────────────────
     function loadGlobalFranchises() {
         db.ref('global_teams').once('value', snap => {
             let teams = snap.val(), grid = document.getElementById('globalTeamsGrid');
@@ -747,7 +737,6 @@
         window.location.reload();
     }
 
-    // ── Settings Modal & Exports ───────────────────────────────────────────
     window.openFranchiseSettings = function() {
         let s = window.auctionSettings || {};
         let html = `
@@ -815,7 +804,6 @@
         html2pdf().set({margin:10, filename:`IPL_All_Squads.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
     };
 
-    // ── Firebase Listeners ─────────────────────────────────────────────────
     function attachFirebaseListeners() {
         let isChatLoaded = false;
         roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
@@ -931,7 +919,6 @@
         myOverseasCount = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName && isOverseas(p)).length;
     }
 
-    // ── Live UI ────────────────────────────────────────────────────────────
     function updateLiveUI(data, amIWinning) {
         document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / 10000000).toFixed(2)} Cr`;
 
@@ -961,7 +948,9 @@
             let p = playerPool[data.current_player_index];
             if (p) {
                 let photoBox = document.getElementById('playerPhoto');
-                let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
+                
+                // FIX 2: Case Insensitive Global Image Key Lookups
+                let safeNameKey = (p.name || '').toLowerCase().replace(/[.#$\[\]\/]/g, '_');
                 let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name];
                 let foundImgUrl = imgObj ? (imgObj.url || imgObj) : getImageUrl(p);
                 
@@ -1005,7 +994,6 @@
             el.classList.remove('timer-green','timer-warn','timer-danger','timer-paused');
             if (currentAuctionState === 'idle')   { el.textContent = '--'; return; }
             if (currentAuctionState === 'paused') { el.textContent = '⏸'; el.classList.add('timer-paused'); return; }
-            // FIX: Using Server Time to prevent clock drift
             let t = data.timer_end ? Math.max(0, Math.ceil((data.timer_end - getServerTime()) / 1000)) : 0;
             el.textContent = t + 's';
             if (t > 10) el.classList.add('timer-green');
@@ -1034,7 +1022,6 @@
         evaluateBidButtonStatus(data, amIWinning);
     }
 
-    // ── My Team UI ─────────────────────────────────────────────────────────
     function updateMyTeamUI() {
         if (!myTeamName || !Object.keys(allRegisteredTeams).length) return;
 
@@ -1077,12 +1064,28 @@
         let xiCount = xiPlayers.length;
         for (let i = xiCount + 1; i <= 11; i++) xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
         
-        if (!isDragging) {
-            document.getElementById('playingXIList').innerHTML = xiHtml;
-            document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
-            document.querySelectorAll('.roster-item-drag').forEach(addDragEvents);
-        }
         document.getElementById('xiCount').textContent = `(${xiCount}/11)`;
+        
+        // FIX 3: HTML String Caching to stop DOM Thrashing
+        if (!isDragging) {
+            let needRebind = false;
+            if (window._cachedXiHtml !== xiHtml) {
+                document.getElementById('playingXIList').innerHTML = xiHtml;
+                window._cachedXiHtml = xiHtml;
+                needRebind = true;
+            }
+            
+            let benchHtml = benchPlayers.map(buildRow).join('');
+            if (window._cachedBenchHtml !== benchHtml) {
+                document.getElementById('benchList').innerHTML = benchHtml;
+                window._cachedBenchHtml = benchHtml;
+                needRebind = true;
+            }
+            
+            if (needRebind) {
+                document.querySelectorAll('.roster-item-drag').forEach(addDragEvents);
+            }
+        }
 
         let othersHtml = '';
         Object.keys(allRegisteredTeams).forEach(t => {
@@ -1111,12 +1114,16 @@
                 <div style="font-size:9px; color:#666; text-transform:uppercase; margin-top:2px;">${count} Players</div>
             </div>`;
         });
-        document.getElementById('otherTeamsList').innerHTML =
-            othersHtml || "<div style='color:#666; font-size:12px; width:100%; text-align:center; padding:20px 0;'>No other franchises connected.</div>";
+        
+        // FIX 3: Continued caching for the "Other Teams" tab
+        if (window._cachedOthersHtml !== othersHtml) {
+            document.getElementById('otherTeamsList').innerHTML = othersHtml || "<div style='color:#666; font-size:12px; width:100%; text-align:center; padding:20px 0;'>No other franchises connected.</div>";
+            window._cachedOthersHtml = othersHtml;
+        }
+
         updateAllPopups();
     }
 
-    // ── Bid Button Status ──────────────────────────────────────────────────
     function evaluateBidButtonStatus(data, amIWinning) {
         let btn = document.getElementById('mainActionButton');
         let bidZone = document.getElementById('bidZoneBox');
@@ -1164,7 +1171,6 @@
         }
     }
 
-    // ── Bidding Logic & Long Press ─────────────────────────────────────────
     function placeBid() { 
         let amount = window.isFirstBid ? localCurrentBid : (localCurrentBid || 0) + getCurrentBidIncrement();
         placeExactBid(amount); 
@@ -1172,8 +1178,6 @@
     
     window.placeExactBid = function(amount) {
         closeJumpMenu();
-        
-        // FIX: Force a fresh budget calculation before pushing the transaction
         recalculateBudgets();
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
         
@@ -1195,11 +1199,10 @@
                 if (amount <= (liveData.current_bid || 0)) return liveData;
             }
 
-            if (amount > myBudget) return liveData; // Keep the secondary guard
+            if (amount > myBudget) return liveData; 
             
             liveData.current_bid     = amount;
             liveData.highest_bidder  = myTeamName;
-            // FIX: Using Server Time to prevent clock drift
             liveData.timer_end       = getServerTime() + 15000;
             liveData.auction_state   = 'bidding';
             return liveData;
@@ -1277,7 +1280,6 @@
     mainBtn.addEventListener('touchcancel', () => clearTimeout(bidPressTimer));
     mainBtn.oncontextmenu = function() { return false; }; 
 
-    // ── Chat ───────────────────────────────────────────────────────────────
     window.sendChatMessage = function() {
         let inp = document.getElementById('chatInput'), msg = inp.value.trim();
         if (msg && myTeamName && roomRef) {
@@ -1298,7 +1300,6 @@
         });
     }
 
-    // ── Log ────────────────────────────────────────────────────────────────
     function logAction(msg, date) {
         let time = (date || new Date()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
         let entry = document.createElement('div'); entry.className = 'log-entry';
@@ -1307,7 +1308,6 @@
         if (!isUserScrollingLog) logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    // ── Role System ────────────────────────────────────────────────────────
     let currentRolePlayer = '';
     window.openRolePopup = function(e, playerName) {
         e.stopPropagation(); currentRolePlayer = playerName;
@@ -1359,7 +1359,6 @@
             popup.style.display = 'none';
     });
 
-    // ── Drag & Drop ────────────────────────────────────────────────────────
     let dragSrcEl = null;
     function handleDragStart(e) {
         dragSrcEl = this;
@@ -1412,7 +1411,6 @@
         roomRef.child('teams_auth/' + myTeamName).update({ playingXI: xi, bench });
     }
 
-    // ── Tab / Dropdowns ────────────────────────────────────────────────────
     function switchTab(name, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1442,7 +1440,6 @@
         if (keys.includes(prev)) sel.value = prev; else sel.value = "";
     }
 
-    // ── List Renders ───────────────────────────────────────────────────────
     function renderDeck() {
         let set  = document.getElementById('setSelector').value;
         let html = '';
@@ -1450,7 +1447,12 @@
             if (p.set !== set || p.status === 'sold' || p.status === 'unsold') return;
             html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr</span></div></div>`;
         });
-        document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players left in this set.</p>";
+        
+        // FIX 3: HTML String Caching to stop DOM Thrashing
+        if (window._cachedDeckHtml !== html) {
+            document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players left in this set.</p>";
+            window._cachedDeckHtml = html;
+        }
     }
 
     function renderUnsold() {
@@ -1459,12 +1461,22 @@
             if (p.status !== 'unsold') return;
             html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
         });
-        document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players yet.</p>";
+        
+        if (window._cachedUnsoldHtml !== html) {
+            document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players yet.</p>";
+            window._cachedUnsoldHtml = html;
+        }
     }
 
     function renderSquads() {
         let team = document.getElementById('teamSelector').value;
-        if (!team) { document.getElementById('squadList').innerHTML = "<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; return; }
+        if (!team) { 
+            if (window._cachedSquadsHtml !== 'empty') {
+                document.getElementById('squadList').innerHTML = "<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; 
+                window._cachedSquadsHtml = 'empty';
+            }
+            return; 
+        }
         let roster = playerPool.filter(p => p.status === 'sold' && p.team === team);
         let order  = allRegisteredTeams[team]?.rosterOrder || [];
         roster.sort((a,b) => { let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi; });
@@ -1483,7 +1495,11 @@
                 : `<span style="font-size:8px; color:#666; border:1px solid #444; padding:1px 3px; border-radius:3px; margin-left:6px;">BENCH</span>`;
             return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleHtml}${xiBadge}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)} Cr</span></div></div>`;
         }).join('');
-        document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
+        
+        if (window._cachedSquadsHtml !== html) {
+            document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
+            window._cachedSquadsHtml = html;
+        }
     }
 
     document.addEventListener('keydown', e => {
