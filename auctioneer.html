@@ -55,7 +55,7 @@
 
         /* ─ Player UI (Compact for Admin) ───────────────────────────────── */
         .player-top-section { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 10px; }
-        .player-photo-box { width: 100px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
+        .player-photo-box { width: 100px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); overflow: hidden; }
         .player-header { flex: 1; }
         .player-name { font-size: 24px; color: #fff; font-weight: bold; margin: 0; line-height: 1.1; display: flex; align-items: center; }
 
@@ -191,7 +191,7 @@
         <div id="customDbUpload" class="file-upload-wrapper" style="display:none;">
             <label style="font-size:11px; color:#888; text-transform:uppercase;">Upload .CSV File</label>
             <input type="file" id="csvFileInput" accept=".csv">
-            <div class="upload-instructions">Required: <strong>Name, Base Price, Set, Franchise, Nationality, Role</strong><br>Last 3 columns auto-mapped as player stats.</div>
+            <div class="upload-instructions">Required (12 Cols): <strong>Name, Base Price, Set, Role, Franchise, Nationality, Runs, Average, SR, Wickets, Economy, Bowling SR</strong></div>
         </div>
         <button class="submit-btn" style="margin:15px 0 10px;" onclick="createNewRoom()">CREATE ROOM</button>
         <button class="back-btn" onclick="backToAdminGateway()">← Back</button>
@@ -406,6 +406,7 @@
     let currentAuctionState = 'idle';
     let TEAM_BUDGET = 100 * CRORE, STARTING_PURSE_CR = 100;
     let teamBudgets = {};       
+    let globalImageMap = {};
     let _modalCb = null, _liveStateData = {};
     let _renderTimer = null;
 
@@ -480,22 +481,35 @@
     function backToAdminGateway() { document.getElementById('createRoomScreen').style.display='none'; document.getElementById('joinAdminRoomScreen').style.display='none'; document.getElementById('adminGatewayScreen').style.display='flex'; }
     function toggleCustomUpload() { document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value==='custom' ? 'block' : 'none'; }
 
+    // 12-Column Specific CSV Parser
     function parseCSV(text) {
-        let lines=text.split('\n'), raw=lines[0].split(',');
-        let hdrs=raw.map(h=>h.trim().toLowerCase().replace(/[^a-z0-9_]/g,'')), n=hdrs.length;
-        let s1=(raw[n-3]||'').trim()||'Stat 1', s2=(raw[n-2]||'').trim()||'Stat 2', s3=(raw[n-1]||'').trim()||'Stat 3';
-        let result=[];
-        for (let i=1;i<lines.length;i++) {
+        let lines = text.split('\n'), raw = lines[0].split(',');
+        let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
+        let result = [];
+        
+        for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
-            let cols=lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/), obj={status:'available'};
-            for (let j=0;j<hdrs.length;j++) {
-                let v=(cols[j]||'').replace(/['"]+/g,'').trim();
-                if (hdrs[j]==='base_price'||hdrs[j]==='baseprice') { let num=Number(v)||0; obj.base_price=(num>0&&num<=100)?num*CRORE:num; }
-                else obj[hdrs[j]]=v;
+            let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            let obj = { status: 'available' };
+            
+            for (let j = 0; j < hdrs.length; j++) {
+                let v = (cols[j]||'').replace(/['"]+/g,'').trim();
+                let h = hdrs[j];
+                
+                if (h === 'baseprice') {
+                    let num = Number(v)||0;
+                    obj.base_price = (num>0&&num<=100) ? num*CRORE : num;
+                } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(h)) {
+                    let key = h;
+                    if(h==='avg') key='average';
+                    if(h==='strikerate' || h==='sr') key='bat_sr';
+                    if(h==='econ') key='economy';
+                    if(h==='bowlingsr') key='bowl_sr';
+                    obj[key] = v || '-';
+                } else if (['name','set','role','franchise','nationality'].includes(h)) {
+                    obj[h] = v;
+                }
             }
-            obj.stat1_label=s1; obj.stat1_val=(cols[n-3]||'').replace(/['"]+/g,'').trim()||'-';
-            obj.stat2_label=s2; obj.stat2_val=(cols[n-2]||'').replace(/['"]+/g,'').trim()||'-';
-            obj.stat3_label=s3; obj.stat3_val=(cols[n-1]||'').replace(/['"]+/g,'').trim()||'-';
             result.push(obj);
         }
         return result;
@@ -531,7 +545,7 @@
                 let fi=document.getElementById('csvFileInput');
                 if (!fi.files.length) { showAlert('Missing File','Select a CSV file.'); return; }
                 let reader=new FileReader();
-                reader.onload=e => { let pool=parseCSV(e.target.result); if(pool.length&&pool[0].name!==undefined) init(pool); else showAlert('CSV Error','Could not parse the file.'); };
+                reader.onload=e => { let pool=parseCSV(e.target.result); if(pool.length&&pool[0].name!==undefined) init(pool); else showAlert('CSV Error','Could not parse the file. Ensure you use the exact 12 columns.'); };
                 reader.readAsText(fi.files[0]);
             }
         });
@@ -574,6 +588,14 @@
             let e=snap.val(); logLocal(e.msg, new Date(e.t));
         });
 
+        // Fetch Global Image Directory
+        db.ref('global_player_images').on('value', snap => {
+            globalImageMap = snap.val() || {};
+            if (currentIndex >= 0 && playerPool.length > 0) {
+                updateLiveUI(_liveStateData); // Force a re-render to update the image if it changes mid-auction
+            }
+        });
+
         roomRef.child('settings').on('value', snap => {
             let d=snap.val()||{};
             STARTING_PURSE_CR=Number(d.starting_purse)||100;
@@ -613,6 +635,10 @@
             currentAuctionState=data.auction_state||'idle';
             updateLiveUI(data);
         });
+        
+        // Broadcast presence
+        roomRef.child('admin_presence').set(true);
+        roomRef.child('admin_presence').onDisconnect().remove();
     }
 
     function scheduleRender() { clearTimeout(_renderTimer); _renderTimer=setTimeout(()=>{ renderDeck(); renderUnsold(); renderSquads(); }, 60); }
@@ -637,17 +663,30 @@
                 if (p.franchise) { tags.textContent=p.franchise; tags.style.display='inline-block'; } else tags.style.display='none';
                 if (p.role) { rl.textContent=p.role; rl.style.display='inline-block'; } else rl.style.display='none';
                 
-                document.getElementById('statRuns').textContent   = p.runs || p.stat1_val || '-';
-                document.getElementById('statAvg').textContent    = p.average || p.avg || p.stat2_val || '-';
-                document.getElementById('statBatSR').textContent  = p.bat_sr || p.strike_rate || p.stat3_val || '-';
+                document.getElementById('statRuns').textContent   = p.runs || '-';
+                document.getElementById('statAvg').textContent    = p.average || '-';
+                document.getElementById('statBatSR').textContent  = p.bat_sr || '-';
                 document.getElementById('statWkts').textContent   = p.wickets || '-';
-                document.getElementById('statEcon').textContent   = p.economy || p.econ || '-';
+                document.getElementById('statEcon').textContent   = p.economy || '-';
                 document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
+                
+                // Fetch Global Image
+                let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
+                let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name]; 
+                let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
+                
+                let photoBox = document.getElementById('playerPhoto');
+                if (imgUrl) {
+                    photoBox.innerHTML = `<img src="${esc(imgUrl)}" style="width:100%; height:100%; object-fit:cover;">`;
+                } else {
+                    photoBox.innerHTML = 'PHOTO';
+                }
             }
         } else {
             document.getElementById('adminPlayer').textContent='Waiting…';
             document.getElementById('adminPlayerTags').style.display='none';
             document.getElementById('adminPlayerRole').style.display='none';
+            document.getElementById('playerPhoto').innerHTML = 'PHOTO';
             ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => {
                 document.getElementById(id).textContent = '-';
             });
