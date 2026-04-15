@@ -171,9 +171,9 @@
             z-index: 5; pointer-events: none; opacity: 0.8;
         }
 
-        /* The 'contain' forces the entire image to fit inside without cropping */
+        /* The 'cover' forces the entire image to fill the box without empty gaps */
         .player-photo-box img { 
-            width: 100%; height: 100%; object-fit: contain; object-position: center; 
+            width: 100%; height: 100%; object-fit: cover; object-position: top center; 
             border-radius: 10px; z-index: 2; position: relative;
             filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); 
         }
