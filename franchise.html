@@ -491,6 +491,7 @@
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
     let isUserScrollingLog = false;
+    let globalImageMap = {};
 
     const logContainer = document.getElementById('logContainer');
 
@@ -872,6 +873,10 @@
             }
         });
 
+        db.ref('global_player_images').on('value', snap => {
+            globalImageMap = snap.val() || {};
+        });
+
         roomRef.child('settings').on('value', snap => {
             let s = snap.val() || {};
             window.auctionSettings = s; 
@@ -967,7 +972,9 @@
             if (p) {
                 // UNIVERSAL IMAGE DETECTOR
                 let photoBox = document.getElementById('playerPhoto');
-                let foundImgUrl = getImageUrl(p);
+                let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
+                let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name];
+                let foundImgUrl = imgObj ? (imgObj.url || imgObj) : getImageUrl(p);
                 
                 if (foundImgUrl) {
                     photoBox.innerHTML = `<img src="${esc(foundImgUrl)}" alt="Player">`;
