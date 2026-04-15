@@ -796,12 +796,12 @@
     function updateLiveUI(data, amIWinning) {
         document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
 
+        let currentLeader = data.highest_bidder || '-';
         let leaderBadge = document.getElementById('leaderBadge');
-        let bidderName  = data.highest_bidder;
-        if (bidderName && bidderName !== '-' && bidderName !== 'Base Price') {
+        if (currentLeader !== '-' && currentLeader !== 'Base Price' && currentLeader !== '') {
             leaderBadge.style.display = 'inline-block';
-            leaderBadge.textContent   = bidderName;
-            leaderBadge.style.color   = allRegisteredTeams[bidderName]?.color || '#fff';
+            leaderBadge.textContent   = currentLeader;
+            leaderBadge.style.color   = allRegisteredTeams[currentLeader]?.color || '#fff';
         } else {
             leaderBadge.style.display = 'none';
         }
@@ -853,7 +853,6 @@
         let myBox = document.getElementById('myTeamBox');
         myBox.classList.remove('leader-card-glow-silver','sold-card-glow');
         
-        // UNIFIED GLOW LOGIC FOR MY TEAM
         let isValidLeader = currentLeader !== '-' && currentLeader !== 'Base Price' && currentLeader !== '';
         if (amIWinning && isValidLeader) {
             if (currentAuctionState === 'sold') myBox.classList.add('sold-card-glow');
@@ -922,7 +921,6 @@
             let isOnline = activePresence[t];
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
             
-            // UNIFIED GLOW LOGIC FOR OTHER TEAMS
             let lBadge  = document.getElementById('leaderBadge');
             let curWin  = lBadge ? lBadge.textContent : '';
             let isValidLeader = curWin !== '-' && curWin !== 'Base Price' && curWin !== '';
