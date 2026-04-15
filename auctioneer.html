@@ -12,6 +12,7 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0f15; color: #e0e0e0; margin: 0; padding: 10px 20px; height: 100vh; overflow: hidden; font-size: 14px; }
         #connBanner { display: none; position: fixed; top: 0; left: 0; right: 0; padding: 8px; background: #dc3545; color: #fff; text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999; }
+        
         /* ─ Screens ─────────────────────────────────────────────────────── */
         .gateway-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000; }
         .gateway-card { background: #161620; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,.8); border: 1px solid #2d2d3f; text-align: center; width: 100%; max-width: 420px; }
@@ -39,16 +40,30 @@
         .col-left { width: calc(65% - 7px); display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
         .col-right { width: calc(35% - 7px); display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
         .panel { background: #161620; padding: 12px 15px; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.2); position: relative; display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; overflow-y: auto; overflow-x: hidden; }
-        .data-box { background: #0a0a0f; padding: 12px; border-radius: 8px; border: 1px solid #222; margin-bottom: 10px; flex-shrink: 0; }
-        .highlight { color: #28a745; font-weight: bold; font-size: 1.5rem; display: block; margin-top: 5px; }
-        .timer-text { font-weight: bold; font-size: 2.5rem; line-height: 1; margin-top: 25px; display: inline-block; transition: color .3s, text-shadow .3s; }
+        
+        .data-box { background: #0a0a0f; padding: 12px 15px; border-radius: 8px; border: 1px solid #222; margin-bottom: 10px; flex-shrink: 0; }
+        .highlight { color: #28a745; font-weight: bold; display: block; }
+        .timer-text { font-weight: bold; font-size: 2.2rem; line-height: 1; transition: color .3s, text-shadow .3s; margin-top:0; }
         .timer-green { color: #28a745; text-shadow: 0 0 20px rgba(40,167,69,.8); }
         .timer-orange { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.8); }
         .timer-red { color: #dc3545; text-shadow: 0 0 25px rgba(220,53,69,.9); animation: pulse 1s infinite; }
         .timer-paused { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.6); }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-top: 8px; }
         
+        .past-teams { font-size: 10px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
+        .player-role-pill { font-size: 10px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 6px; }
+
+        /* ─ Player UI (Compact for Admin) ───────────────────────────────── */
+        .player-top-section { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 10px; }
+        .player-photo-box { width: 100px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
+        .player-header { flex: 1; }
+        .player-name { font-size: 24px; color: #fff; font-weight: bold; margin: 0; line-height: 1.1; display: flex; align-items: center; }
+
+        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
+        .stat-box { background: #0a0a0f; text-align: center; padding: 8px 2px; }
+        .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; font-weight: bold; }
+        .stat-val { font-size: 15px; color: #eee; font-weight: bold; }
+
         /* ─ Buttons ─────────────────────────────────────────────────────── */
         button { border: none; padding: 10px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: .2s; color: white; text-transform: uppercase; }
         button:not(:disabled):active { transform: translateY(0); }
@@ -59,10 +74,13 @@
         
         .btn-clock { background: rgba(253,126,20,.1); border: 1px solid #fd7e14; color: #fd7e14; }
         .btn-clock:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
+        .circle-btn { width: 34px; height: 34px; border-radius: 50%; padding: 0 !important; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        
         .btn-pause { background: rgba(253,126,20,.15); border: 1px solid #fd7e14; color: #fd7e14; }
         .btn-pause:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
         .btn-pause.is-paused { background: rgba(40,167,69,.15); border-color: #28a745; color: #28a745; }
         .btn-pause.is-paused:not(:disabled):hover { background: #28a745; color: #fff; }
+        
         .btn-undo { background: rgba(108,117,125,.1); border: 1px solid #6c757d; color: #e0e0e0; }
         .btn-undo:not(:disabled):hover { background: #6c757d; color: #fff; transform: translateY(-1px); }
         .btn-outline-danger { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #dc3545; }
@@ -120,12 +138,6 @@
         .log-entry { font-family: 'Consolas', monospace; font-size: 12px; margin-bottom: 8px; color: #aaa; border-bottom: 1px dashed #222; padding-bottom: 8px; }
         .log-time { color: #555; margin-right: 8px; }
         
-        /* ─ Stats ─────────────────────────────────────────────────────────── */
-        .stats-bar { display: flex; background: #0a0a0f; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
-        .stat-box { flex: 1; text-align: center; padding: 10px 5px; border-right: 1px solid #222; }
-        .stat-box:last-child { border-right: none; }
-        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: bold; }
-        .stat-val { font-size: 18px; color: #eee; font-weight: bold; }
         .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
         
         /* ─ Settings Overlay ─────────────────────────────────────────────── */
@@ -141,12 +153,6 @@
         .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
         .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
         .modal-input:focus { border-color: #ffc107; }
-        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
-        .action-btn:hover { background: #0056b3; }
-        .action-btn.danger { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; }
-        .action-btn.danger:hover { background: #dc3545; color: #fff; }
-        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
-        .action-btn.outline:hover { background: #333; color: #fff; }
         
         /* Hotkey hint */
         .hotkey-hint { position: absolute; top: 8px; right: 15px; font-size: 11px; color: #888; background: #111118; padding: 4px 8px; border-radius: 8px; border: 1px solid #2d2d3f; z-index: 10; }
@@ -270,28 +276,43 @@
                     <span class="key-badge">P</span> Pause
                 </div>
                 <div class="data-box">
-                    <div style="width:100%; border-bottom:1px solid #222; padding-bottom:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <span style="color:#888; font-size:13px; text-transform:uppercase;">On the Block</span>
-                            <span id="adminPlayer" class="highlight" style="font-size:1.8rem; display:flex; align-items:center;">-</span>
-                            <div class="past-teams" id="adminPlayerTags" style="display:none;"></div>
+                    <div class="player-top-section">
+                        <div class="player-photo-box" id="playerPhoto" style="width:100px; height:100px;">PHOTO</div>
+                        <div class="player-header" style="margin-bottom:0; padding-right:0;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div>
+                                    <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">On the Block</span>
+                                    <div class="player-name" id="adminPlayer" style="font-size:24px; color:#28a745;">Waiting...</div>
+                                    <div style="display:flex; gap:8px; margin-top:5px; flex-wrap:wrap;">
+                                        <div class="past-teams" id="adminPlayerTags" style="display:none;"></div>
+                                        <div class="player-role-pill" id="adminPlayerRole" style="display:none;"></div>
+                                    </div>
+                                </div>
+                                <div style="text-align:right; line-height:1;">
+                                    <span id="adminTimer" class="timer-text timer-green" style="margin-top:0; font-size:2.2rem;">--</span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="text-align:right;"><span id="adminTimer" class="timer-text timer-green">--</span></div>
                     </div>
+
                     <div class="stats-bar">
-                        <div class="stat-box"><div class="stat-label" id="statLabel1">STAT 1</div><div class="stat-val" id="playerStat1">-</div></div>
-                        <div class="stat-box"><div class="stat-label" id="statLabel2">STAT 2</div><div class="stat-val" id="playerStat2">-</div></div>
-                        <div class="stat-box"><div class="stat-label" id="statLabel3">STAT 3</div><div class="stat-val" id="playerStat3">-</div></div>
+                        <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
+                        <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
+                        <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
+                        <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
+                        <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
+                        <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                     </div>
+
                     <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                         <div style="width:45%;">
-                            <span style="color:#888; font-size:13px; text-transform:uppercase;">Current Bid</span>
-                            <span id="adminBid" class="highlight">₹0.00 Cr</span>
+                            <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
+                            <span id="adminBid" class="highlight" style="font-size:1.8rem; margin-top:2px;">₹0.00 Cr</span>
                         </div>
                         <div style="width:50%; display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <span style="color:#888; font-size:13px; text-transform:uppercase;">Current Bidder</span>
-                                <span id="adminLeader" class="highlight" style="color:#007bff;">-</span>
+                                <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
+                                <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.4rem; margin-top:2px;">-</span>
                             </div>
                             <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)">🎲</button>
                         </div>
@@ -311,27 +332,27 @@
             <div class="panel" style="flex:0 0 auto; padding: 12px 15px;">
                 <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:10px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Auction Controls</label>
                 
-                <div style="display: flex; gap: 10px; align-items: stretch; height: 80px;">
-                    <div style="display: flex; flex-direction: column; gap: 5px; flex: 0 0 60px;">
-                        <button class="btn-clock master-clock" style="flex:1; padding:0; font-size:11px; border-radius:6px;" onclick="startTimer(15,'bidding')">15s</button>
-                        <button class="btn-clock master-clock" style="flex:1; padding:0; font-size:11px; border-radius:6px;" onclick="startTimer(30,'bidding')">30s</button>
-                        <button class="btn-clock master-clock" style="flex:1; padding:0; font-size:11px; border-radius:6px;" onclick="startTimer(60,'bidding')">60s</button>
+                <div style="display: flex; gap: 15px; align-items: stretch; height: 80px;">
+                    <div style="display: flex; flex-direction: column; gap: 5px; justify-content: center; align-items: center;">
+                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(15,'bidding')">15s</button>
+                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(30,'bidding')">30s</button>
+                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(60,'bidding')">60s</button>
                     </div>
                     
                     <div style="width: 1px; background: #333; margin: 0 5px;"></div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1;">
-                        <button class="btn-push" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="bypassCooldown()">
-                            <span style="font-size:14px;">⏩</span> FORCE START
+                        <button class="btn-undo" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="undoLastSale()">
+                            <span style="font-size:14px;">⏪</span> UNDO SALE
+                        </button>
+                        <button class="btn-undo" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px; border: 1px solid #0dcaf0; color: #0dcaf0;" onclick="undoLastBid()">
+                            <span style="font-size:14px;">↩️</span> UNDO BID
                         </button>
                         <button id="btnPause" class="btn-pause" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="togglePause()">
                             <span style="font-size:14px;">⏸</span> PAUSE
                         </button>
-                        <button class="btn-undo" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="undoLastSale()">
-                            <span style="font-size:14px;">⏪</span> UNDO SALE
-                        </button>
-                        <button class="btn-outline-danger" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="confirmResetAuction()">
-                            <span style="font-size:14px;">☢️</span> RESET
+                        <button class="btn-push" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="bypassCooldown()">
+                            <span style="font-size:14px;">⏩</span> FORCE START
                         </button>
                     </div>
                 </div>
@@ -556,6 +577,7 @@
             let d=snap.val()||{};
             STARTING_PURSE_CR=Number(d.starting_purse)||100;
             TEAM_BUDGET=STARTING_PURSE_CR*CRORE;
+            window.auctionSettings = d;
             document.getElementById('headerRoomName').textContent=(d.room_name||'IPL AUCTIONEER').toUpperCase();
         });
 
@@ -610,16 +632,23 @@
                 let isOv=!['india','indian','ind'].includes((p.nationality||'Indian').trim().toLowerCase());
                 document.getElementById('adminPlayer').innerHTML = esc(p.name) + (isOv?`<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>`:'');
                 let tags=document.getElementById('adminPlayerTags');
+                let rl=document.getElementById('adminPlayerRole');
                 if (p.franchise) { tags.textContent=p.franchise; tags.style.display='inline-block'; } else tags.style.display='none';
-                document.getElementById('statLabel1').textContent=p.stat1_label||'STAT 1'; document.getElementById('playerStat1').textContent=p.stat1_val||'-';
-                document.getElementById('statLabel2').textContent=p.stat2_label||'STAT 2'; document.getElementById('playerStat2').textContent=p.stat2_val||'-';
-                document.getElementById('statLabel3').textContent=p.stat3_label||'STAT 3'; document.getElementById('playerStat3').textContent=p.stat3_val||'-';
+                if (p.role) { rl.textContent=p.role; rl.style.display='inline-block'; } else rl.style.display='none';
+                
+                document.getElementById('statRuns').textContent   = p.runs || p.stat1_val || '-';
+                document.getElementById('statAvg').textContent    = p.average || p.avg || p.stat2_val || '-';
+                document.getElementById('statBatSR').textContent  = p.bat_sr || p.strike_rate || p.stat3_val || '-';
+                document.getElementById('statWkts').textContent   = p.wickets || '-';
+                document.getElementById('statEcon').textContent   = p.economy || p.econ || '-';
+                document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
             }
         } else {
             document.getElementById('adminPlayer').textContent='Waiting…';
             document.getElementById('adminPlayerTags').style.display='none';
-            ['statLabel1','playerStat1','statLabel2','playerStat2','statLabel3','playerStat3'].forEach((id,i)=>{
-                document.getElementById(id).textContent=['STAT 1','-','STAT 2','-','STAT 3','-'][i];
+            document.getElementById('adminPlayerRole').style.display='none';
+            ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => {
+                document.getElementById(id).textContent = '-';
             });
         }
 
@@ -824,6 +853,48 @@
             );
         });
     }
+    
+    // NEW: Undo Last Bid feature
+    window.undoLastBid = function() {
+        if (currentIndex < 0 || currentAuctionState === 'sold' || currentAuctionState === 'unsold') {
+            showAlert('Cannot Undo Bid', 'Auction is not currently active for a player.');
+            return;
+        }
+        let p = playerPool[currentIndex];
+        let base = p.base_price || 0;
+        if (currentBid <= base) {
+            showAlert('Base Price Reached', 'The bid is already at the base price.');
+            return;
+        }
+        
+        showConfirm('↩️ Undo Last Bid',
+            `Are you sure you want to undo the last bid?\nThe current bid is ₹${(currentBid/CRORE).toFixed(2)} Cr.`,
+            () => {
+                let set = window.auctionSettings || {};
+                let incBase = (set.inc_base || 20) * 100000;
+                let incMid = (set.inc_mid || 50) * 100000;
+                let incHigh = (set.inc_high || 100) * 100000;
+                
+                let prevBid = currentBid;
+                if (currentBid > 50000000) prevBid -= incHigh;
+                else if (currentBid > 20000000) prevBid -= incMid;
+                else prevBid -= incBase;
+                
+                if (prevBid < base) prevBid = base;
+                
+                let newLeader = prevBid === base ? 'Base Price' : '-';
+                
+                roomRef.child('live_state').update({
+                    current_bid: prevBid,
+                    highest_bidder: newLeader,
+                    timer_end: Date.now() + 15000,
+                    auction_state: 'bidding'
+                });
+                
+                persistEvent(`↩️ Auctioneer reversed the last bid. Bid dropped to ₹${(prevBid/CRORE).toFixed(2)} Cr.`);
+            }
+        );
+    };
 
     function confirmResetAuction() {
         showConfirm('☢️ Full Reset',
