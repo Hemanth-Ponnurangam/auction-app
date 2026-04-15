@@ -492,6 +492,8 @@
     let localBidCooldown = false, _modalCb = null, activePopups = {};
     let isUserScrollingLog = false;
     let globalImageMap = {};
+    let _latestLiveData = null;
+    let isDragging = false;
 
     const logContainer = document.getElementById('logContainer');
 
@@ -912,11 +914,20 @@
                 recalculateBudgets();
                 renderDeck(); renderUnsold(); renderSquads();
                 updateMyTeamUI();
+                // Fix sold discrepancy: when player_pool arrives after live_state in a rapid
+                // auction, re-run updateLiveUI so the badge/button use the authoritative team
+                // from player_pool rather than the potentially stale live_state.highest_bidder.
+                if (currentAuctionState === 'sold' && _latestLiveData) {
+                    let soldP = playerPool[_latestLiveData.current_player_index];
+                    let amIWinning = soldP?.team === myTeamName;
+                    updateLiveUI(_latestLiveData, amIWinning);
+                }
             }
         });
 
         roomRef.child('live_state').on('value', snap => {
             let data = snap.val(); if (!data) return;
+            _latestLiveData     = data;
             currentAuctionState = data.auction_state || 'idle';
             localCurrentBid     = data.current_bid || 0;
             let amIWinning      = (data.highest_bidder === myTeamName);
@@ -952,6 +963,15 @@
         document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
 
         let currentLeader = data.highest_bidder || '-';
+        // When sold, player_pool.team is authoritative — it reflects what the auctioneer
+        // actually committed, fixing the race where a late in-flight bid overwrites
+        // live_state.highest_bidder after the auctioneer already wrote player_pool.
+        if (currentAuctionState === 'sold' && data.current_player_index >= 0) {
+            let soldP = playerPool[data.current_player_index];
+            if (soldP?.status === 'sold' && soldP.team) {
+                currentLeader = soldP.team;
+            }
+        }
         let leaderBadge = document.getElementById('leaderBadge');
         if (currentLeader !== '-' && currentLeader !== 'Base Price' && currentLeader !== '') {
             leaderBadge.style.display = 'inline-block';
@@ -1090,10 +1110,14 @@
         let xiHtml = xiPlayers.map(buildRow).join('');
         let xiCount = xiPlayers.length;
         for (let i = xiCount + 1; i <= 11; i++) xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
-        document.getElementById('playingXIList').innerHTML = xiHtml;
-        document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
-        document.getElementById('xiCount').textContent     = `(${xiCount}/11)`;
-        document.querySelectorAll('.roster-item-drag').forEach(addDragEvents);
+        // Do not replace roster innerHTML while a drag is in progress — doing so detaches
+        // the element the browser is currently tracking, causing duplication on drop.
+        if (!isDragging) {
+            document.getElementById('playingXIList').innerHTML = xiHtml;
+            document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
+            document.querySelectorAll('.roster-item-drag').forEach(addDragEvents);
+        }
+        document.getElementById('xiCount').textContent = `(${xiCount}/11)`;
 
         // Other teams bottom row
         let othersHtml = '';
@@ -1347,7 +1371,13 @@
 
     // ── Drag & Drop ────────────────────────────────────────────────────────
     let dragSrcEl = null;
-    function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.style.opacity = '.4'; }
+    function handleDragStart(e) {
+        dragSrcEl = this;
+        isDragging = true;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.getAttribute('data-player'));
+        this.style.opacity = '.4';
+    }
     function handleDragOver(e)  { e.preventDefault(); return false; }
     function handleDragEnterItem(e) { this.classList.add('over'); }
     function handleDragLeaveItem(e) { this.classList.remove('over'); }
@@ -1355,22 +1385,32 @@
     function handleDragLeaveZone(e) { this.classList.remove('over-zone'); }
     function handleDrop(e) {
         e.stopPropagation();
-        if (dragSrcEl === this) return false;
-        let destIsXI    = this.id === 'playingXIList' || !!this.closest('#playingXIList');
-        let srcIsBench  = !!dragSrcEl.closest('#benchList');
+        if (!dragSrcEl || dragSrcEl === this) return false;
+        let destIsXI   = this.id === 'playingXIList' || !!this.closest('#playingXIList');
+        let srcIsBench = !!dragSrcEl.closest('#benchList');
         if (destIsXI && srcIsBench) {
             let xiCount = document.querySelectorAll('#playingXIList .roster-item-drag').length;
             if (xiCount >= 11) { showAlert('XI Full','Playing XI already has 11 players.'); return false; }
         }
-        if (this.classList.contains('drop-zone')) this.appendChild(dragSrcEl);
-        else this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this);
+        if (this.classList.contains('drop-zone')) {
+            this.appendChild(dragSrcEl);
+        } else {
+            // insertBefore(node, null) appends to end — do NOT use `|| this` fallback
+            // which incorrectly inserts before the target when dropping on the last item.
+            this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
+        }
         saveRosterOrder();
         return false;
     }
     function handleDragEnd(e) {
-        this.style.opacity = '1';
+        isDragging = false;
+        if (dragSrcEl) dragSrcEl.style.opacity = '1';
+        dragSrcEl = null;
         document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('over'));
         document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('over-zone'));
+        // Re-render from latest Firebase data now that drag is complete.
+        // This clears any stale DOM state and re-attaches drag events cleanly.
+        updateMyTeamUI();
     }
     function addDragEvents(item) {
         item.addEventListener('dragstart',   handleDragStart,    false);
