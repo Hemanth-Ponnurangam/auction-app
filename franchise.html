@@ -59,18 +59,16 @@
         .submit-btn:hover { background: #218838; }
         .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
         .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
-        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
 
         /* ─ Dots ──────────────────────────────────────────────────────── */
         .live-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle; }
         .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
 
-        /* ─ Main Dashboard (Base layout without forced height) ────────── */
+        /* ─ Main Dashboard ─────────────────────────────────────────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
         
-        /* ─ DESKTOP SPECIFIC RULES ────────────────────────────────────── */
         @media (min-width: 1000px) {
             #mainDashboard { height: calc(100vh - 30px); }
             .top-row { flex-direction: row; align-items: stretch; }
@@ -108,14 +106,14 @@
         .roster-item-drag:active { cursor: grabbing; }
         .roster-item.over { border-top: 2px solid #007bff; background: rgba(0,123,255,.1); }
         .roster-item:last-child { border-bottom: none; }
-        #playingXIList { height: 264px; flex: 0 0 264px; overflow-y: hidden; margin-bottom: 8px; flex-shrink: 0; display: flex; flex-direction: column; }
+        #playingXIList { height: 276px; flex: 0 0 276px; overflow-y: hidden; margin-bottom: 8px; flex-shrink: 0; display: flex; flex-direction: column; }
         #benchList { flex: 1 1 0; overflow-y: auto; min-height: 0; }
         
         .logout-btn { position: absolute; top: 10px; left: 10px; background: rgba(220,53,69,.05); border: 1px solid #dc3545; color: #dc3545; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
         .logout-btn:hover { color: #fff; background: #dc3545; }
         
-        .settings-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.05); border: 1px solid #444; color: #aaa; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: .2s; z-index: 10; display: flex; align-items: center; justify-content: center; }
-        .settings-btn:hover { color: #fff; background: #444; }
+        .settings-btn { position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #aaa; cursor: pointer; font-size: 18px; transition: .2s; z-index: 10; display: flex; align-items: center; justify-content: center; }
+        .settings-btn:hover { color: #fff; transform: scale(1.1); }
         
         .team-msg-popup { position: absolute; bottom: -5px; left: 5px; right: 5px; background: rgba(0,123,255,.95); color: #fff; padding: 6px; font-size: 11px; font-weight: bold; z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; opacity: 0; transition: all .3s; pointer-events: none; backdrop-filter: blur(4px); border-radius: 6px; border: 1px solid #007bff; box-shadow: 0 4px 15px rgba(0,0,0,.5); transform: translateY(10px); }
         .team-msg-popup.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
@@ -139,7 +137,7 @@
         .timer-paused { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         
-        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
+        .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 10px; }
         .player-photo-box { width: 160px; height: 160px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); }
         .player-header { flex: 1; padding-right: 70px; }
         
@@ -148,19 +146,21 @@
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
         /* New 6-Column Stats Grid */
-        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; }
+        .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 10px; flex-shrink: 0; }
         .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
         .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
 
         /* ─ Bid Zone ────────────────────────────────────────────────────── */
-        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 15px; text-align: center; transition: all .3s; flex-shrink: 0; }
-        .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 12px; text-align: center; transition: all .3s; flex-shrink: 0; }
+        .current-bid-display { font-size: 45px; font-weight: bold; margin: 2px 0 8px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
         .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all .3s; }
         .status-losing  { color: #dc3545; }
         .status-winning { color: #28a745; text-shadow: 0 0 25px rgba(40,167,69,.4); }
         .status-neutral { color: #fff; }
-        .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; }
+        
+        /* Bid Button Tweaks */
+        .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         .btn-bid-active       { background: #dc3545; color: #fff; box-shadow: 0 6px 20px rgba(220,53,69,.4); }
         .btn-bid-active:hover { background: #c82333; transform: translateY(-2px); }
         .btn-bid-active:active{ transform: translateY(2px); }
@@ -168,14 +168,20 @@
         .btn-bid-insufficient { background: #333; color: #888; border: 2px solid #444; cursor: not-allowed; }
         .btn-cooldown         { background: #22222d; color: #aaa; border: 1px solid #444; cursor: not-allowed; }
         .btn-bid-unsold       { background: rgba(255,7,58,.15); color: #ff073a; border: 2px solid #ff073a; cursor: not-allowed; }
-        .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .shortcut-hint { font-size: 11px; color: #666; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000; }
-        .jump-bids { display: flex; gap: 10px; margin-top: 10px; }
-        .jump-btn { flex: 1; background: rgba(255,255,255,.05); border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: .2s; }
-        .jump-btn:not(:disabled):hover { background: rgba(255,255,255,.1); color: #fff; border-color: #555; }
-        .jump-btn:disabled { opacity: .3; cursor: not-allowed; }
 
-        /* ─ Log Panel (Tightened Padding for Max Internal Space) ────────── */
+        /* Jump Bid Popup Menu */
+        #jumpBidPopup { position: fixed; display: none; background: #161620; border: 1px solid #444; border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.8); z-index: 9999; flex-direction: column; gap: 8px; width: 140px; transform: translate(-50%, -110%); }
+        #jumpBidPopup button { border: none; font-size: 14px; font-weight: bold; cursor: pointer; padding: 10px; border-radius: 6px; color: #fff; text-transform: uppercase; transition: .2s; }
+        #jumpBidPopup button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        .jb-5 { background: linear-gradient(145deg, #28a745, #1e7e34); }
+        .jb-10 { background: linear-gradient(145deg, #007bff, #0056b3); }
+        .jb-manual { background: linear-gradient(145deg, #fd7e14, #e36a00); }
+        .jb-cancel { background: transparent !important; color: #888 !important; border: 1px solid #444 !important; font-size: 11px !important; padding: 6px !important; }
+        .jb-cancel:hover { background: #222 !important; color: #fff !important; }
+
+        /* ─ Log Panel ───────────────────────────────────────────────────── */
         .log-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 150px; padding: 10px 15px !important; }
         .log-header { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #2d2d3f; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
         .chat-input-area { display: flex; gap: 6px; align-items: center; }
@@ -284,6 +290,13 @@
     <button onclick="setRole('')" class="clear-btn" title="Clear Role">❌</button>
 </div>
 
+<div id="jumpBidPopup">
+    <button class="jb-5" onclick="placeExactBid(50000000)">5 CR</button>
+    <button class="jb-10" onclick="placeExactBid(100000000)">10 CR</button>
+    <button class="jb-manual" onclick="promptManualBid()">MANUAL</button>
+    <button class="jb-cancel" onclick="closeJumpMenu()">CANCEL</button>
+</div>
+
 <div id="loginScreen">
     <div class="login-card">
         <h1 id="loginTitle" style="color:#fff; font-size:24px; margin-bottom:5px;">Franchise Access</h1>
@@ -383,12 +396,8 @@
                         <span id="actualBidAmount">₹0.00 Cr</span>
                         <span class="leader-badge" id="leaderBadge">-</span>
                     </div>
-                    <button id="mainActionButton" class="action-btn-bid btn-bid-locked" onclick="placeBid()" disabled>WAITING…</button>
-                    <div class="shortcut-hint">Press <span class="key">Space</span> to place a standard bid</div>
-                    <div class="jump-bids">
-                        <button id="jumpBtn5Cr" class="jump-btn" onclick="placeJumpBid(50000000)" disabled>+₹5 CR</button>
-                        <button id="jumpBtn10Cr" class="jump-btn" onclick="placeJumpBid(100000000)" disabled>+₹10 CR</button>
-                    </div>
+                    <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
+                    <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
                 </div>
             </div>
         </div>
@@ -396,7 +405,7 @@
         <div class="col-right">
             <div class="panel log-panel">
                 <div class="log-header">
-                    <span>📜 Live Activity</span>
+                    <span>📜 Live Activity <span id="auctioneerStatus" class="offline-dot" title="Auctioneer Offline"></span></span>
                     <div class="chat-input-area">
                         <input type="text" id="chatInput" class="chat-input" maxlength="30" placeholder="Type message…" onkeypress="if(event.key==='Enter') sendChatMessage()">
                         <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
@@ -451,6 +460,21 @@
         _openModal(title, msg, false);
         document.getElementById('modalButtons').innerHTML = `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">OK</button>`;
         _modalCb = onOk || null;
+    }
+    function showConfirm(title, msg, onYes, onNo) {
+        _openModal(title, msg, false);
+        document.getElementById('modalButtons').innerHTML =
+            `<button class="action-btn danger" style="flex:1;" onclick="closeModal(true)">CONFIRM</button>
+             <button class="action-btn outline" style="flex:1;" onclick="closeModal(false)">CANCEL</button>`;
+        _modalCb = r => r ? (onYes&&onYes()) : (onNo&&onNo());
+    }
+    function showPrompt(title, msg, placeholder, onSubmit) {
+        _openModal(title, msg, true);
+        let i = document.getElementById('modalInput'); i.placeholder = placeholder||''; i.value='';
+        document.getElementById('modalButtons').innerHTML =
+            `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">CONFIRM</button>
+             <button class="action-btn outline" style="flex:1;" onclick="closeModal(false)">CANCEL</button>`;
+        _modalCb = r => { if(r&&onSubmit) onSubmit(document.getElementById('modalInput').value.trim()); };
     }
     function _openModal(title, msg, hasInput) {
         document.getElementById('modalTitle').textContent   = title;
@@ -724,6 +748,16 @@
             let e = snap.val(); logAction(e.msg, new Date(e.t));
         });
 
+        // Online Status logic for Auctioneer
+        roomRef.child('admin_presence').on('value', snap => {
+            let isOnline = snap.val();
+            let dot = document.getElementById('auctioneerStatus');
+            if (dot) {
+                dot.className = isOnline ? 'live-dot' : 'offline-dot';
+                dot.title = isOnline ? 'Auctioneer Online' : 'Auctioneer Offline';
+            }
+        });
+
         roomRef.child('settings').on('value', snap => {
             let s = snap.val() || {};
             window.auctionSettings = s; 
@@ -895,7 +929,6 @@
 
         let xiPlayers    = myXIOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
         let benchPlayers = myBenchOrder.map(n => myRoster.find(p => p.name === n)).filter(Boolean);
-        // Any newly sold player not yet in either order goes to bench
         myRoster.forEach(p => { if (!myXIOrder.includes(p.name) && !myBenchOrder.includes(p.name)) benchPlayers.push(p); });
 
         let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
@@ -959,7 +992,6 @@
     function evaluateBidButtonStatus(data, amIWinning) {
         let btn = document.getElementById('mainActionButton');
         let bidZone = document.getElementById('bidZoneBox');
-        let jumps   = document.querySelectorAll('.jump-btn');
         
         let set = window.auctionSettings || {};
         let maxOv = set.max_overseas || 8;
@@ -973,7 +1005,6 @@
 
         const setBtn = (cls, text, enabled) => {
             btn.className = `action-btn-bid ${cls}`; btn.textContent = text; btn.disabled = !enabled;
-            jumps.forEach(j => { j.disabled = !enabled; });
             bidZone.style.borderColor = enabled ? 'rgba(220,53,69,.3)' : '#222';
         };
         const setStatus = cls => { document.getElementById('currentBidContainer').className = `current-bid-display ${cls}`; };
@@ -981,16 +1012,14 @@
         if (currentAuctionState === 'idle') {
             setStatus('status-neutral'); setBtn('btn-bid-locked','WAITING…',false);
         } else if (currentAuctionState === 'sold') {
-            setStatus('status-winning'); btn.className='action-btn-bid btn-bid-locked'; btn.disabled=true;
-            btn.textContent=`SOLD TO ${data.highest_bidder}`; jumps.forEach(j=>j.disabled=true);
+            setStatus('status-winning'); setBtn('btn-bid-locked', `SOLD TO ${data.highest_bidder}`, false);
         } else if (currentAuctionState === 'unsold') {
             setStatus('status-losing');  setBtn('btn-bid-unsold','UNSOLD',false);
         } else if (currentAuctionState === 'cooldown' || currentAuctionState === 'paused') {
             setStatus('status-neutral'); setBtn('btn-cooldown', currentAuctionState.toUpperCase() + '…', false);
         } else if (amIWinning) {
             setStatus('status-winning'); bidZone.style.borderColor='rgba(40,167,69,.3)';
-            btn.className='action-btn-bid btn-bid-locked'; btn.textContent='BID'; btn.disabled=true;
-            jumps.forEach(j=>j.disabled=true);
+            setBtn('btn-bid-locked','BID',false);
         } else if (isSquadMaxed) {
             setStatus('status-losing');  setBtn('btn-bid-insufficient', `SQUAD FULL (${maxSq})`, false);
         } else if (isOvMaxed) {
@@ -1002,28 +1031,97 @@
         }
     }
 
-    // ── Bidding ────────────────────────────────────────────────────────────
-    function placeBid()            { placeJumpBid(getCurrentBidIncrement()); }
-    function placeJumpBid(amount) {
-        let btn = document.getElementById('mainActionButton');
-        if (!myTeamName || btn.disabled || localBidCooldown) return;
-        localBidCooldown = true; setTimeout(() => { localBidCooldown = false; }, 500);
-
+    // ── Bidding Logic & Long Press ─────────────────────────────────────────
+    function placeBid() { placeExactBid((localCurrentBid || 0) + getCurrentBidIncrement()); }
+    
+    window.placeExactBid = function(amount) {
+        closeJumpMenu();
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
 
         roomRef.child('live_state').transaction(liveData => {
             if (!liveData) return liveData;
             let state = liveData.auction_state;
             if (state !== 'bidding' && state !== 'cooldown') return liveData; 
-            let newBid = (liveData.current_bid || 0) + amount;
-            if (newBid > myBudget || liveData.highest_bidder === myTeamName) return liveData; 
-            liveData.current_bid     = newBid;
+            if (amount <= (liveData.current_bid || 0)) return liveData; 
+            if (amount > myBudget) return liveData; 
+            
+            liveData.current_bid     = amount;
             liveData.highest_bidder  = myTeamName;
             liveData.timer_end       = Date.now() + 15000;
             liveData.auction_state   = 'bidding';
             return liveData;
-        }, (err) => { if (err) console.error('Bid transaction failed:', err); });
-    }
+        }, (err, committed, snap) => {
+            if (err) console.error('Bid transaction failed:', err);
+            else if (!committed) {
+                let d = snap.val();
+                if (d && amount <= (d.current_bid || 0)) showAlert('Invalid Bid', 'Bid must be strictly higher than the current bid.');
+                else if (amount > myBudget) showAlert('Insufficient Funds', 'You do not have enough purse remaining for this bid.');
+            }
+        });
+    };
+
+    window.promptManualBid = function() {
+        closeJumpMenu();
+        showPrompt('Manual Bid', 'Enter exact bid amount in Crores (e.g. 7.5)', '', val => {
+            let cr = parseFloat(val);
+            if (!isNaN(cr) && cr > 0) {
+                placeExactBid(Math.round(cr * CRORE));
+            } else {
+                showAlert('Invalid', 'Please enter a valid number.');
+            }
+        });
+    };
+
+    // Long Press Event Listeners for Main Bid Button
+    const mainBtn = document.getElementById('mainActionButton');
+    let bidPressTimer;
+    let isLongPress = false;
+
+    window.openJumpMenu = function(e) {
+        if (e) e.stopPropagation();
+        let popup = document.getElementById('jumpBidPopup');
+        popup.style.display = 'flex';
+        let btnRect = mainBtn.getBoundingClientRect();
+        popup.style.top = (btnRect.top - 10) + 'px';
+        popup.style.left = (btnRect.left + btnRect.width / 2) + 'px';
+    };
+    
+    window.closeJumpMenu = function() {
+        document.getElementById('jumpBidPopup').style.display = 'none';
+    };
+
+    document.addEventListener('click', e => {
+        let popup = document.getElementById('jumpBidPopup');
+        if (popup.style.display === 'flex' && !popup.contains(e.target) && e.target.id !== 'mainActionButton') {
+            popup.style.display = 'none';
+        }
+    });
+
+    const onPointerDown = (e) => {
+        if (e.button !== 0 && e.type !== 'touchstart') return; 
+        if (mainBtn.disabled) return;
+        isLongPress = false;
+        bidPressTimer = setTimeout(() => {
+            isLongPress = true;
+            openJumpMenu(e);
+        }, 600); // 600ms long press
+    };
+
+    const onPointerUp = (e) => {
+        clearTimeout(bidPressTimer);
+        if (!isLongPress && !mainBtn.disabled && currentAuctionState !== 'idle' && currentAuctionState !== 'sold' && currentAuctionState !== 'unsold' && currentAuctionState !== 'paused') {
+            placeBid();
+        }
+        if (e.type === 'touchend') e.preventDefault(); 
+    };
+
+    mainBtn.addEventListener('mousedown', onPointerDown);
+    mainBtn.addEventListener('touchstart', onPointerDown, {passive: false});
+    mainBtn.addEventListener('mouseup', onPointerUp);
+    mainBtn.addEventListener('touchend', onPointerUp);
+    mainBtn.addEventListener('mouseleave', () => clearTimeout(bidPressTimer));
+    mainBtn.addEventListener('touchcancel', () => clearTimeout(bidPressTimer));
+    mainBtn.oncontextmenu = function() { return false; }; // Prevent native context menu on long press
 
     // ── Chat ───────────────────────────────────────────────────────────────
     window.sendChatMessage = function() {
