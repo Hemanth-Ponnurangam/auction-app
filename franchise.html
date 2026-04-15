@@ -10,7 +10,6 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
 
-        /* FIX: body was overflow:hidden which cut content on mobile */
         body {
             font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
             background: #0a0a0f; color: #fff; margin: 0; padding: 15px;
@@ -66,15 +65,19 @@
         .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
 
-        /* ─ Main Dashboard ─────────────────────────────────────────────── */
-        #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; height: calc(100vh - 30px); }
+        /* ─ Main Dashboard (Base layout without forced height) ────────── */
+        #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
+        
+        /* ─ DESKTOP SPECIFIC RULES ────────────────────────────────────── */
         @media (min-width: 1000px) {
+            #mainDashboard { height: calc(100vh - 30px); }
             .top-row { flex-direction: row; align-items: stretch; }
             .col-left   { flex: 2.5; display: flex; flex-direction: column; min-height: 0; height: 100%; }
             .col-center { flex: 4.5; display: flex; flex-direction: column; min-height: 0; height: 100%; }
             .col-right  { flex: 3; display: flex; flex-direction: column; gap: 20px; min-height: 0; height: 100%; }
         }
+
         .bottom-row { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: #161620; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.4); flex-shrink: 0; }
         .panel { background: #161620; border: 1px solid #2d2d3f; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.4); position: relative; transition: all .3s ease; box-sizing: border-box; min-height: 0; display: flex; flex-direction: column; }
 
@@ -211,6 +214,34 @@
         .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
         ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* ─ MOBILE RESPONSIVENESS ──────────────────────────────────────── */
+        @media (max-width: 999px) {
+            body { overflow-y: auto; height: auto; min-height: 100vh; display: block; }
+            #mainDashboard { height: auto; margin-bottom: 20px; }
+            .top-row { height: auto; flex: none; }
+            .col-left, .col-center, .col-right { height: auto; flex: none; }
+            .panel { height: auto; min-height: unset; flex: none; }
+            
+            #playingXIList { height: auto; max-height: 280px; overflow-y: auto; }
+            #benchList { min-height: 80px; max-height: 200px; overflow-y: auto; }
+            
+            /* Center block adjustments */
+            #centerPanel { min-height: 450px; display: flex; flex-direction: column; }
+            .timer-pill { position: static; display: table; margin: 0 0 15px auto; float: none; }
+            .player-top-section { flex-direction: column; align-items: center; text-align: center; }
+            .player-header { padding-right: 0; display: flex; flex-direction: column; align-items: center; }
+            .player-name { justify-content: center; text-align: center; }
+            
+            .stats-bar { margin-top: 20px; grid-template-columns: repeat(6, 1fr); gap: 1px; }
+            .stat-box { padding: 8px 2px; }
+            .stat-val { font-size: 13px; }
+            .current-bid-display { font-size: 36px; flex-direction: column; gap: 5px; }
+            
+            /* Logs and Tabs */
+            .log-panel { min-height: 250px; max-height: 350px; }
+            .tabs-panel { min-height: 400px; }
+        }
     </style>
 </head>
 <body>
@@ -298,7 +329,7 @@
                 
                 <div class="player-top-section">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                    <div class="player-header" style="margin-bottom:0; padding-right:0;">
+                    <div class="player-header" style="margin-bottom:0;">
                         <span class="label-text">On The Block</span>
                         <div class="player-name" id="playerName">Waiting…</div>
                         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -374,7 +405,7 @@
     let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle', myOverseasCount = 0;
     let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
-    let teamBudgets = {};   // cached — only recalculated when player_pool changes
+    let teamBudgets = {};   
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
     let isUserScrollingLog = false;
@@ -575,7 +606,6 @@
 
     // ── Firebase Listeners ─────────────────────────────────────────────────
     function attachFirebaseListeners() {
-        // 1. Chat
         let isChatLoaded = false;
         roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
             if (!isChatLoaded) return;
@@ -586,7 +616,6 @@
         });
         roomRef.child('chat_events').once('value', () => { isChatLoaded = true; });
 
-        // 2. Persistent Auction Log — load history then stream new events
         let isLogLoaded = false;
         roomRef.child('auction_log').limitToLast(100).once('value', snap => {
             let entries = snap.val() || {};
@@ -598,7 +627,6 @@
             let e = snap.val(); logAction(e.msg, new Date(e.t));
         });
 
-        // 3. Settings (Saved globally for dynamic bid limits)
         roomRef.child('settings').on('value', snap => {
             let s = snap.val() || {};
             window.auctionSettings = s; 
@@ -607,7 +635,6 @@
             window.isOverseasStrict = s.overseas_limit_enabled === true;
         });
 
-        // 4. Teams & Presence
         roomRef.child('teams_auth').on('value', snap => {
             allRegisteredTeams = snap.val() || {};
             updateTeamDropdown();
@@ -619,7 +646,6 @@
             updateMyTeamUI();
         });
 
-        // 5a. Player Pool — full load ONCE (avoids re-downloading entire pool on every bid)
         roomRef.child('player_pool').once('value', snap => {
             let raw = snap.val() || [];
             playerPool = Array.isArray(raw) ? raw : Object.values(raw);
@@ -629,7 +655,6 @@
             updateMyTeamUI();
         });
 
-        // 5b. Player Pool — per-player patches only (fires on sold/unsold/reset, NOT on every bid)
         roomRef.child('player_pool').on('child_changed', snap => {
             let idx = parseInt(snap.key);
             if (!isNaN(idx)) {
@@ -640,7 +665,6 @@
             }
         });
 
-        // 6. Live State (hyper-fast — only live_state, not the whole room)
         roomRef.child('live_state').on('value', snap => {
             let data = snap.val(); if (!data) return;
             currentAuctionState = data.auction_state || 'idle';
@@ -650,7 +674,6 @@
         });
     }
 
-    // ── Dynamic Bidding Increment Logic ────────────────────────────────────
     function getCurrentBidIncrement() {
         let set = window.auctionSettings || {};
         let base = (set.inc_base || 20) * 100000;
@@ -663,8 +686,6 @@
         return base;
     }
 
-    // ── Budget Cache ───────────────────────────────────────────────────────
-    // Only recalculated when playerPool changes — not on every bid tick
     function recalculateBudgets() {
         let keys = Object.keys(allRegisteredTeams);
         keys.forEach(t => { teamBudgets[t] = TEAM_BUDGET; });
@@ -678,10 +699,8 @@
 
     // ── Live UI ────────────────────────────────────────────────────────────
     function updateLiveUI(data, amIWinning) {
-        // Bid amount
         document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
 
-        // Leader badge
         let leaderBadge = document.getElementById('leaderBadge');
         let bidderName  = data.highest_bidder;
         if (bidderName && bidderName !== '-' && bidderName !== 'Base Price') {
@@ -692,14 +711,12 @@
             leaderBadge.style.display = 'none';
         }
 
-        // Center panel glow
         let centerPanel = document.getElementById('centerPanel');
         centerPanel.classList.remove('glow-sold', 'glow-unsold');
         leaderBadge.classList.remove('party-mood');
         if (currentAuctionState === 'sold')   { centerPanel.classList.add('glow-sold');   leaderBadge.classList.add('party-mood'); }
         if (currentAuctionState === 'unsold') { centerPanel.classList.add('glow-unsold'); }
 
-        // Player on block
         if (data.current_player_index >= 0 && playerPool.length > 0) {
             let p = playerPool[data.current_player_index];
             if (p) {
@@ -709,7 +726,6 @@
                 if (p.franchise) { fr.textContent = p.franchise; fr.style.display = 'inline-block'; } else fr.style.display = 'none';
                 if (p.role)      { rl.textContent = p.role;      rl.style.display = 'inline-block'; } else rl.style.display = 'none';
                 
-                // Attempt to parse dynamic fields if they exist, otherwise fallback to dashes
                 document.getElementById('statRuns').textContent   = p.runs || p.stat1_val || '-';
                 document.getElementById('statAvg').textContent    = p.average || p.avg || p.stat2_val || '-';
                 document.getElementById('statBatSR').textContent  = p.bat_sr || p.strike_rate || p.stat3_val || '-';
@@ -726,7 +742,6 @@
             });
         }
 
-        // Timer
         if (window.uiTimer) clearInterval(window.uiTimer);
         window.uiTimer = setInterval(() => {
             let el = document.getElementById('playerTimer');
@@ -740,7 +755,6 @@
             else el.classList.add('timer-danger');
         }, 500);
 
-        // My team glow
         let myBox = document.getElementById('myTeamBox');
         myBox.classList.remove('leader-card-glow','sold-card-glow');
         if (amIWinning) {
@@ -811,7 +825,6 @@
             let isOnline = activePresence[t];
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
             
-            // Get winning leader card logic with SILVER PULSE
             let lBadge  = document.getElementById('leaderBadge');
             let curWin  = lBadge ? lBadge.textContent : '';
             let lgClass = (t === curWin && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow-silver' :
@@ -874,7 +887,6 @@
         } else if (isInsufficient) {
             setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
-            // Apply dynamic bid increment text on the main button
             setStatus('status-losing');  setBtn('btn-bid-active', `BID (+₹${(getCurrentBidIncrement()/100000)}L)`, true);
         }
     }
@@ -888,8 +900,6 @@
 
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
 
-        // Firebase transaction — atomic update on the tiny live_state node only.
-        // This prevents race conditions when multiple teams bid simultaneously.
         roomRef.child('live_state').transaction(liveData => {
             if (!liveData) return liveData;
             let state = liveData.auction_state;
@@ -913,7 +923,6 @@
         }
     };
 
-    // ── Chat Popups ────────────────────────────────────────────────────────
     function triggerChatPopup(team, text) { activePopups[team] = { text, expiry: Date.now() + 5000 }; }
     function updateAllPopups() {
         let now = Date.now();
@@ -955,7 +964,6 @@
         if (role === '') {
             updates[currentRolePlayer] = null;
         } else {
-            // Strictly enforce ONE per team for C, VC, and WK
             for (let p in curRoles) {
                 if (p !== currentRolePlayer) {
                     let pArr = (curRoles[p] || '').split(',').filter(r => r !== role);
@@ -963,7 +971,6 @@
                 }
             }
 
-            // Toggle role on the clicked player
             if (activeArr.includes(role)) {
                 activeArr = activeArr.filter(r => r !== role);
             } else {
@@ -971,7 +978,6 @@
                 if (role === 'VC') activeArr = activeArr.filter(r => r !== 'C');
                 activeArr.push(role);
 
-                // Global Chat Announcement for Leadership
                 if (role === 'C' || role === 'VC') {
                     let title = role === 'C' ? 'Captain' : 'Vice Captain';
                     let msg = `👑 ${esc(currentRolePlayer)} has been appointed as the ${title} of ${myTeamName}!`;
