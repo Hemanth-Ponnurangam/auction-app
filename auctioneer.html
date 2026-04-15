@@ -4,20 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auctioneer Command Center</title>
-    <link rel="stylesheet" href="shared-auction.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="firebase-config.js"></script>
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0f15; color: #e0e0e0; margin: 0; padding: 10px 20px; height: 100vh; overflow: hidden; font-size: 14px; }
+        #connBanner { display: none; position: fixed; top: 0; left: 0; right: 0; padding: 8px; background: #dc3545; color: #fff; text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999; }
         
+        /* ─ Screens ─────────────────────────────────────────────────────── */
+        .gateway-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000; }
+        .gateway-card { background: #161620; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,.8); border: 1px solid #2d2d3f; text-align: center; width: 100%; max-width: 420px; }
+        .btn-massive { width: 100%; padding: 20px; margin: 10px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-radius: 10px; cursor: pointer; transition: .3s; border: none; letter-spacing: 1px; }
+        .btn-auctioneer { background: linear-gradient(145deg,#eab308,#b08605); color: #000; box-shadow: 0 5px 15px rgba(234,179,8,.4); }
+        .btn-auctioneer:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(234,179,8,.6); }
+        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0a0a0f; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
+        .login-input:focus { border-color: #ffc107; }
+        .submit-btn { width: 100%; background: #28a745; color: #fff; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: .2s; }
+        .submit-btn:hover { background: #218838; transform: translateY(-2px); }
+        .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
         .file-upload-wrapper { border: 2px dashed #444; background: #0a0a0f; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .file-upload-wrapper input[type=file] { color: #aaa; font-size: 12px; width: 100%; margin-top: 8px; }
         .upload-instructions { font-size: 10px; color: #888; margin-top: 8px; line-height: 1.5; background: rgba(255,255,255,.05); padding: 8px; border-radius: 4px; }
         .upload-instructions strong { color: #ffc107; }
+        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
         
+        /* ─ Dashboard ────────────────────────────────────────────────────── */
         #adminDashboardWrapper { display: none; width: 100%; flex-direction: column; }
         .main-title { color: #fff; text-align: center; margin: 0 0 5px; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; text-shadow: 0 0 20px rgba(255,193,7,.4); position: relative; }
         .main-title span { color: #ffc107; }
@@ -40,6 +53,7 @@
         .past-teams { font-size: 10px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-top: 8px; }
         .player-role-pill { font-size: 10px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 6px; }
 
+        /* ─ Player UI (Compact for Admin) ───────────────────────────────── */
         .player-top-section { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 10px; }
         .player-photo-box { width: 100px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); overflow: hidden; }
         .player-header { flex: 1; }
@@ -50,6 +64,7 @@
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; font-weight: bold; }
         .stat-val { font-size: 15px; color: #eee; font-weight: bold; }
 
+        /* ─ Buttons ─────────────────────────────────────────────────────── */
         button { border: none; padding: 10px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: .2s; color: white; text-transform: uppercase; }
         button:not(:disabled):active { transform: translateY(0); }
         .btn-green { background: linear-gradient(145deg,#28a745,#1e7e34); width: 48%; font-size: 15px; padding: 12px; letter-spacing: 2px; border: 1px solid #218838; box-shadow: 0 4px 15px rgba(40,167,69,.2); border-radius: 8px; flex-shrink: 0; }
@@ -79,6 +94,7 @@
         .btn-dice:not(:disabled):hover { background: #3a3a4c; border-color: #666; transform: scale(1.05); }
         .flex-row { display: flex; justify-content: space-between; margin-bottom: 0; gap: 15px; flex-shrink: 0; }
         
+        /* ─ Budget Grid (Perfect 10 Fit) ────────────────────────────────── */
         .budget-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(calc(50% - 6px), 1fr); gap: 12px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; }
         .budget-card { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; transition: all .3s; }
         .budget-card-empty { border: 1px dashed #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px; font-weight: bold; letter-spacing: 1px; height: 100%; }
@@ -95,7 +111,11 @@
         .delete-team-btn:hover { opacity: 1; transform: scale(1.2); }
         .pin-eye { cursor: pointer; opacity: .5; transition: .2s; font-size: 11px; }
         .pin-eye:hover { opacity: 1; }
+        .live-dot { height: 6px; width: 6px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 4px; box-shadow: 0 0 5px #28a745; vertical-align: middle; }
+        .offline-dot { height: 6px; width: 6px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 4px; box-shadow: 0 0 5px #dc3545; vertical-align: middle; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
         
+        /* ─ Tabs ─────────────────────────────────────────────────────────── */
         .tabs-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .tabs { display: flex; margin-bottom: 10px; background: #0a0a0f; border-radius: 10px; padding: 6px; border: 1px solid #222; flex-shrink: 0; gap: 6px; }
         .tab-btn { flex: 1; background: transparent; color: #777; padding: 10px 5px; border-radius: 8px; margin: 0; font-size: 11px; font-weight: 800; cursor: pointer; border: none; }
@@ -109,6 +129,7 @@
         select { appearance: none; padding: 8px 12px; font-size: 13px; border-radius: 8px; background: #111118; color: #fff; border: 1px solid #333; outline: none; width: 100%; cursor: pointer; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 8px center; }
         .compact-select { max-width: 220px; flex: 1; }
         
+        /* ─ Log / Chat ───────────────────────────────────────────────────── */
         .chat-input-area { display: flex; gap: 8px; background: rgba(0,0,0,.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
         .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; outline: none; flex: 1; transition: .2s; }
         .chat-input:focus { border-color: #007bff; }
@@ -117,13 +138,32 @@
         .log-entry { font-family: 'Consolas', monospace; font-size: 12px; margin-bottom: 8px; color: #aaa; border-bottom: 1px dashed #222; padding-bottom: 8px; }
         .log-time { color: #555; margin-right: 8px; }
         
+        .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; margin-left: 5px; }
+        
+        /* ─ Settings Overlay ─────────────────────────────────────────────── */
+        .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.8); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
+        .settings-card { background: #161620; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 100%; max-width: 480px; box-shadow: 0 15px 50px rgba(0,0,0,.8); max-height: 90vh; overflow-y: auto; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #222; }
         .setting-label { color: #aaa; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
         .setting-input { background: #0a0a0f; border: 1px solid #333; color: #ffc107; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-size: 16px; font-weight: bold; outline: none; }
         .setting-input.wide { width: 180px; text-align: right; }
         
+        /* ─ App Modal ─────────────────────────────────────────────────────── */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px); }
+        .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
+        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
+        .modal-input:focus { border-color: #ffc107; }
+        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
+        .action-btn:hover { background: #0056b3; }
+        .action-btn.danger { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; }
+        .action-btn.danger:hover { background: #dc3545; color: #fff; }
+        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
+        .action-btn.outline:hover { background: #333; color: #fff; }
+        
+        /* Hotkey hint */
         .hotkey-hint { position: absolute; top: 8px; right: 15px; font-size: 11px; color: #888; background: #111118; padding: 4px 8px; border-radius: 8px; border: 1px solid #2d2d3f; z-index: 10; }
         .key-badge { background: #22222d; color: #ffc107; padding: 3px 6px; border-radius: 4px; font-family: monospace; border-bottom: 2px solid #000; margin: 0 4px; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -379,14 +419,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let serverTimeOffset = 0;
-    db.ref('.info/serverTimeOffset').on('value', snap => {
-        serverTimeOffset = snap.val() || 0;
-    });
-    function getServerTime() {
-        return Date.now() + serverTimeOffset;
-    }
-
     let currentRoomKey = null, roomRef = null;
     let currentIndex = -1, currentBid = 0, currentLeader = '-';
     let playerPool = [], allRegisteredTeams = {}, activePresence = {};
@@ -397,10 +429,12 @@
     let _modalCb = null, _liveStateData = {};
     let _renderTimer = null;
 
+    // ── Connection Monitor ────────────────────────────────────────────────
     db.ref('.info/connected').on('value', snap => {
         document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
+    // ── Modal System ──────────────────────────────────────────────────────
     function showAlert(title, msg, onOk) {
         _openModal(title, msg, false);
         document.getElementById('modalButtons').innerHTML = `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">OK</button>`;
@@ -435,6 +469,7 @@
     function debounce(fn, ms) { let t; return function(...a) { clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),ms); }; }
     function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+    // ── Boot Flow ─────────────────────────────────────────────────────────
     window.onload = function() {
         currentRoomKey = sessionStorage.getItem('roomKey');
         if (currentRoomKey) {
@@ -465,39 +500,37 @@
     function backToAdminGateway() { document.getElementById('createRoomScreen').style.display='none'; document.getElementById('joinAdminRoomScreen').style.display='none'; document.getElementById('adminGatewayScreen').style.display='flex'; }
     function toggleCustomUpload() { document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value==='custom' ? 'block' : 'none'; }
 
+    // 12-Column Specific CSV Parser
     function parseCSV(text) {
-        let parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        let lines = text.split('\n'), raw = lines[0].split(',');
+        let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
         let result = [];
-        let hdrsMap = {};
         
-        if (parsed.meta.fields) {
-            parsed.meta.fields.forEach(h => {
-                hdrsMap[h.trim().toLowerCase().replace(/[^a-z0-9]/g,'')] = h;
-            });
-        }
-        
-        parsed.data.forEach(row => {
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             let obj = { status: 'available' };
-            for (let cleanHdr in hdrsMap) {
-                let origHdr = hdrsMap[cleanHdr];
-                let v = String(row[origHdr] || '').trim();
+            
+            for (let j = 0; j < hdrs.length; j++) {
+                let v = (cols[j]||'').replace(/['"]+/g,'').trim();
+                let h = hdrs[j];
                 
-                if (cleanHdr === 'baseprice') {
-                    let num = Number(v.replace(/,/g, '')) || 0;
-                    obj.base_price = (num > 0 && num <= 100) ? num * 10000000 : num;
-                } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(cleanHdr)) {
-                    let key = cleanHdr;
-                    if(cleanHdr === 'avg') key = 'average';
-                    if(cleanHdr === 'strikerate' || cleanHdr === 'sr') key = 'bat_sr';
-                    if(cleanHdr === 'econ') key = 'economy';
-                    if(cleanHdr === 'bowlingsr') key = 'bowl_sr';
+                if (h === 'baseprice') {
+                    let num = Number(v)||0;
+                    obj.base_price = (num>0&&num<=100) ? num*10000000 : num;
+                } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(h)) {
+                    let key = h;
+                    if(h==='avg') key='average';
+                    if(h==='strikerate' || h==='sr') key='bat_sr';
+                    if(h==='econ') key='economy';
+                    if(h==='bowlingsr') key='bowl_sr';
                     obj[key] = v || '-';
-                } else if (['name','set','role','franchise','nationality'].includes(cleanHdr)) {
-                    obj[cleanHdr] = v;
+                } else if (['name','set','role','franchise','nationality'].includes(h)) {
+                    obj[h] = v;
                 }
             }
-            if (obj.name) result.push(obj);
-        });
+            result.push(obj);
+        }
         return result;
     }
 
@@ -553,6 +586,7 @@
         attachFirebaseListeners();
     }
 
+    // ── Firebase Listeners ────────────────────────────────────────────────
     function attachFirebaseListeners() {
         let isChatLoaded=false;
         roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
@@ -573,10 +607,11 @@
             let e=snap.val(); logLocal(e.msg, new Date(e.t));
         });
 
+        // Fetch Global Image Directory
         db.ref('global_player_images').on('value', snap => {
             globalImageMap = snap.val() || {};
             if (currentIndex >= 0 && playerPool.length > 0) {
-                updateLiveUI(_liveStateData);
+                updateLiveUI(_liveStateData); // Force a re-render to update the image if it changes mid-auction
             }
         });
 
@@ -620,6 +655,7 @@
             updateLiveUI(data);
         });
         
+        // Broadcast presence
         roomRef.child('admin_presence').set(true);
         roomRef.child('admin_presence').onDisconnect().remove();
     }
@@ -632,6 +668,7 @@
         playerPool.forEach(p => { if(p.status==='sold'&&p.team&&teamBudgets[p.team]!==undefined) teamBudgets[p.team]-=(Number(p.sold_price)||0); });
     }
 
+    // ── Live UI Update ────────────────────────────────────────────────────
     function updateLiveUI(data) {
         let isIdle=currentAuctionState==='idle', isPaused=currentAuctionState==='paused';
 
@@ -652,8 +689,8 @@
                 document.getElementById('statEcon').textContent   = p.economy || '-';
                 document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
                 
-                // FIX 2: Case Insensitive Global Image Key Lookups
-                let safeNameKey = (p.name || '').toLowerCase().replace(/[.#$\[\]\/]/g, '_');
+                // Fetch Global Image
+                let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
                 let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name]; 
                 let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
                 
@@ -685,10 +722,8 @@
             timerEl.classList.remove('timer-green','timer-orange','timer-red','timer-paused');
             if (isIdle) { timerEl.textContent='--'; return; }
             if (isPaused) { timerEl.textContent='⏸'; timerEl.classList.add('timer-paused'); return; }
-            
-            let t=data.timer_end ? Math.max(0, Math.ceil((data.timer_end-getServerTime())/1000)) : 0;
+            let t=data.timer_end ? Math.max(0, Math.ceil((data.timer_end-Date.now())/1000)) : 0;
             timerEl.textContent=t+'s';
-            
             if (t>10) timerEl.classList.add('timer-green');
             else if (t>5) timerEl.classList.add('timer-orange');
             else timerEl.classList.add('timer-red');
@@ -731,6 +766,7 @@
         btn.style.cursor=enabled?'pointer':'not-allowed';
     }
 
+    // ── Budget Tracker ────────────────────────────────────────────────────
     function updateBudgetTracker() {
         let keys=Object.keys(allRegisteredTeams);
         let totalSlots=Math.max(10, Math.ceil(keys.length/5)*5);
@@ -770,16 +806,12 @@
                 html+=`<div class="budget-card-empty">WAITING...</div>`;
             }
         }
-        
-        // FIX 3: HTML String Caching to stop DOM Thrashing
-        if (window._cachedBudgetHtml !== html) {
-            document.getElementById('budgetCards').innerHTML = html;
-            window._cachedBudgetHtml = html;
-        }
+        document.getElementById('budgetCards').innerHTML=html;
     }
 
+    // ── Persistent Log ────────────────────────────────────────────────────
     function persistEvent(msg) {
-        if (roomRef) roomRef.child('auction_log').push({ msg, t: getServerTime() });
+        if (roomRef) roomRef.child('auction_log').push({ msg, t: Date.now() });
     }
 
     function logLocal(msg, date) {
@@ -791,11 +823,11 @@
         logDiv.parentElement.scrollTop=logDiv.parentElement.scrollHeight;
     }
 
+    // ── Auction Controls ──────────────────────────────────────────────────
     function pushPlayerToBlock(index) {
         if (currentAuctionState==='bidding'||currentAuctionState==='cooldown') { showAlert('In Progress','An auction is already running.'); return; }
         let p=playerPool[index], msg=`▶️ <strong>${esc(p.name)}</strong> is on the block. Base: ₹${(p.base_price/10000000).toFixed(2)} Cr`;
-        
-        roomRef.child('live_state').update({ current_player_index:parseInt(index), current_bid:p.base_price, highest_bidder:'Base Price', auction_state:'cooldown', timer_end:getServerTime()+10000 });
+        roomRef.child('live_state').update({ current_player_index:parseInt(index), current_bid:p.base_price, highest_bidder:'Base Price', auction_state:'cooldown', timer_end:Date.now()+10000 });
         persistEvent(msg);
     }
 
@@ -829,31 +861,33 @@
     }
 
     function startTimer(seconds, state='bidding') {
-        roomRef.child('live_state').update({ timer_end:getServerTime()+(seconds*1000), auction_state:state });
+        roomRef.child('live_state').update({ timer_end:Date.now()+(seconds*1000), auction_state:state });
     }
     
     window.bypassCooldown = function() {
         if (currentAuctionState === 'cooldown') {
             roomRef.child('live_state').update({ 
                 auction_state: 'bidding', 
-                timer_end: getServerTime() + 15000 
+                timer_end: Date.now() + 15000 
             });
             persistEvent('⏩ Cooldown bypassed. Bidding is LIVE!');
         }
     };
 
+    // ── PAUSE / RESUME ────────────────────────────────────────────────────
     function togglePause() {
         if (currentAuctionState==='paused') {
             let remaining=_liveStateData.paused_remaining||15000;
-            roomRef.child('live_state').update({ auction_state:'bidding', timer_end:getServerTime()+remaining, paused_remaining:null });
+            roomRef.child('live_state').update({ auction_state:'bidding', timer_end:Date.now()+remaining, paused_remaining:null });
             persistEvent('▶️ Auction <strong>RESUMED</strong>.');
         } else if (currentAuctionState==='bidding'||currentAuctionState==='cooldown') {
-            let remaining=Math.max(0, (_liveStateData.timer_end||0) - getServerTime());
+            let remaining=Math.max(0, (_liveStateData.timer_end||0) - Date.now());
             roomRef.child('live_state').update({ auction_state:'paused', timer_end:0, paused_remaining:remaining });
             persistEvent('⏸️ Auction <strong>PAUSED</strong> by auctioneer.');
         }
     }
 
+    // ── Undo / Reset ──────────────────────────────────────────────────────
     function undoLastSale() {
         roomRef.child('live_state').once('value').then(snap => {
             let lsi=snap.val()?.last_sold_index;
@@ -878,6 +912,7 @@
         });
     }
 
+    // Undo Last Bid
     window.undoLastBid = function() {
         if (currentIndex < 0 || currentAuctionState === 'sold' || currentAuctionState === 'unsold') {
             showAlert('Cannot Undo Bid', 'Auction is not currently active for a player.');
@@ -913,7 +948,7 @@
                 roomRef.child('live_state').update({
                     current_bid: prevBid,
                     highest_bidder: newLeader,
-                    timer_end: getServerTime() + 15000,
+                    timer_end: Date.now() + 15000,
                     auction_state: 'bidding'
                 });
                 
@@ -937,11 +972,13 @@
         );
     }
 
+    // ── Chat ──────────────────────────────────────────────────────────────
     function sendChatMessage() {
         let inp=document.getElementById('chatInput'), msg=inp.value.trim();
-        if (msg&&roomRef) { roomRef.child('chat_events').push({team:'ADMIN', text:msg, time:getServerTime()}); inp.value=''; }
+        if (msg&&roomRef) { roomRef.child('chat_events').push({team:'ADMIN', text:msg, time:Date.now()}); inp.value=''; }
     }
 
+    // ── Team Delete ───────────────────────────────────────────────────────
     function confirmDeleteTeam(teamCode) {
         showPrompt('Delete Franchise',
             `Enter the PIN for '${teamCode}' to confirm deletion:`,
@@ -961,6 +998,7 @@
         if (n&&p) { let show=n.style.display!=='none'; n.style.display=show?'none':'block'; p.style.display=show?'block':'none'; }
     }
 
+    // ── Settings ──────────────────────────────────────────────────────────
     function openSettings() {
         document.getElementById('settingsOverlay').style.display='flex';
         document.getElementById('set-room-key').value=currentRoomKey||'';
@@ -1019,6 +1057,7 @@
         }
     }
 
+    // ── Exports ───────────────────────────────────────────────────────────
     function exportSquadCSV() {
         let team=document.getElementById('exportTeamSelector').value;
         let sold=playerPool.filter(p=>p.status==='sold'&&(team==='ALL'||p.team===team));
@@ -1048,6 +1087,7 @@
         html2pdf().set({margin:10, filename:`IPL_${team}_Export.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
     }
 
+    // ── Tab / Dropdowns ───────────────────────────────────────────────────
     function switchTab(name, el) {
         document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1088,12 +1128,7 @@
             let disabled=inProgress?'disabled style="opacity:.3; cursor:not-allowed;"':'';
             html+=`<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr</span></div><button class="btn-push" ${disabled} onclick="pushPlayerToBlock(${i})">Push</button></div>`;
         });
-        
-        // FIX 3: HTML String Caching to stop DOM Thrashing
-        if (window._cachedDeckHtml !== html) {
-            document.getElementById('deckList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players in this set.</p>";
-            window._cachedDeckHtml = html;
-        }
+        document.getElementById('deckList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players in this set.</p>";
     }
 
     function renderUnsold() {
@@ -1108,23 +1143,13 @@
             let disabled=inProgress?'disabled style="opacity:.3; cursor:not-allowed;"':'';
             html+=`<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div><button class="btn-repush" ${disabled} onclick="pushPlayerToBlock(${i})">Re-Push</button></div>`;
         });
-        
-        if (window._cachedUnsoldHtml !== html) {
-            document.getElementById('unsoldList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players.</p>";
-            window._cachedUnsoldHtml = html;
-        }
+        document.getElementById('unsoldList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players.</p>";
     }
 
     function renderSquads() {
         let team=document.getElementById('teamSelector').value;
         let term=document.getElementById('auctioneerSearch').value.toLowerCase();
-        if (!team) { 
-            if (window._cachedSquadsHtml !== 'empty') {
-                document.getElementById('squadList').innerHTML="<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; 
-                window._cachedSquadsHtml = 'empty';
-            }
-            return; 
-        }
+        if (!team) { document.getElementById('squadList').innerHTML="<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; return; }
         let roster=playerPool.filter(p=>p.status==='sold'&&p.team===team&&(!term||p.name.toLowerCase().includes(term)));
         let order=allRegisteredTeams[team]?.rosterOrder||[];
         roster.sort((a,b)=>{let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi;});
@@ -1139,13 +1164,10 @@
             let pc=p.sold_price===gold?'#eab308':p.sold_price===silver?'#c0c0c0':p.sold_price===bronze?'#cd7f32':'#aaa';
             return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span>${roleHtml}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)} Cr</span></div></div>`;
         }).join('');
-        
-        if (window._cachedSquadsHtml !== html) {
-            document.getElementById('squadList').innerHTML=html||`<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
-            window._cachedSquadsHtml = html;
-        }
+        document.getElementById('squadList').innerHTML=html||`<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
     }
 
+    // ── Keyboard Shortcuts ────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
         if (document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA') return;
         if (document.getElementById('adminDashboardWrapper').style.display==='none') return;
