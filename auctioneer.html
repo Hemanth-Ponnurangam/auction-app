@@ -43,14 +43,14 @@
         
         .data-box { background: #0a0a0f; padding: 12px 15px; border-radius: 8px; border: 1px solid #222; margin-bottom: 10px; flex-shrink: 0; }
         .highlight { color: #28a745; font-weight: bold; display: block; }
-        .timer-text { font-weight: bold; font-size: 2.2rem; line-height: 1; transition: color .3s, text-shadow .3s; margin-top:0; }
+        .timer-text { font-weight: bold; font-size: 2.5rem; line-height: 1; transition: color .3s, text-shadow .3s; margin-top: 25px; display: inline-block; }
         .timer-green { color: #28a745; text-shadow: 0 0 20px rgba(40,167,69,.8); }
         .timer-orange { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.8); }
         .timer-red { color: #dc3545; text-shadow: 0 0 25px rgba(220,53,69,.9); animation: pulse 1s infinite; }
         .timer-paused { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.6); }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         
-        .past-teams { font-size: 10px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
+        .past-teams { font-size: 10px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-top: 8px; }
         .player-role-pill { font-size: 10px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 6px; }
 
         /* ─ Player UI (Compact for Admin) ───────────────────────────────── */
@@ -153,6 +153,12 @@
         .modal-card { background: #161620; padding: 30px; border-radius: 12px; border: 1px solid #444; width: 100%; max-width: 420px; box-shadow: 0 15px 50px rgba(0,0,0,.8); }
         .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; outline: none; }
         .modal-input:focus { border-color: #ffc107; }
+        .action-btn { background: #007bff; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: .2s; }
+        .action-btn:hover { background: #0056b3; }
+        .action-btn.danger { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; }
+        .action-btn.danger:hover { background: #dc3545; color: #fff; }
+        .action-btn.outline { background: transparent; border: 1px solid #555; color: #ccc; }
+        .action-btn.outline:hover { background: #333; color: #fff; }
         
         /* Hotkey hint */
         .hotkey-hint { position: absolute; top: 8px; right: 15px; font-size: 11px; color: #888; background: #111118; padding: 4px 8px; border-radius: 8px; border: 1px solid #2d2d3f; z-index: 10; }
@@ -216,6 +222,7 @@
             <div class="setting-label">Starting Purse (Cr)</div>
             <input type="number" id="set-purse" class="setting-input" value="100" min="1">
         </div>
+        
         <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px; flex-wrap:wrap; gap:10px;">
             <div class="setting-label" style="width:100%;">Differential Bid Increments (Lakhs)</div>
             <input type="number" id="set-inc-base" class="setting-input" value="20" title="Base Tier (0-2Cr)">
@@ -289,7 +296,7 @@
                                     </div>
                                 </div>
                                 <div style="text-align:right; line-height:1;">
-                                    <span id="adminTimer" class="timer-text timer-green" style="margin-top:0; font-size:2.2rem;">--</span>
+                                    <span id="adminTimer" class="timer-text timer-green" style="margin-top:30px; font-size:3rem;">--</span>
                                 </div>
                             </div>
                         </div>
@@ -332,27 +339,21 @@
             <div class="panel" style="flex:0 0 auto; padding: 12px 15px;">
                 <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:10px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Auction Controls</label>
                 
-                <div style="display: flex; gap: 15px; align-items: stretch; height: 80px;">
-                    <div style="display: flex; flex-direction: column; gap: 5px; justify-content: center; align-items: center;">
+                <div style="display: flex; flex-direction: column; height: 80px; justify-content: center;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px; height: 35px;">
+                        <button class="btn-undo" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="undoLastSale()" title="Undo Sale">⏪</button>
+                        <button class="btn-undo" style="flex:1; padding:0; border-radius:6px; font-size:18px; border: 1px solid #0dcaf0; color: #0dcaf0; display:flex; align-items:center; justify-content:center;" onclick="undoLastBid()" title="Undo Last Bid">↩️</button>
+                        <button id="btnPause" class="btn-pause" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="togglePause()" title="Pause / Resume">⏸</button>
+                        <button class="btn-push" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="bypassCooldown()" title="Force Start">⏩</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; height: 35px;">
                         <button class="btn-clock master-clock circle-btn" onclick="startTimer(15,'bidding')">15s</button>
                         <button class="btn-clock master-clock circle-btn" onclick="startTimer(30,'bidding')">30s</button>
                         <button class="btn-clock master-clock circle-btn" onclick="startTimer(60,'bidding')">60s</button>
-                    </div>
-                    
-                    <div style="width: 1px; background: #333; margin: 0 5px;"></div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1;">
-                        <button class="btn-undo" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="undoLastSale()">
-                            <span style="font-size:14px;">⏪</span> UNDO SALE
-                        </button>
-                        <button class="btn-undo" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px; border: 1px solid #0dcaf0; color: #0dcaf0;" onclick="undoLastBid()">
-                            <span style="font-size:14px;">↩️</span> UNDO BID
-                        </button>
-                        <button id="btnPause" class="btn-pause" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="togglePause()">
-                            <span style="font-size:14px;">⏸</span> PAUSE
-                        </button>
-                        <button class="btn-push" style="padding:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:11px; border-radius:6px;" onclick="bypassCooldown()">
-                            <span style="font-size:14px;">⏩</span> FORCE START
+                        <div style="width: 1px; height: 80%; background: #333; margin: 0 2px;"></div>
+                        <button class="btn-outline-danger" style="flex:1; padding:0; height:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px;" onclick="confirmResetAuction()">
+                            <span style="font-size:16px;">☢️</span> RESET
                         </button>
                     </div>
                 </div>
@@ -689,11 +690,11 @@
         }
         
         if (isPaused) { 
-            pauseBtn.innerHTML='<span style="font-size:14px;">▶</span> RESUME'; 
+            pauseBtn.innerHTML='▶'; 
             pauseBtn.classList.add('is-paused'); 
         }
         else { 
-            pauseBtn.innerHTML='<span style="font-size:14px;">⏸</span> PAUSE'; 
+            pauseBtn.innerHTML='⏸'; 
             pauseBtn.classList.remove('is-paused'); 
         }
 
@@ -725,7 +726,6 @@
                 let tColor=tData.color||'#fff';
                 let leaderClass='';
                 
-                // UNIFIED GLOW LOGIC
                 if (team === currentLeader && isValidLeader) {
                     if (currentAuctionState === 'sold') leaderClass = ' sold-card-glow';
                     else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') leaderClass = ' leader-card-glow-silver';
@@ -853,8 +853,8 @@
             );
         });
     }
-    
-    // NEW: Undo Last Bid feature
+
+    // Undo Last Bid
     window.undoLastBid = function() {
         if (currentIndex < 0 || currentAuctionState === 'sold' || currentAuctionState === 'unsold') {
             showAlert('Cannot Undo Bid', 'Auction is not currently active for a player.');
