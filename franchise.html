@@ -59,29 +59,29 @@
         .submit-btn:hover { background: #218838; }
         .back-btn { width: 100%; background: transparent; color: #888; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline; }
         .label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
-        select.login-input { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
 
         /* ─ Dots ──────────────────────────────────────────────────────── */
         .live-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #28a745; vertical-align: middle; }
         .offline-dot { height: 8px; width: 8px; background: #dc3545; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-left: 6px; box-shadow: 0 0 8px #dc3545; vertical-align: middle; }
         @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
 
-        /* ─ Main Dashboard ─────────────────────────────────────────────── */
+        /* ─ Main Dashboard (Base layout without forced height) ────────── */
         #mainDashboard { display: none; width: 100%; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
         .top-row { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; width: 100%; }
+        
         .mobile-nav { display: none; } /* Hidden on desktop */
 
         /* ─ DESKTOP SPECIFIC RULES ────────────────────────────────────── */
         @media (min-width: 1000px) {
             #mainDashboard { height: calc(100vh - 30px); }
             .top-row { flex-direction: row; align-items: stretch; }
-            .col-left   { flex: 2.5; display: flex; flex-direction: column; min-height: 0; height: 100%; }
-            .col-center { flex: 4.5; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+            /* FIXED: Restored wider layout ratios */
+            .col-left   { flex: 3; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+            .col-center { flex: 4; display: flex; flex-direction: column; min-height: 0; height: 100%; }
             .col-right  { flex: 3; display: flex; flex-direction: column; gap: 20px; min-height: 0; height: 100%; }
             
-            /* Enforcing strictly fixed XI and scrollable bench */
-            #playingXIList { flex: 0 0 auto; overflow: hidden; margin-bottom: 8px; display: flex; flex-direction: column; }
-            #benchList { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+            #playingXIList { flex: 1 1 auto; overflow-y: auto; margin-bottom: 8px; display: flex; flex-direction: column; min-height: 260px; }
+            #benchList { flex: 0 0 100px; overflow-y: auto; min-height: 0; }
         }
 
         .bottom-row { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: #161620; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.4); flex-shrink: 0; }
@@ -90,11 +90,9 @@
         /* ─ Glow States ────────────────────────────────────────────────── */
         .glow-sold    { box-shadow: 0 0 40px rgba(57,255,20,.4), inset 0 0 20px rgba(57,255,20,.2) !important; border-color: #39ff14 !important; }
         .glow-unsold  { box-shadow: 0 0 40px rgba(255,7,58,.4), inset 0 0 20px rgba(255,7,58,.2) !important; border-color: #ff073a !important; }
-        @keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
         @keyframes soldPulse   { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
         @keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
         
-        .leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
         .sold-card-glow   { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
         .leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
         
@@ -113,6 +111,8 @@
         .roster-item-drag:active { cursor: grabbing; }
         .roster-item.over { border-top: 2px solid #007bff; background: rgba(0,123,255,.1); }
         .roster-item:last-child { border-bottom: none; }
+        #playingXIList { height: 276px; flex: 0 0 276px; overflow-y: hidden; margin-bottom: 8px; flex-shrink: 0; display: flex; flex-direction: column; }
+        #benchList { flex: 1 1 0; overflow-y: auto; min-height: 0; }
         
         .logout-btn { position: absolute; top: 10px; left: 10px; background: rgba(220,53,69,.05); border: 1px solid #dc3545; color: #dc3545; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; z-index: 10; }
         .logout-btn:hover { color: #fff; background: #dc3545; }
@@ -143,13 +143,23 @@
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         
         .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
-        .player-photo-box { width: 160px; height: 160px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); overflow: hidden; }
+        
+        /* FIX: Prevents image cropping */
+        .player-photo-box { 
+            width: 160px; height: 160px; border: 2px dashed #444; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; color: #555; 
+            font-size: 12px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); 
+            background-size: contain !important; background-position: center !important; background-repeat: no-repeat !important; overflow: hidden;
+        }
+        .player-photo-box img { width: 100%; height: 100%; object-fit: contain; object-position: center; border-radius: 6px; }
+        
         .player-header { flex: 1; padding-right: 70px; }
         
         .player-name { font-size: 28px; color: #fff; font-weight: bold; margin: 0 0 5px; line-height: 1.1; display: flex; align-items: center; }
         .past-teams { font-size: 11px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; }
         .player-role-pill { font-size: 11px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 8px; }
         
+        /* New 6-Column Stats Grid */
         .stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; transition: opacity .3s; }
         .stat-box { background: #0a0a0f; text-align: center; padding: 10px 4px; }
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
@@ -235,8 +245,8 @@
 
         /* ─ MOBILE RESPONSIVENESS ──────────────────────────────────────── */
         @media (max-width: 999px) {
-            body { overflow: hidden; height: 100dvh; padding: 5px; margin: 0; box-sizing: border-box; }
-            #mainDashboard { height: calc(100dvh - 10px); padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; position: relative; }
+            body { overflow: hidden; height: 100dvh; padding: 6px; margin: 0; box-sizing: border-box; }
+            #mainDashboard { height: calc(100dvh - 12px); padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; position: relative; }
             
             .mobile-nav { display: flex; gap: 6px; flex-shrink: 0; width: 100%; z-index: 1001; }
             .mobile-nav-btn { flex: 1; padding: 8px 0; font-size: 11px; font-weight: 900; background: #161620; color: #888; border: 1px solid #2d2d3f; border-radius: 8px; text-transform: uppercase; cursor: pointer; transition: .2s; }
@@ -246,10 +256,10 @@
             .col-left, .col-right { display: contents; } 
             
             .col-center { flex: 1; display: flex; flex-direction: column; min-height: 0; width: 100%; display: contents; }
-            #centerPanel { flex: 1; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+            #centerPanel { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
             
             .player-top-section { margin-bottom: 5px; align-items: flex-start; flex-shrink: 0; }
-            .player-photo-box { width: 80px; height: 80px; font-size: 10px; border-width: 1px; }
+            .player-photo-box { width: 90px; height: 90px; font-size: 10px; border-width: 1px; }
             .player-header { padding-right: 30px; }
             .player-name { font-size: 22px; justify-content: flex-start; text-align: left; }
             
@@ -264,9 +274,9 @@
             .action-btn-bid { padding: 10px; font-size: 18px; }
             .shortcut-hint { font-size: 9px; margin-top: 6px; }
 
-            /* Mobile Overlays: Pinned strictly between header and bid box */
-            #myTeamBox, #logPanelMobile, #tabsPanelMobile, #otherTeamsList {
-                position: absolute; top: 110px; left: 10px; right: 10px; bottom: 120px;
+            /* Mobile Overlays: Dynamically positioned via JS to avoid clash */
+            .mobile-overlay-panel {
+                position: absolute; left: 10px; right: 10px;
                 z-index: 1000; display: none; background: rgba(15,15,21,0.98); backdrop-filter: blur(8px);
                 border: 1px solid #444; border-radius: 12px; padding: 12px; box-shadow: 0 10px 50px rgba(0,0,0,0.9);
                 overflow-y: auto; margin: 0; flex-direction: column;
@@ -278,10 +288,8 @@
 
             #myTeamBox.show, #logPanelMobile.show, #tabsPanelMobile.show, #otherTeamsList.show { display: flex !important; }
 
-            /* Enforcing strictly fixed XI and scrollable bench */
-            #playingXIList { height: auto; flex: 0 0 auto; overflow: hidden; margin-bottom: 5px; }
-            #benchList { flex: 1 1 0; overflow-y: auto; }
-            
+            #playingXIList { height: auto; flex: 1 1 0; overflow-y: auto; margin-bottom: 5px; }
+            #benchList { flex: 0 0 90px; }
             .log-panel { padding: 10px !important; }
             .timer-pill { position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 14px; }
         }
@@ -385,56 +393,60 @@
         <button class="mobile-nav-btn" onclick="toggleMobilePanel('otherTeamsList', this)">🌐 Teams</button>
     </div>
 
-    <div class="top-row">
-        <div class="col-left panel my-team-card" id="myTeamBox">
-            <div class="team-msg-popup" id="msg-popup-myteam"></div>
-            <button class="logout-btn" onclick="logout()">LEAVE</button>
-            <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
-            <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
-            <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
-            <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
-            <div class="roster-list drop-zone" id="playingXIList"></div>
-            <div class="roster-header" style="margin-top:6px;">BENCH</div>
-            <div class="roster-list drop-zone" id="benchList"></div>
+    <div class="top-row" id="mainTopRow">
+        <div class="col-left">
+            <div class="panel my-team-card mobile-overlay-panel" id="myTeamBox">
+                <div class="team-msg-popup" id="msg-popup-myteam"></div>
+                <button class="logout-btn" onclick="logout()">LEAVE</button>
+                <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
+                <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
+                <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
+                <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
+                <div class="roster-list drop-zone" id="playingXIList"></div>
+                <div class="roster-header" style="margin-top:6px;">BENCH</div>
+                <div class="roster-list drop-zone" id="benchList"></div>
+            </div>
         </div>
 
-        <div class="col-center panel" id="centerPanel">
-            <div class="timer-pill" id="playerTimer">--</div>
-            
-            <div class="player-top-section">
-                <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                <div class="player-header" style="margin-bottom:0;">
-                    <span class="label-text">On The Block</span>
-                    <div class="player-name" id="playerName">Waiting…</div>
-                    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                        <div class="past-teams" id="playerFranchise" style="display:none;"></div>
-                        <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+        <div class="col-center">
+            <div class="panel" id="centerPanel">
+                <div class="timer-pill" id="playerTimer">--</div>
+                
+                <div class="player-top-section" id="playerTopSection">
+                    <div class="player-photo-box" id="playerPhoto">PHOTO</div>
+                    <div class="player-header" style="margin-bottom:0;">
+                        <span class="label-text">On The Block</span>
+                        <div class="player-name" id="playerName">Waiting…</div>
+                        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                            <div class="past-teams" id="playerFranchise" style="display:none;"></div>
+                            <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="stats-bar">
-                <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
-                <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
-                <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
-                <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
-                <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
-                <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
-            </div>
-
-            <div class="bidding-zone" id="bidZoneBox">
-                <span class="label-text" style="font-size:12px;">Current Bid</span>
-                <div class="current-bid-display status-neutral" id="currentBidContainer">
-                    <span id="actualBidAmount">₹0.00 Cr</span>
-                    <span class="leader-badge" id="leaderBadge">-</span>
+                <div class="stats-bar" id="statsBar">
+                    <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
+                    <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
+                    <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
+                    <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
+                    <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
+                    <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                 </div>
-                <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
-                <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
+
+                <div class="bidding-zone" id="bidZoneBox">
+                    <span class="label-text" style="font-size:12px;">Current Bid</span>
+                    <div class="current-bid-display status-neutral" id="currentBidContainer">
+                        <span id="actualBidAmount">₹0.00 Cr</span>
+                        <span class="leader-badge" id="leaderBadge">-</span>
+                    </div>
+                    <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
+                    <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
+                </div>
             </div>
         </div>
 
-        <div class="col-right" style="background:transparent; border:none; padding:0; box-shadow:none;">
-            <div class="panel log-panel" id="logPanelMobile">
+        <div class="col-right" id="rightColumnWrapper">
+            <div class="panel log-panel mobile-overlay-panel" id="logPanelMobile">
                 <div class="log-header">
                     <span>📜 Live Activity <span id="auctioneerStatus" class="offline-dot" title="Auctioneer Offline"></span></span>
                     <div class="chat-input-area">
@@ -445,7 +457,7 @@
                 <div class="log-container" id="logContainer"></div>
             </div>
             
-            <div class="panel tabs-panel" id="tabsPanelMobile">
+            <div class="panel tabs-panel mobile-overlay-panel" id="tabsPanelMobile">
                 <div class="tabs">
                     <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); renderDeck()">
                         <option value="" disabled selected hidden>ON DECK</option>
@@ -462,7 +474,7 @@
         </div>
     </div>
 
-    <div class="bottom-row" id="otherTeamsList"></div>
+    <div class="bottom-row mobile-overlay-panel" id="otherTeamsList"></div>
 </div>
 
 <script>
@@ -476,8 +488,6 @@
     let currentAuctionState = 'idle', myOverseasCount = 0;
     let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
     let teamBudgets = {};   
-    let globalImageMap = {};
-    let _liveStateData = null;
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
     let isUserScrollingLog = false;
@@ -489,7 +499,7 @@
         document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
-    // ── Mobile Menu Toggle ─────────────────────────────────────────────────
+    // ── Mobile Menu Toggle (Dynamic Safe-Zone Positioning) ─────────────────
     window.toggleMobilePanel = function(panelId, btnEl) {
         if (window.innerWidth >= 1000) return;
         
@@ -499,13 +509,26 @@
         
         panels.forEach(p => { 
             let el = document.getElementById(p); 
-            if(el) el.classList.remove('show'); 
+            if(el) {
+                el.classList.remove('show'); 
+                el.style.top = ''; el.style.bottom = '';
+            }
         });
         document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
         
-        let statsBar = document.querySelector('.stats-bar');
+        let statsBar = document.getElementById('statsBar');
         
         if (isOpening) {
+            let topRowRect = document.getElementById('mainTopRow').getBoundingClientRect();
+            let headerRect = document.getElementById('playerTopSection').getBoundingClientRect();
+            let bidBoxRect = document.getElementById('bidZoneBox').getBoundingClientRect();
+            
+            let topOffset = headerRect.bottom - topRowRect.top + 10;
+            let bottomOffset = topRowRect.bottom - bidBoxRect.top + 10;
+            
+            targetPanel.style.top = topOffset + 'px';
+            targetPanel.style.bottom = bottomOffset + 'px';
+            
             targetPanel.classList.add('show');
             if (btnEl) btnEl.classList.add('active');
             if (statsBar) statsBar.style.display = 'none';
@@ -513,6 +536,22 @@
             if (statsBar) statsBar.style.display = 'grid';
         }
     };
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1000) {
+            let panels = ['myTeamBox', 'logPanelMobile', 'tabsPanelMobile', 'otherTeamsList'];
+            panels.forEach(p => {
+                let el = document.getElementById(p);
+                if (el) {
+                    el.classList.remove('show');
+                    el.style.top = ''; el.style.bottom = '';
+                }
+            });
+            document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+            let statsBar = document.getElementById('statsBar');
+            if (statsBar) statsBar.style.display = 'grid';
+        }
+    });
 
     // ── Modal System ───────────────────────────────────────────────────────
     function showAlert(title, msg, onOk) {
@@ -816,14 +855,6 @@
             }
         });
 
-        // Global Image Map
-        db.ref('global_player_images').on('value', snap => {
-            globalImageMap = snap.val() || {};
-            if (_liveStateData && _liveStateData.current_player_index >= 0) {
-                updateLiveUI(_liveStateData, _liveStateData.highest_bidder === myTeamName);
-            }
-        });
-
         roomRef.child('settings').on('value', snap => {
             let s = snap.val() || {};
             window.auctionSettings = s; 
@@ -864,7 +895,6 @@
 
         roomRef.child('live_state').on('value', snap => {
             let data = snap.val(); if (!data) return;
-            _liveStateData = data;
             currentAuctionState = data.auction_state || 'idle';
             localCurrentBid     = data.current_bid || 0;
             let amIWinning      = (data.highest_bidder === myTeamName);
@@ -924,29 +954,17 @@
                 if (p.franchise) { fr.textContent = p.franchise; fr.style.display = 'inline-block'; } else fr.style.display = 'none';
                 if (p.role)      { rl.textContent = p.role;      rl.style.display = 'inline-block'; } else rl.style.display = 'none';
                 
-                document.getElementById('statRuns').textContent   = p.runs || '-';
-                document.getElementById('statAvg').textContent    = p.average || '-';
-                document.getElementById('statBatSR').textContent  = p.bat_sr || '-';
+                document.getElementById('statRuns').textContent   = p.runs || p.stat1_val || '-';
+                document.getElementById('statAvg').textContent    = p.average || p.avg || p.stat2_val || '-';
+                document.getElementById('statBatSR').textContent  = p.bat_sr || p.strike_rate || p.stat3_val || '-';
                 document.getElementById('statWkts').textContent   = p.wickets || '-';
-                document.getElementById('statEcon').textContent   = p.economy || '-';
+                document.getElementById('statEcon').textContent   = p.economy || p.econ || '-';
                 document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
-
-                // Setup Global Image
-                let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
-                let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name]; 
-                let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
-                let photoBox = document.getElementById('playerPhoto');
-                if (imgUrl) {
-                    photoBox.innerHTML = `<img src="${esc(imgUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">`;
-                } else {
-                    photoBox.innerHTML = 'PHOTO';
-                }
             }
         } else {
             document.getElementById('playerName').textContent = 'Waiting…';
             document.getElementById('playerFranchise').style.display = 'none';
             document.getElementById('playerRole').style.display      = 'none';
-            document.getElementById('playerPhoto').innerHTML = 'PHOTO';
             ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => {
                 document.getElementById(id).textContent = '-';
             });
@@ -1380,7 +1398,7 @@
         let roster = playerPool.filter(p => p.status === 'sold' && p.team === team);
         let order  = allRegisteredTeams[team]?.rosterOrder || [];
         roster.sort((a,b) => { let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi; });
-        let ranks  = [...new Set(roster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
+        let ranks  = [...new Set(roster.map(p=>p.sold_price))].filter(v=>v>0).sort((a,b)=>b-a);
         let [gold,silver,bronze] = [ranks[0]||-1, ranks[1]||-1, ranks[2]||-1];
         let tColor = allRegisteredTeams[team]?.color || '#333';
         let roles  = allRegisteredTeams[team]?.playerRoles || {};
