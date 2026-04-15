@@ -278,7 +278,8 @@
     function esc(str) {
         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
-    // FIX 2: Case Insensitive Global Image Key
+    
+    // FIX: Case Insensitive Global Image Key
     function sanitizeKey(name) {
         return name.toLowerCase().replace(/[.#$\[\]\/]/g, '_');
     }
@@ -287,18 +288,26 @@
     function verifySuperAdmin() {
         let entered = document.getElementById('superPin').value.trim();
         if (!entered) { showAlert('Missing PIN', 'Please enter the Admin PIN.'); return; }
+        
         db.ref('platform_settings/admin_pin').once('value', snap => {
             let stored = snap.val();
-            if (!stored) {
+            if (stored === null || stored === undefined) {
                 showAlert('Not Configured', 'No Admin PIN set in Firebase.\n\nSet platform_settings → admin_pin');
                 return;
             }
-            if (entered === stored) {
+            
+            // FIX: Force the stored Firebase value to be a String before comparing to prevent type mismatch
+            if (entered === String(stored).trim()) {
                 document.getElementById('adminLoginScreen').style.display = 'none';
                 document.getElementById('masterDashboard').style.display  = 'flex';
                 bootDashboard();
-            } else { showAlert('Access Denied', 'Incorrect PIN.'); }
-        }).catch(() => showAlert('Read Error', 'Cannot read platform_settings. Check Firebase Rules.'));
+            } else { 
+                showAlert('Access Denied', 'Incorrect PIN.'); 
+            }
+        }).catch((error) => {
+            console.error(error);
+            showAlert('Read Error', 'Cannot read platform_settings. Check your Firebase Security Rules.');
+        });
     }
 
     // ── Tab Switching ─────────────────────────────────────────────────────
