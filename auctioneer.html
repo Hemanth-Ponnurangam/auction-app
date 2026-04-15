@@ -13,7 +13,6 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0f15; color: #e0e0e0; margin: 0; padding: 10px 20px; height: 100vh; overflow: hidden; font-size: 14px; }
         
-        /* ─ Auctioneer Specific UI ─────────────────────────────────────── */
         .file-upload-wrapper { border: 2px dashed #444; background: #0a0a0f; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .file-upload-wrapper input[type=file] { color: #aaa; font-size: 12px; width: 100%; margin-top: 8px; }
         .upload-instructions { font-size: 10px; color: #888; margin-top: 8px; line-height: 1.5; background: rgba(255,255,255,.05); padding: 8px; border-radius: 4px; }
@@ -41,7 +40,6 @@
         .past-teams { font-size: 10px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-top: 8px; }
         .player-role-pill { font-size: 10px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 6px; }
 
-        /* ─ Player UI (Compact for Admin) ───────────────────────────────── */
         .player-top-section { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 10px; }
         .player-photo-box { width: 100px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); overflow: hidden; }
         .player-header { flex: 1; }
@@ -52,7 +50,6 @@
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; font-weight: bold; }
         .stat-val { font-size: 15px; color: #eee; font-weight: bold; }
 
-        /* ─ Buttons ─────────────────────────────────────────────────────── */
         button { border: none; padding: 10px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: .2s; color: white; text-transform: uppercase; }
         button:not(:disabled):active { transform: translateY(0); }
         .btn-green { background: linear-gradient(145deg,#28a745,#1e7e34); width: 48%; font-size: 15px; padding: 12px; letter-spacing: 2px; border: 1px solid #218838; box-shadow: 0 4px 15px rgba(40,167,69,.2); border-radius: 8px; flex-shrink: 0; }
@@ -82,7 +79,6 @@
         .btn-dice:not(:disabled):hover { background: #3a3a4c; border-color: #666; transform: scale(1.05); }
         .flex-row { display: flex; justify-content: space-between; margin-bottom: 0; gap: 15px; flex-shrink: 0; }
         
-        /* ─ Budget Grid (Perfect 10 Fit) ────────────────────────────────── */
         .budget-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(calc(50% - 6px), 1fr); gap: 12px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; }
         .budget-card { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; transition: all .3s; }
         .budget-card-empty { border: 1px dashed #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px; font-weight: bold; letter-spacing: 1px; height: 100%; }
@@ -100,7 +96,6 @@
         .pin-eye { cursor: pointer; opacity: .5; transition: .2s; font-size: 11px; }
         .pin-eye:hover { opacity: 1; }
         
-        /* ─ Tabs ─────────────────────────────────────────────────────────── */
         .tabs-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .tabs { display: flex; margin-bottom: 10px; background: #0a0a0f; border-radius: 10px; padding: 6px; border: 1px solid #222; flex-shrink: 0; gap: 6px; }
         .tab-btn { flex: 1; background: transparent; color: #777; padding: 10px 5px; border-radius: 8px; margin: 0; font-size: 11px; font-weight: 800; cursor: pointer; border: none; }
@@ -114,7 +109,6 @@
         select { appearance: none; padding: 8px 12px; font-size: 13px; border-radius: 8px; background: #111118; color: #fff; border: 1px solid #333; outline: none; width: 100%; cursor: pointer; background-image: url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 8px center; }
         .compact-select { max-width: 220px; flex: 1; }
         
-        /* ─ Log / Chat ───────────────────────────────────────────────────── */
         .chat-input-area { display: flex; gap: 8px; background: rgba(0,0,0,.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
         .chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; outline: none; flex: 1; transition: .2s; }
         .chat-input:focus { border-color: #007bff; }
@@ -128,7 +122,6 @@
         .setting-input { background: #0a0a0f; border: 1px solid #333; color: #ffc107; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-size: 16px; font-weight: bold; outline: none; }
         .setting-input.wide { width: 180px; text-align: right; }
         
-        /* Hotkey hint */
         .hotkey-hint { position: absolute; top: 8px; right: 15px; font-size: 11px; color: #888; background: #111118; padding: 4px 8px; border-radius: 8px; border: 1px solid #2d2d3f; z-index: 10; }
         .key-badge { background: #22222d; color: #ffc107; padding: 3px 6px; border-radius: 4px; font-family: monospace; border-bottom: 2px solid #000; margin: 0 4px; }
     </style>
@@ -386,7 +379,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ── Server Time Offset Logic ───────────────────────────────────────────
     let serverTimeOffset = 0;
     db.ref('.info/serverTimeOffset').on('value', snap => {
         serverTimeOffset = snap.val() || 0;
@@ -473,7 +465,6 @@
     function backToAdminGateway() { document.getElementById('createRoomScreen').style.display='none'; document.getElementById('joinAdminRoomScreen').style.display='none'; document.getElementById('adminGatewayScreen').style.display='flex'; }
     function toggleCustomUpload() { document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value==='custom' ? 'block' : 'none'; }
 
-    // FIX: Replaced Fragile Regex Parser with PapaParse
     function parseCSV(text) {
         let parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
         let result = [];
@@ -661,7 +652,8 @@
                 document.getElementById('statEcon').textContent   = p.economy || '-';
                 document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
                 
-                let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
+                // FIX 2: Case Insensitive Global Image Key Lookups
+                let safeNameKey = (p.name || '').toLowerCase().replace(/[.#$\[\]\/]/g, '_');
                 let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name]; 
                 let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
                 
@@ -694,7 +686,6 @@
             if (isIdle) { timerEl.textContent='--'; return; }
             if (isPaused) { timerEl.textContent='⏸'; timerEl.classList.add('timer-paused'); return; }
             
-            // FIX: Using Server Time to prevent clock drift
             let t=data.timer_end ? Math.max(0, Math.ceil((data.timer_end-getServerTime())/1000)) : 0;
             timerEl.textContent=t+'s';
             
@@ -779,7 +770,12 @@
                 html+=`<div class="budget-card-empty">WAITING...</div>`;
             }
         }
-        document.getElementById('budgetCards').innerHTML=html;
+        
+        // FIX 3: HTML String Caching to stop DOM Thrashing
+        if (window._cachedBudgetHtml !== html) {
+            document.getElementById('budgetCards').innerHTML = html;
+            window._cachedBudgetHtml = html;
+        }
     }
 
     function persistEvent(msg) {
@@ -799,7 +795,6 @@
         if (currentAuctionState==='bidding'||currentAuctionState==='cooldown') { showAlert('In Progress','An auction is already running.'); return; }
         let p=playerPool[index], msg=`▶️ <strong>${esc(p.name)}</strong> is on the block. Base: ₹${(p.base_price/10000000).toFixed(2)} Cr`;
         
-        // FIX: Start timers using Server Sync to kill drift
         roomRef.child('live_state').update({ current_player_index:parseInt(index), current_bid:p.base_price, highest_bidder:'Base Price', auction_state:'cooldown', timer_end:getServerTime()+10000 });
         persistEvent(msg);
     }
@@ -834,13 +829,11 @@
     }
 
     function startTimer(seconds, state='bidding') {
-        // FIX: Start timers using Server Sync
         roomRef.child('live_state').update({ timer_end:getServerTime()+(seconds*1000), auction_state:state });
     }
     
     window.bypassCooldown = function() {
         if (currentAuctionState === 'cooldown') {
-            // FIX: Using Server Time to prevent clock drift
             roomRef.child('live_state').update({ 
                 auction_state: 'bidding', 
                 timer_end: getServerTime() + 15000 
@@ -1095,7 +1088,12 @@
             let disabled=inProgress?'disabled style="opacity:.3; cursor:not-allowed;"':'';
             html+=`<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr</span></div><button class="btn-push" ${disabled} onclick="pushPlayerToBlock(${i})">Push</button></div>`;
         });
-        document.getElementById('deckList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players in this set.</p>";
+        
+        // FIX 3: HTML String Caching to stop DOM Thrashing
+        if (window._cachedDeckHtml !== html) {
+            document.getElementById('deckList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players in this set.</p>";
+            window._cachedDeckHtml = html;
+        }
     }
 
     function renderUnsold() {
@@ -1110,13 +1108,23 @@
             let disabled=inProgress?'disabled style="opacity:.3; cursor:not-allowed;"':'';
             html+=`<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div><button class="btn-repush" ${disabled} onclick="pushPlayerToBlock(${i})">Re-Push</button></div>`;
         });
-        document.getElementById('unsoldList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players.</p>";
+        
+        if (window._cachedUnsoldHtml !== html) {
+            document.getElementById('unsoldList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players.</p>";
+            window._cachedUnsoldHtml = html;
+        }
     }
 
     function renderSquads() {
         let team=document.getElementById('teamSelector').value;
         let term=document.getElementById('auctioneerSearch').value.toLowerCase();
-        if (!team) { document.getElementById('squadList').innerHTML="<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; return; }
+        if (!team) { 
+            if (window._cachedSquadsHtml !== 'empty') {
+                document.getElementById('squadList').innerHTML="<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; 
+                window._cachedSquadsHtml = 'empty';
+            }
+            return; 
+        }
         let roster=playerPool.filter(p=>p.status==='sold'&&p.team===team&&(!term||p.name.toLowerCase().includes(term)));
         let order=allRegisteredTeams[team]?.rosterOrder||[];
         roster.sort((a,b)=>{let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi;});
@@ -1131,7 +1139,11 @@
             let pc=p.sold_price===gold?'#eab308':p.sold_price===silver?'#c0c0c0':p.sold_price===bronze?'#cd7f32':'#aaa';
             return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span>${roleHtml}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)} Cr</span></div></div>`;
         }).join('');
-        document.getElementById('squadList').innerHTML=html||`<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
+        
+        if (window._cachedSquadsHtml !== html) {
+            document.getElementById('squadList').innerHTML=html||`<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
+            window._cachedSquadsHtml = html;
+        }
     }
 
     document.addEventListener('keydown', e => {
