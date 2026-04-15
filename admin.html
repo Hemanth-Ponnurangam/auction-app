@@ -279,7 +279,7 @@
         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
     
-    // FIX: Case Insensitive Global Image Key
+    // Case Insensitive Global Image Key
     function sanitizeKey(name) {
         return name.toLowerCase().replace(/[.#$\[\]\/]/g, '_');
     }
@@ -292,21 +292,21 @@
         db.ref('platform_settings/admin_pin').once('value', snap => {
             let stored = snap.val();
             if (stored === null || stored === undefined) {
-                showAlert('Not Configured', 'No Admin PIN set in Firebase.\n\nSet platform_settings → admin_pin');
+                showAlert('Not Configured', 'No Admin PIN set in Firebase.\n\nGo to Firebase Realtime Database and create: platform_settings -> admin_pin');
                 return;
             }
             
-            // FIX: Force the stored Firebase value to be a String before comparing to prevent type mismatch
+            // Type-safe comparison to prevent Firebase integer formatting errors
             if (entered === String(stored).trim()) {
                 document.getElementById('adminLoginScreen').style.display = 'none';
                 document.getElementById('masterDashboard').style.display  = 'flex';
                 bootDashboard();
             } else { 
-                showAlert('Access Denied', 'Incorrect PIN.'); 
+                showAlert('Access Denied', 'Incorrect PIN. Please try again.'); 
             }
         }).catch((error) => {
-            console.error(error);
-            showAlert('Read Error', 'Cannot read platform_settings. Check your Firebase Security Rules.');
+            console.error("Firebase Read Error:", error);
+            showAlert('Read Error', 'Firebase blocked the request. Please check your Realtime Database Security Rules and ensure .read is true.');
         });
     }
 
