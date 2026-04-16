@@ -419,18 +419,45 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ── Centralized Listener Management & State Pipeline ───────────────────
+    const _appListeners = [];
+    function addDbListener(ref, event, callback) {
+        ref.on(event, callback);
+        _appListeners.push({ ref, event, callback });
+    }
+    function clearAllListeners() {
+        _appListeners.forEach(l => l.ref.off(l.event, l.callback));
+        _appListeners.length = 0;
+    }
+    window.addEventListener('beforeunload', () => {
+        clearAllListeners();
+        if (roomRef) roomRef.child('admin_presence').remove();
+    });
+
+    let _renderTimer = null;
+    function scheduleRender() { 
+        if (_renderTimer) cancelAnimationFrame(_renderTimer);
+        _renderTimer = requestAnimationFrame(() => {
+            populateDropdowns(); 
+            recalculateBudgets(); 
+            if (_liveStateData) updateLiveUI(_liveStateData);
+            updateBudgetTracker();
+            renderDeck(); renderUnsold(); renderSquads();
+        });
+    }
+
     let currentRoomKey = null, roomRef = null;
     let currentIndex = -1, currentBid = 0, currentLeader = '-';
     let playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle';
+    const CRORE = 10000000;
     let TEAM_BUDGET = 100 * CRORE, STARTING_PURSE_CR = 100;
     let teamBudgets = {};       
     let globalImageMap = {};
-    let _modalCb = null, _liveStateData = {};
-    let _renderTimer = null;
+    let _modalCb = null, _liveStateData = null;
 
     // ── Connection Monitor ────────────────────────────────────────────────
-    db.ref('.info/connected').on('value', snap => {
+    addDbListener(db.ref('.info/connected'), 'value', snap => {
         document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
@@ -500,7 +527,6 @@
     function backToAdminGateway() { document.getElementById('createRoomScreen').style.display='none'; document.getElementById('joinAdminRoomScreen').style.display='none'; document.getElementById('adminGatewayScreen').style.display='flex'; }
     function toggleCustomUpload() { document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value==='custom' ? 'block' : 'none'; }
 
-    // 12-Column Specific CSV Parser
     function parseCSV(text) {
         let lines = text.split('\n'), raw = lines[0].split(',');
         let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
@@ -589,7 +615,7 @@
     // ── Firebase Listeners ────────────────────────────────────────────────
     function attachFirebaseListeners() {
         let isChatLoaded=false;
-        roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
+        addDbListener(roomRef.child('chat_events').limitToLast(15), 'child_added', snap => {
             if (!isChatLoaded) return;
             let d=snap.val(), color=allRegisteredTeams[d.team]?.color||(d.team==='ADMIN'?'#ffc107':'#fff');
             logLocal(`💬 <span style="color:${color}; font-weight:bold;">${esc(d.team)}</span>: ${esc(d.text)}`);
@@ -602,65 +628,64 @@
             Object.values(entries).sort((a,b)=>a.t-b.t).forEach(e => logLocal(e.msg, new Date(e.t)));
             isLogLoaded=true;
         });
-        roomRef.child('auction_log').limitToLast(100).on('child_added', snap => {
+        addDbListener(roomRef.child('auction_log').limitToLast(100), 'child_added', snap => {
             if (!isLogLoaded) return;
             let e=snap.val(); logLocal(e.msg, new Date(e.t));
         });
 
-        // Fetch Global Image Directory
-        db.ref('global_player_images').on('value', snap => {
+        addDbListener(db.ref('global_player_images'), 'value', snap => {
             globalImageMap = snap.val() || {};
             if (currentIndex >= 0 && playerPool.length > 0) {
-                updateLiveUI(_liveStateData); // Force a re-render to update the image if it changes mid-auction
+                scheduleRender();
             }
         });
 
-        roomRef.child('settings').on('value', snap => {
+        addDbListener(roomRef.child('settings'), 'value', snap => {
             let d=snap.val()||{};
             STARTING_PURSE_CR=Number(d.starting_purse)||100;
             TEAM_BUDGET=STARTING_PURSE_CR*CRORE;
             window.auctionSettings = d;
             document.getElementById('headerRoomName').textContent=(d.room_name||'IPL AUCTIONEER').toUpperCase();
+            scheduleRender();
         });
 
-        roomRef.child('teams_auth').on('value', snap => {
+        addDbListener(roomRef.child('teams_auth'), 'value', snap => {
             allRegisteredTeams=snap.val()||{};
-            populateDropdowns(); recalculateBudgets(); updateBudgetTracker();
+            scheduleRender();
         });
-        roomRef.child('logged_in_teams').on('value', snap => {
-            activePresence=snap.val()||{}; updateBudgetTracker();
+        
+        addDbListener(roomRef.child('logged_in_teams'), 'value', snap => {
+            activePresence=snap.val()||{}; 
+            scheduleRender();
         });
 
         roomRef.child('player_pool').once('value', snap => {
             let raw=snap.val()||[];
             playerPool=Array.isArray(raw)?raw:Object.values(raw);
-            populateDropdowns(); recalculateBudgets(); scheduleRender();
+            scheduleRender();
         });
 
-        roomRef.child('player_pool').on('child_changed', snap => {
+        addDbListener(roomRef.child('player_pool'), 'child_changed', snap => {
             let idx=parseInt(snap.key);
             if (!isNaN(idx)) {
                 playerPool[idx]=snap.val();
-                recalculateBudgets(); scheduleRender(); updateBudgetTracker();
+                scheduleRender();
             }
         });
 
-        roomRef.child('live_state').on('value', snap => {
+        addDbListener(roomRef.child('live_state'), 'value', snap => {
             let data=snap.val()||{};
             _liveStateData=data;
             currentIndex=data.current_player_index!==undefined ? data.current_player_index : -1;
             currentBid=data.current_bid||0;
             currentLeader=data.highest_bidder||'-';
             currentAuctionState=data.auction_state||'idle';
-            updateLiveUI(data);
+            scheduleRender();
         });
         
-        // Broadcast presence
         roomRef.child('admin_presence').set(true);
         roomRef.child('admin_presence').onDisconnect().remove();
     }
-
-    function scheduleRender() { clearTimeout(_renderTimer); _renderTimer=setTimeout(()=>{ renderDeck(); renderUnsold(); renderSquads(); }, 60); }
 
     function recalculateBudgets() {
         let keys=Object.keys(allRegisteredTeams);
@@ -689,7 +714,6 @@
                 document.getElementById('statEcon').textContent   = p.economy || '-';
                 document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
                 
-                // Fetch Global Image
                 let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
                 let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name]; 
                 let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
@@ -755,8 +779,6 @@
             pauseBtn.innerHTML='⏸'; 
             pauseBtn.classList.remove('is-paused'); 
         }
-
-        updateBudgetTracker();
     }
 
     function _setBtn(btn, enabled) {
@@ -912,7 +934,6 @@
         });
     }
 
-    // Undo Last Bid
     window.undoLastBid = function() {
         if (currentIndex < 0 || currentAuctionState === 'sold' || currentAuctionState === 'unsold') {
             showAlert('Cannot Undo Bid', 'Auction is not currently active for a player.');
