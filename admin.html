@@ -300,7 +300,7 @@
                 showAlert('Not Configured', 'No Admin PIN set in Firebase.\n\nSet platform_settings → admin_pin');
                 return;
             }
-            if (entered === stored) {
+            if (entered === String(stored)) {
                 document.getElementById('adminLoginScreen').style.display = 'none';
                 document.getElementById('masterDashboard').style.display  = 'flex';
                 bootDashboard();
