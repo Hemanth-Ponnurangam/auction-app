@@ -138,7 +138,7 @@
         .log-entry { font-family: 'Consolas', monospace; font-size: 12px; margin-bottom: 8px; color: #aaa; border-bottom: 1px dashed #222; padding-bottom: 8px; }
         .log-time { color: #555; margin-right: 8px; }
         
-        .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; margin-left: 5px; }
+        .neon-plane { text-shadow: 0 0 10px #0dcaf0; color: #0dcaf0; font-size: .9em; margin-left: 10px; vertical-align: middle; }
         
         /* ─ Settings Overlay ─────────────────────────────────────────────── */
         .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.8); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
@@ -423,7 +423,7 @@
     let currentIndex = -1, currentBid = 0, currentLeader = '-';
     let playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle';
-    let TEAM_BUDGET = 100 * 10000000, STARTING_PURSE_CR = 100;
+    let TEAM_BUDGET = 100 * CRORE, STARTING_PURSE_CR = 100;
     let teamBudgets = {};       
     let globalImageMap = {};
     let _modalCb = null, _liveStateData = {};
@@ -517,7 +517,7 @@
                 
                 if (h === 'baseprice') {
                     let num = Number(v)||0;
-                    obj.base_price = (num>0&&num<=100) ? num*10000000 : num;
+                    obj.base_price = (num>0&&num<=100) ? num*CRORE : num;
                 } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(h)) {
                     let key = h;
                     if(h==='avg') key='average';
@@ -618,7 +618,7 @@
         roomRef.child('settings').on('value', snap => {
             let d=snap.val()||{};
             STARTING_PURSE_CR=Number(d.starting_purse)||100;
-            TEAM_BUDGET=STARTING_PURSE_CR*10000000;
+            TEAM_BUDGET=STARTING_PURSE_CR*CRORE;
             window.auctionSettings = d;
             document.getElementById('headerRoomName').textContent=(d.room_name||'IPL AUCTIONEER').toUpperCase();
         });
@@ -711,7 +711,7 @@
             });
         }
 
-        document.getElementById('adminBid').textContent=`₹${(currentBid/10000000).toFixed(2)} Cr`;
+        document.getElementById('adminBid').textContent=`₹${(currentBid/CRORE).toFixed(2)} Cr`;
         let leaderEl=document.getElementById('adminLeader');
         leaderEl.textContent=currentLeader;
         leaderEl.style.color=allRegisteredTeams[currentLeader]?.color||'#007bff';
@@ -778,7 +778,7 @@
                 let team=keys[i], tData=allRegisteredTeams[team]||{};
                 let remaining=teamBudgets[team]!==undefined?teamBudgets[team]:TEAM_BUDGET;
                 let count=playerPool.filter(p=>p.status==='sold'&&p.team===team).length;
-                let rCr=(remaining/10000000).toFixed(2);
+                let rCr=(remaining/CRORE).toFixed(2);
                 let isOnline=activePresence[team];
                 let dot=isOnline?'<span class="live-dot"></span>':'<span class="offline-dot"></span>';
                 let tColor=tData.color||'#fff';
@@ -826,7 +826,7 @@
     // ── Auction Controls ──────────────────────────────────────────────────
     function pushPlayerToBlock(index) {
         if (currentAuctionState==='bidding'||currentAuctionState==='cooldown') { showAlert('In Progress','An auction is already running.'); return; }
-        let p=playerPool[index], msg=`▶️ <strong>${esc(p.name)}</strong> is on the block. Base: ₹${(p.base_price/10000000).toFixed(2)} Cr`;
+        let p=playerPool[index], msg=`▶️ <strong>${esc(p.name)}</strong> is on the block. Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr`;
         roomRef.child('live_state').update({ current_player_index:parseInt(index), current_bid:p.base_price, highest_bidder:'Base Price', auction_state:'cooldown', timer_end:Date.now()+10000 });
         persistEvent(msg);
     }
@@ -842,7 +842,7 @@
     function sellPlayer() {
         if (currentIndex<0||currentLeader==='-'||currentLeader==='Base Price') return;
         let p=playerPool[currentIndex];
-        let msg=`🔨 <strong>${esc(p.name)}</strong> SOLD to ${esc(currentLeader)} for ₹${(currentBid/10000000).toFixed(2)} Cr`;
+        let msg=`🔨 <strong>${esc(p.name)}</strong> SOLD to ${esc(currentLeader)} for ₹${(currentBid/CRORE).toFixed(2)} Cr`;
         let updates={};
         updates[`player_pool/${currentIndex}/status`]='sold';
         updates[`player_pool/${currentIndex}/team`]=currentLeader;
@@ -895,7 +895,7 @@
             let p=playerPool[lsi];
             if (!p||p.status!=='sold') { showAlert('Nothing to Undo','The last tracked player is not currently sold.'); return; }
             showConfirm('⏪ Undo Sale',
-                `Revert the sale of ${p.name} to ${p.team} for ₹${(p.sold_price/10000000).toFixed(2)} Cr?`,
+                `Revert the sale of ${p.name} to ${p.team} for ₹${(p.sold_price/CRORE).toFixed(2)} Cr?`,
                 () => showPrompt('Type to Confirm', 'Type UNDO to proceed:', 'UNDO', val => {
                     if (val==='UNDO') {
                         let msg=`⏪ UNDO: <strong>${esc(p.name)}</strong> sale to ${esc(p.team)} was reverted.`;
@@ -926,15 +926,15 @@
         }
         
         showConfirm('↩️ Undo Last Bid',
-            `Are you sure you want to undo the last bid?\nThe current bid is ₹${(currentBid/10000000).toFixed(2)} Cr.`,
+            `Are you sure you want to undo the last bid?\nThe current bid is ₹${(currentBid/CRORE).toFixed(2)} Cr.`,
             () => {
                 let set = window.auctionSettings || {};
                 let incBase = (set.inc_base || 20) * 100000;
                 let incMid = (set.inc_mid || 50) * 100000;
                 let incHigh = (set.inc_high || 100) * 100000;
                 
-                let limitMid = (set.limit_mid || 2) * 10000000;
-                let limitHigh = (set.limit_high || 5) * 10000000;
+                let limitMid = (set.limit_mid || 2) * CRORE;
+                let limitHigh = (set.limit_high || 5) * CRORE;
                 
                 let prevBid = currentBid;
                 if (currentBid > limitHigh) prevBid -= incHigh;
@@ -952,7 +952,7 @@
                     auction_state: 'bidding'
                 });
                 
-                persistEvent(`↩️ Auctioneer reversed the last bid. Bid dropped to ₹${(prevBid/10000000).toFixed(2)} Cr.`);
+                persistEvent(`↩️ Auctioneer reversed the last bid. Bid dropped to ₹${(prevBid/CRORE).toFixed(2)} Cr.`);
             }
         );
     };
@@ -1063,7 +1063,7 @@
         let sold=playerPool.filter(p=>p.status==='sold'&&(team==='ALL'||p.team===team));
         let csv=`"Player","Team","Role","Bought For (Cr)"\n` + sold.map(p=>{
             let role=(allRegisteredTeams[p.team]?.playerRoles&&allRegisteredTeams[p.team].playerRoles[p.name])||'-';
-            return `"${p.name}","${p.team}","${role}","${(p.sold_price/10000000).toFixed(2)}"`;
+            return `"${p.name}","${p.team}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
         }).join('\n');
         let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
         let a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob), download:`IPL_${team}_Export.csv`});
@@ -1081,7 +1081,7 @@
             <tr style="background:#eee;"><th style="padding:10px; border:1px solid #ccc;">Player</th><th style="padding:10px; border:1px solid #ccc;">Nat</th><th style="padding:10px; border:1px solid #ccc;">Team</th><th style="padding:10px; border:1px solid #ccc;">Role</th><th style="padding:10px; border:1px solid #ccc;">Price (Cr)</th></tr>
             ${sold.map(p=>{
                 let role=(allRegisteredTeams[p.team]?.playerRoles?.[p.name])||'-';
-                return `<tr><td style="padding:10px; border:1px solid #ccc;">${p.name}</td><td style="padding:10px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:10px; border:1px solid #ccc;">${p.team}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)}</td></tr>`;
+                return `<tr><td style="padding:10px; border:1px solid #ccc;">${p.name}</td><td style="padding:10px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:10px; border:1px solid #ccc;">${p.team}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}</td></tr>`;
             }).join('')}
         </table>`;
         html2pdf().set({margin:10, filename:`IPL_${team}_Export.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}}).from(div).save();
@@ -1126,7 +1126,7 @@
             let isOv=!['india','indian','ind'].includes((p.nationality||'Indian').trim().toLowerCase());
             let plane=isOv?`<span class="neon-plane">✈️</span>`:'';
             let disabled=inProgress?'disabled style="opacity:.3; cursor:not-allowed;"':'';
-            html+=`<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr</span></div><button class="btn-push" ${disabled} onclick="pushPlayerToBlock(${i})">Push</button></div>`;
+            html+=`<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr</span></div><button class="btn-push" ${disabled} onclick="pushPlayerToBlock(${i})">Push</button></div>`;
         });
         document.getElementById('deckList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players in this set.</p>";
     }
@@ -1141,7 +1141,7 @@
             let isOv=!['india','indian','ind'].includes((p.nationality||'Indian').trim().toLowerCase());
             let plane=isOv?`<span class="neon-plane">✈️</span>`:'';
             let disabled=inProgress?'disabled style="opacity:.3; cursor:not-allowed;"':'';
-            html+=`<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/10000000).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div><button class="btn-repush" ${disabled} onclick="pushPlayerToBlock(${i})">Re-Push</button></div>`;
+            html+=`<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div><button class="btn-repush" ${disabled} onclick="pushPlayerToBlock(${i})">Re-Push</button></div>`;
         });
         document.getElementById('unsoldList').innerHTML=html||"<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players.</p>";
     }
@@ -1162,7 +1162,7 @@
             let plane=isOv?`<span class="neon-plane">✈️</span>`:'';
             let roleHtml=(roles[p.name]||'').split(',').filter(Boolean).map(r=>`<span style="font-size:9px; color:${r==='WK'?'#0dcaf0':'#ffc107'}; font-weight:bold; margin-left:3px;">${r}</span>`).join('');
             let pc=p.sold_price===gold?'#eab308':p.sold_price===silver?'#c0c0c0':p.sold_price===bronze?'#cd7f32':'#aaa';
-            return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span>${roleHtml}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)} Cr</span></div></div>`;
+            return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${plane}</span>${roleHtml}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)} Cr</span></div></div>`;
         }).join('');
         document.getElementById('squadList').innerHTML=html||`<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
     }
