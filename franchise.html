@@ -512,7 +512,7 @@
     let currentRoomKey = '', myTeamName = '', myTeamColor = '', myRepName = '';
     let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle', myOverseasCount = 0;
-    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * 10000000;
+    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
     let teamBudgets = {};   
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
@@ -818,7 +818,7 @@
         if (!sold.length) return `<p style="color:#666; font-size:12px;">No players bought yet.</p>`;
         let rows = sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `<tr><td style="padding:8px; border:1px solid #ccc;">${p.name}</td><td style="padding:8px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)}</td></tr>`;
+            return `<tr><td style="padding:8px; border:1px solid #ccc;">${p.name}</td><td style="padding:8px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:8px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}</td></tr>`;
         }).join('');
         return `
         <h3 style="text-transform:uppercase; margin-bottom:10px; color:#000;">${teamName} Squad</h3>
@@ -832,7 +832,7 @@
         let sold = playerPool.filter(p => p.status === 'sold' && p.team === myTeamName);
         let csv = `"Player","Role","Bought For (Cr)"\n` + sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `"${p.name}","${role}","${(p.sold_price/10000000).toFixed(2)}"`;
+            return `"${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
         }).join('\n');
         downloadBlob(csv, `IPL_${myTeamName}_Squad.csv`, 'text/csv;charset=utf-8;');
     };
@@ -841,7 +841,7 @@
         let sold = playerPool.filter(p => p.status === 'sold');
         let csv = `"Team","Player","Role","Bought For (Cr)"\n` + sold.map(p => {
             let role = (allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `"${p.team}","${p.name}","${role}","${(p.sold_price/10000000).toFixed(2)}"`;
+            return `"${p.team}","${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
         }).join('\n');
         downloadBlob(csv, `IPL_All_Squads.csv`, 'text/csv;charset=utf-8;');
     };
@@ -909,7 +909,7 @@
             let s = snap.val() || {};
             window.auctionSettings = s; 
             STARTING_PURSE_CR = Number(s.starting_purse) || 100;
-            TEAM_BUDGET = STARTING_PURSE_CR * 10000000;
+            TEAM_BUDGET = STARTING_PURSE_CR * CRORE;
             window.isOverseasStrict = s.overseas_limit_enabled === true;
         });
 
@@ -970,7 +970,7 @@
         let limitMid = set.limit_mid || 2;
         let limitHigh = set.limit_high || 5;
         
-        let cr = localCurrentBid / 10000000;
+        let cr = localCurrentBid / CRORE;
 
         if (cr >= limitHigh) return high;
         if (cr >= limitMid) return mid;
@@ -990,7 +990,7 @@
 
     // ── Live UI ────────────────────────────────────────────────────────────
     function updateLiveUI(data, amIWinning) {
-        document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / 10000000).toFixed(2)} Cr`;
+        document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
 
         let currentLeader = data.highest_bidder || '-';
         // When sold, player_pool.team is authoritative — it reflects what the auctioneer
@@ -1104,7 +1104,7 @@
         document.getElementById('myTeamDisplay').style.color   = myTeamColor;
 
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
-        let myPurseCr = myBudget / 10000000;
+        let myPurseCr = myBudget / CRORE;
         let purseEl = document.getElementById('myTeamPurse');
         purseEl.textContent = `₹${myPurseCr.toFixed(2)} Cr`;
         purseEl.style.color = getPurseColor(myPurseCr, STARTING_PURSE_CR);
@@ -1130,7 +1130,7 @@
                     <span>${esc(p.name)} ${planeIcon(p)}</span>
                     <button class="role-badge" onclick="openRolePopup(event,'${esc(p.name)}')">${roleHtml}</button>
                 </div>
-                <span style="color:${pc}; font-weight:bold;">₹${(p.sold_price/10000000).toFixed(2)}Cr</span>
+                <span style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}Cr</span>
             </div>`;
         };
 
@@ -1153,7 +1153,7 @@
             let tData  = allRegisteredTeams[t] || {};
             let tColor = tData.color || '#fff';
             let tRep   = tData.repName || 'Unknown';
-            let rCr    = (teamBudgets[t] !== undefined ? teamBudgets[t] : TEAM_BUDGET) / 10000000;
+            let rCr    = (teamBudgets[t] !== undefined ? teamBudgets[t] : TEAM_BUDGET) / CRORE;
             let count  = playerPool.filter(p => p.status === 'sold' && p.team === t).length;
             let isOnline = activePresence[t];
             let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
@@ -1224,7 +1224,7 @@
         } else {
             setStatus('status-losing');  
             // Display BID BASE if no one has bid yet
-            let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/10000000).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
+            let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/CRORE).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
             setBtn('btn-bid-active', btnText, true);
         }
     }
@@ -1277,7 +1277,7 @@
         showPrompt('Manual Bid', 'Enter exact bid amount in Crores (e.g. 7.5)', '', val => {
             let cr = parseFloat(val);
             if (!isNaN(cr) && cr > 0) {
-                placeExactBid(Math.round(cr * 10000000));
+                placeExactBid(Math.round(cr * CRORE));
             } else {
                 showAlert('Invalid', 'Please enter a valid number.');
             }
@@ -1441,4 +1441,119 @@
             if (xiCount >= 11) { showAlert('XI Full','Playing XI already has 11 players.'); return false; }
         }
         if (this.classList.contains('drop-zone')) {
-            this
+            this.appendChild(dragSrcEl);
+        } else {
+            // insertBefore(node, null) appends to end — do NOT use `|| this` fallback
+            // which incorrectly inserts before the target when dropping on the last item.
+            this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
+        }
+        saveRosterOrder();
+        return false;
+    }
+    function handleDragEnd(e) {
+        isDragging = false;
+        if (dragSrcEl) dragSrcEl.style.opacity = '1';
+        dragSrcEl = null;
+        document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('over'));
+        document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('over-zone'));
+        // Re-render from latest Firebase data now that drag is complete.
+        // This clears any stale DOM state and re-attaches drag events cleanly.
+        updateMyTeamUI();
+    }
+    function addDragEvents(item) {
+        item.addEventListener('dragstart',   handleDragStart,    false);
+        item.addEventListener('dragenter',   handleDragEnterItem,false);
+        item.addEventListener('dragover',    handleDragOver,     false);
+        item.addEventListener('dragleave',   handleDragLeaveItem,false);
+        item.addEventListener('drop',        handleDrop,         false);
+        item.addEventListener('dragend',     handleDragEnd,      false);
+    }
+    function saveRosterOrder() {
+        let xi    = [...document.querySelectorAll('#playingXIList .roster-item-drag')].map(i => i.getAttribute('data-player'));
+        let bench = [...document.querySelectorAll('#benchList .roster-item-drag')].map(i => i.getAttribute('data-player'));
+        roomRef.child('teams_auth/' + myTeamName).update({ playingXI: xi, bench });
+    }
+
+    // ── Tab / Dropdowns ────────────────────────────────────────────────────
+    function switchTab(name, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${name}`).classList.add('active');
+        if (el) el.classList.add('active');
+    }
+
+    function populateSetDropdown() {
+        let sets = new Set(); playerPool.forEach(p => { if (p.set) sets.add(p.set); });
+        let sel  = document.getElementById('setSelector'), prev = sel.value;
+        sel.innerHTML = '<option value="" disabled hidden>ON DECK</option>';
+        sets.forEach(s => { let o = document.createElement('option'); o.value = s; o.text = s; sel.appendChild(o); });
+        if (prev && sets.has(prev)) sel.value = prev; else if (sets.size > 0) sel.value = Array.from(sets)[0];
+    }
+
+    function updateTeamDropdown() {
+        let keys = Object.keys(allRegisteredTeams);
+        let sel  = document.getElementById('teamSelector'), prev = sel.value;
+        
+        sel.innerHTML = '<option value="" disabled hidden>SQUADS</option>';
+        keys.forEach(t => {
+            let o = document.createElement('option'); o.value = t; o.text = t;
+            o.style.color = allRegisteredTeams[t]?.color || '#fff';
+            sel.appendChild(o);
+        });
+        
+        if (keys.includes(prev)) sel.value = prev; else sel.value = "";
+    }
+
+    // ── List Renders ───────────────────────────────────────────────────────
+    function renderDeck() {
+        let set  = document.getElementById('setSelector').value;
+        let html = '';
+        playerPool.forEach(p => {
+            if (p.set !== set || p.status === 'sold' || p.status === 'unsold') return;
+            html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+        });
+        document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players left in this set.</p>";
+    }
+
+    function renderUnsold() {
+        let html = '';
+        playerPool.forEach(p => {
+            if (p.status !== 'unsold') return;
+            html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
+        });
+        document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players yet.</p>";
+    }
+
+    function renderSquads() {
+        let team = document.getElementById('teamSelector').value;
+        if (!team) { document.getElementById('squadList').innerHTML = "<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; return; }
+        let roster = playerPool.filter(p => p.status === 'sold' && p.team === team);
+        let order  = allRegisteredTeams[team]?.rosterOrder || [];
+        roster.sort((a,b) => { let ai=order.indexOf(a.name),bi=order.indexOf(b.name); if(ai===-1)ai=999; if(bi===-1)bi=999; return ai-bi; });
+        let ranks  = [...new Set(roster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
+        let [gold,silver,bronze] = [ranks[0]||-1, ranks[1]||-1, ranks[2]||-1];
+        let tColor = allRegisteredTeams[team]?.color || '#333';
+        let roles  = allRegisteredTeams[team]?.playerRoles || {};
+        let xiOrder = allRegisteredTeams[team]?.playingXI || [];
+        let html = roster.map(p => {
+            let rawR = roles[p.name] || '';
+            let roleHtml = rawR.split(',').filter(Boolean).map(r => `<span style="font-size:9px; color:${r==='WK'?'#0dcaf0':'#ffc107'}; font-weight:bold; margin-left:3px;">${r}</span>`).join('');
+            let pc = p.sold_price===gold?'#eab308': p.sold_price===silver?'#c0c0c0': p.sold_price===bronze?'#cd7f32':'#aaa';
+            let isXI = xiOrder.includes(p.name);
+            let xiBadge = isXI
+                ? `<span style="font-size:8px; color:#28a745; border:1px solid #28a745; padding:1px 3px; border-radius:3px; margin-left:6px;">XI</span>`
+                : `<span style="font-size:8px; color:#666; border:1px solid #444; padding:1px 3px; border-radius:3px; margin-left:6px;">BENCH</span>`;
+            return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleHtml}${xiBadge}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+        }).join('');
+        document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
+    }
+
+    // ── Keyboard Shortcut ──────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (document.getElementById('mainDashboard').style.display === 'none') return;
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+        if (e.code === 'Space') { e.preventDefault(); if (!document.getElementById('mainActionButton').disabled) placeBid(); }
+    });
+</script>
+</body>
+</html>
