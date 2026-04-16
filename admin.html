@@ -104,6 +104,7 @@
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="action-btn" onclick="openUploadModal()">+ Upload CSV</button>
+                    <button class="action-btn" style="background:#28a745;" onclick="openAddSinglePlayerModal()">+ Add Single Player</button>
                     <button class="action-btn outline" onclick="exportCurrentDB()">📥 Export</button>
                     <button class="action-btn danger" onclick="confirmDeleteDB()">🗑️ Delete</button>
                 </div>
@@ -157,6 +158,69 @@
             </div>
             <p style="color:#888; font-size:12px; margin-top:0;">These teams are available globally across all rooms.</p>
             <div id="teamsContainer" class="team-grid"></div>
+        </div>
+    </div>
+</div>
+
+<div id="addSinglePlayerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Add Single Player</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label class="modal-label">Player Name *</label>
+                <input type="text" id="spName" class="modal-input" placeholder="e.g. MS Dhoni" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Base Price (in Cr) *</label>
+                <input type="number" id="spBasePrice" class="modal-input" placeholder="e.g. 2" step="0.1" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Role</label>
+                <input type="text" id="spRole" class="modal-input" placeholder="e.g. WK-Batsman" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Nationality</label>
+                <input type="text" id="spNat" class="modal-input" placeholder="e.g. Indian" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Set</label>
+                <input type="text" id="spSet" class="modal-input" placeholder="e.g. Marquee" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Franchise (Past)</label>
+                <input type="text" id="spFranchise" class="modal-input" placeholder="e.g. CSK" style="margin-bottom:0;">
+            </div>
+            
+            <div>
+                <label class="modal-label">Runs</label>
+                <input type="text" id="spRuns" class="modal-input" placeholder="-" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Average</label>
+                <input type="text" id="spAvg" class="modal-input" placeholder="-" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Batting SR</label>
+                <input type="text" id="spBatSr" class="modal-input" placeholder="-" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Wickets</label>
+                <input type="text" id="spWkts" class="modal-input" placeholder="-" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Economy</label>
+                <input type="text" id="spEcon" class="modal-input" placeholder="-" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label class="modal-label">Bowling SR</label>
+                <input type="text" id="spBowlSr" class="modal-input" placeholder="-" style="margin-bottom:0;">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" onclick="saveSinglePlayer()">ADD PLAYER</button>
+            <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('addSinglePlayerModal').style.display='none'">CANCEL</button>
         </div>
     </div>
 </div>
@@ -459,6 +523,57 @@
                 if (val === currentDbId) db.ref('preset_databases/'+currentDbId).remove();
                 else showAlert('Mismatch', 'ID did not match.');
             });
+        });
+    }
+
+    // Add Single Player Logic
+    function openAddSinglePlayerModal() {
+        if (!currentDbId) {
+            showAlert('No Database Selected', 'Please select or create a database preset first.');
+            return;
+        }
+        ['spName','spBasePrice','spRole','spNat','spSet','spFranchise','spRuns','spAvg','spBatSr','spWkts','spEcon','spBowlSr'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('addSinglePlayerModal').style.display = 'flex';
+    }
+
+    function saveSinglePlayer() {
+        if (!currentDbId) return;
+        
+        let name = document.getElementById('spName').value.trim();
+        let basePriceInput = parseFloat(document.getElementById('spBasePrice').value);
+        
+        if (!name || isNaN(basePriceInput)) {
+            showAlert('Missing Fields', 'Player Name and Base Price are required.');
+            return;
+        }
+
+        const CRORE = 10000000;
+        
+        let newPlayer = {
+            name: name,
+            base_price: basePriceInput * CRORE,
+            role: document.getElementById('spRole').value.trim() || '-',
+            nationality: document.getElementById('spNat').value.trim() || 'Indian',
+            set: document.getElementById('spSet').value.trim() || '-',
+            franchise: document.getElementById('spFranchise').value.trim() || '-',
+            runs: document.getElementById('spRuns').value.trim() || '-',
+            average: document.getElementById('spAvg').value.trim() || '-',
+            bat_sr: document.getElementById('spBatSr').value.trim() || '-',
+            wickets: document.getElementById('spWkts').value.trim() || '-',
+            economy: document.getElementById('spEcon').value.trim() || '-',
+            bowl_sr: document.getElementById('spBowlSr').value.trim() || '-',
+            status: 'available'
+        };
+
+        let updatedDbData = [...currentDbData, newPlayer];
+        
+        db.ref('preset_databases/' + currentDbId).set(updatedDbData).then(() => {
+            document.getElementById('addSinglePlayerModal').style.display = 'none';
+            showAlert('Success', `Added ${name} to the database.`);
+        }).catch(err => {
+            showAlert('Error', 'Failed to add player: ' + err.message);
         });
     }
 
