@@ -507,26 +507,12 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ── Centralized Listener Management & State Variables ──────────────────
-    const _appListeners = [];
-    function addDbListener(ref, event, callback) {
-        ref.on(event, callback);
-        _appListeners.push({ ref, event, callback });
-    }
-    function clearAllListeners() {
-        _appListeners.forEach(l => l.ref.off(l.event, l.callback));
-        _appListeners.length = 0;
-    }
-    window.addEventListener('beforeunload', () => {
-        clearAllListeners();
-        if (presenceRef) presenceRef.remove();
-    });
-
+    // ── State ──────────────────────────────────────────────────────────────
     let roomRef = null, presenceRef = null;
     let currentRoomKey = '', myTeamName = '', myTeamColor = '', myRepName = '';
     let localCurrentBid = 0, playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle', myOverseasCount = 0;
-    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * 10000000; // Assuming CRORE is 10000000
+    let STARTING_PURSE_CR = 100, TEAM_BUDGET = 100 * CRORE;
     let teamBudgets = {};   
     let pendingCode = '', pendingColor = '', isCustomFlow = false;
     let localBidCooldown = false, _modalCb = null, activePopups = {};
@@ -534,30 +520,11 @@
     let globalImageMap = {};
     let _latestLiveData = null;
     let isDragging = false;
-    const CRORE = 10000000; // Adding missing constant
 
     const logContainer = document.getElementById('logContainer');
 
-    // ── Render Pipeline (RequestAnimationFrame) ────────────────────────────
-    let _renderFrame = null;
-    function requestRender() {
-        if (_renderFrame) cancelAnimationFrame(_renderFrame);
-        _renderFrame = requestAnimationFrame(() => {
-            updateTeamDropdown();
-            recalculateBudgets();
-            updateMyTeamUI();
-            if (_latestLiveData) {
-                let amIWinning = (_latestLiveData.highest_bidder === myTeamName);
-                updateLiveUI(_latestLiveData, amIWinning);
-            }
-            renderDeck(); 
-            renderUnsold(); 
-            renderSquads();
-        });
-    }
-
     // ── Connection Monitor ─────────────────────────────────────────────────
-    addDbListener(db.ref('.info/connected'), 'value', snap => {
+    db.ref('.info/connected').on('value', snap => {
         document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
@@ -581,10 +548,12 @@
         let statsBar = document.getElementById('statsBar');
         
         if (isOpening) {
+            // Calculate dynamic safe zones to prevent any clashing
             let topRowRect = document.getElementById('mainTopRow').getBoundingClientRect();
             let headerRect = document.getElementById('playerTopSection').getBoundingClientRect();
             let bidBoxRect = document.getElementById('bidZoneBox').getBoundingClientRect();
             
+            // Calculate pixel distances from the top of the relative container (.top-row)
             let topOffset = headerRect.bottom - topRowRect.top + 10;
             let bottomOffset = topRowRect.bottom - bidBoxRect.top + 10;
             
@@ -663,6 +632,7 @@
         return isOverseas(p) ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '';
     }
 
+    // Universal image detector for the CSV object
     function getImageUrl(p) {
         let imgUrl = '';
         ['image', 'img', 'photo', 'picture', 'pic', 'url', 'link'].forEach(key => {
@@ -825,7 +795,6 @@
     }
 
     function logout() {
-        clearAllListeners();
         if (presenceRef) presenceRef.remove();
         sessionStorage.clear();
         window.location.reload();
@@ -902,7 +871,7 @@
     // ── Firebase Listeners ─────────────────────────────────────────────────
     function attachFirebaseListeners() {
         let isChatLoaded = false;
-        addDbListener(roomRef.child('chat_events').limitToLast(15), 'child_added', snap => {
+        roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
             if (!isChatLoaded) return;
             let d = snap.val();
             triggerChatPopup(d.team, d.text);
@@ -917,13 +886,13 @@
             Object.values(entries).sort((a,b) => a.t - b.t).forEach(e => logAction(e.msg, new Date(e.t)));
             isLogLoaded = true;
         });
-        addDbListener(roomRef.child('auction_log').limitToLast(100), 'child_added', snap => {
+        roomRef.child('auction_log').limitToLast(100).on('child_added', snap => {
             if (!isLogLoaded) return;
             let e = snap.val(); logAction(e.msg, new Date(e.t));
         });
 
         // Online Status logic for Auctioneer
-        addDbListener(roomRef.child('admin_presence'), 'value', snap => {
+        roomRef.child('admin_presence').on('value', snap => {
             let isOnline = snap.val();
             let dot = document.getElementById('auctioneerStatus');
             if (dot) {
@@ -932,51 +901,63 @@
             }
         });
 
-        addDbListener(db.ref('global_player_images'), 'value', snap => {
+        db.ref('global_player_images').on('value', snap => {
             globalImageMap = snap.val() || {};
-            requestRender();
         });
 
-        addDbListener(roomRef.child('settings'), 'value', snap => {
+        roomRef.child('settings').on('value', snap => {
             let s = snap.val() || {};
             window.auctionSettings = s; 
             STARTING_PURSE_CR = Number(s.starting_purse) || 100;
             TEAM_BUDGET = STARTING_PURSE_CR * CRORE;
             window.isOverseasStrict = s.overseas_limit_enabled === true;
-            requestRender();
         });
 
-        addDbListener(roomRef.child('teams_auth'), 'value', snap => {
+        roomRef.child('teams_auth').on('value', snap => {
             allRegisteredTeams = snap.val() || {};
-            requestRender();
+            updateTeamDropdown();
+            recalculateBudgets();
+            updateMyTeamUI();
         });
-        
-        addDbListener(roomRef.child('logged_in_teams'), 'value', snap => {
+        roomRef.child('logged_in_teams').on('value', snap => {
             activePresence = snap.val() || {};
-            requestRender();
+            updateMyTeamUI();
         });
 
         roomRef.child('player_pool').once('value', snap => {
             let raw = snap.val() || [];
             playerPool = Array.isArray(raw) ? raw : Object.values(raw);
             populateSetDropdown();
-            requestRender();
+            recalculateBudgets();
+            renderDeck(); renderUnsold(); renderSquads();
+            updateMyTeamUI();
         });
 
-        addDbListener(roomRef.child('player_pool'), 'child_changed', snap => {
+        roomRef.child('player_pool').on('child_changed', snap => {
             let idx = parseInt(snap.key);
             if (!isNaN(idx)) {
                 playerPool[idx] = snap.val();
-                requestRender();
+                recalculateBudgets();
+                renderDeck(); renderUnsold(); renderSquads();
+                updateMyTeamUI();
+                // Fix sold discrepancy: when player_pool arrives after live_state in a rapid
+                // auction, re-run updateLiveUI so the badge/button use the authoritative team
+                // from player_pool rather than the potentially stale live_state.highest_bidder.
+                if (currentAuctionState === 'sold' && _latestLiveData) {
+                    let soldP = playerPool[_latestLiveData.current_player_index];
+                    let amIWinning = soldP?.team === myTeamName;
+                    updateLiveUI(_latestLiveData, amIWinning);
+                }
             }
         });
 
-        addDbListener(roomRef.child('live_state'), 'value', snap => {
+        roomRef.child('live_state').on('value', snap => {
             let data = snap.val(); if (!data) return;
             _latestLiveData     = data;
             currentAuctionState = data.auction_state || 'idle';
             localCurrentBid     = data.current_bid || 0;
-            requestRender();
+            let amIWinning      = (data.highest_bidder === myTeamName);
+            updateLiveUI(data, amIWinning);
         });
     }
 
@@ -1012,6 +993,9 @@
         document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
 
         let currentLeader = data.highest_bidder || '-';
+        // When sold, player_pool.team is authoritative — it reflects what the auctioneer
+        // actually committed, fixing the race where a late in-flight bid overwrites
+        // live_state.highest_bidder after the auctioneer already wrote player_pool.
         if (currentAuctionState === 'sold' && data.current_player_index >= 0) {
             let soldP = playerPool[data.current_player_index];
             if (soldP?.status === 'sold' && soldP.team) {
@@ -1036,6 +1020,7 @@
         if (data.current_player_index >= 0 && playerPool.length > 0) {
             let p = playerPool[data.current_player_index];
             if (p) {
+                // UNIVERSAL IMAGE DETECTOR
                 let photoBox = document.getElementById('playerPhoto');
                 let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
                 let imgObj = globalImageMap[safeNameKey] || globalImageMap[p.name];
@@ -1097,6 +1082,7 @@
             else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow-silver');
         }
 
+        // OTHER TEAMS GLOW UPDATE
         document.querySelectorAll('.other-team-card-hz').forEach(card => {
             card.classList.remove('leader-card-glow-silver', 'sold-card-glow');
             let teamName = card.getAttribute('data-team');
@@ -1151,6 +1137,8 @@
         let xiHtml = xiPlayers.map(buildRow).join('');
         let xiCount = xiPlayers.length;
         for (let i = xiCount + 1; i <= 11; i++) xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
+        // Do not replace roster innerHTML while a drag is in progress — doing so detaches
+        // the element the browser is currently tracking, causing duplication on drop.
         if (!isDragging) {
             document.getElementById('playingXIList').innerHTML = xiHtml;
             document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
@@ -1158,6 +1146,7 @@
         }
         document.getElementById('xiCount').textContent = `(${xiCount}/11)`;
 
+        // Other teams bottom row
         let othersHtml = '';
         Object.keys(allRegisteredTeams).forEach(t => {
             if (t === myTeamName) return;
@@ -1204,6 +1193,7 @@
         let isSquadMaxed = myRosterCount >= maxSq;
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
         
+        // Check if this is the first bid
         window.isFirstBid = data.highest_bidder === 'Base Price' || data.highest_bidder === '-' || data.highest_bidder === '';
         let requiredBid = window.isFirstBid ? localCurrentBid : localCurrentBid + getCurrentBidIncrement();
         let isInsufficient = requiredBid > myBudget;
@@ -1233,6 +1223,7 @@
             setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
             setStatus('status-losing');  
+            // Display BID BASE if no one has bid yet
             let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/CRORE).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
             setBtn('btn-bid-active', btnText, true);
         }
@@ -1255,6 +1246,7 @@
             
             let isDataFirstBid = liveData.highest_bidder === 'Base Price' || liveData.highest_bidder === '-' || liveData.highest_bidder === '';
 
+            // If first bid, accept amount equal to current_bid. Otherwise, strictly greater.
             if (isDataFirstBid) {
                 if (amount < (liveData.current_bid || 0)) return liveData;
             } else {
@@ -1292,6 +1284,7 @@
         });
     };
 
+    // Long Press Event Listeners for Main Bid Button
     const mainBtn = document.getElementById('mainActionButton');
     let bidPressTimer;
     let isLongPress = false;
@@ -1323,7 +1316,7 @@
         bidPressTimer = setTimeout(() => {
             isLongPress = true;
             openJumpMenu(e);
-        }, 600); 
+        }, 600); // 600ms long press
     };
 
     const onPointerUp = (e) => {
@@ -1340,7 +1333,7 @@
     mainBtn.addEventListener('touchend', onPointerUp);
     mainBtn.addEventListener('mouseleave', () => clearTimeout(bidPressTimer));
     mainBtn.addEventListener('touchcancel', () => clearTimeout(bidPressTimer));
-    mainBtn.oncontextmenu = function() { return false; }; 
+    mainBtn.oncontextmenu = function() { return false; }; // Prevent native context menu on long press
 
     // ── Chat ───────────────────────────────────────────────────────────────
     window.sendChatMessage = function() {
@@ -1450,6 +1443,8 @@
         if (this.classList.contains('drop-zone')) {
             this.appendChild(dragSrcEl);
         } else {
+            // insertBefore(node, null) appends to end — do NOT use `|| this` fallback
+            // which incorrectly inserts before the target when dropping on the last item.
             this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
         }
         saveRosterOrder();
@@ -1461,7 +1456,9 @@
         dragSrcEl = null;
         document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('over'));
         document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('over-zone'));
-        requestRender();
+        // Re-render from latest Firebase data now that drag is complete.
+        // This clears any stale DOM state and re-attaches drag events cleanly.
+        updateMyTeamUI();
     }
     function addDragEvents(item) {
         item.addEventListener('dragstart',   handleDragStart,    false);
