@@ -64,6 +64,10 @@
         .stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; font-weight: bold; }
         .stat-val { font-size: 15px; color: #eee; font-weight: bold; }
 
+        .bid-history-container { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; margin-top: 10px; margin-bottom: 10px; height: 75px; overflow-y: auto; font-size: 11px; }
+        .bid-history-item { padding: 4px 8px; border-bottom: 1px solid #1a1a24; display: flex; justify-content: space-between; align-items: center; }
+        .bid-history-item:last-child { border-bottom: none; }
+
         /* ─ Buttons ─────────────────────────────────────────────────────── */
         button { border: none; padding: 10px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: .2s; color: white; text-transform: uppercase; }
         button:not(:disabled):active { transform: translateY(0); }
@@ -351,6 +355,8 @@
                             <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)">🎲</button>
                         </div>
                     </div>
+                    
+                    <div class="bid-history-container" id="adminBidHistory"></div>
                 </div>
                 <div class="flex-row">
                     <button id="btnSold" class="btn-green" style="padding:10px; font-size:14px;" onclick="sellPlayer()">SOLD</button>
@@ -432,9 +438,6 @@
 
 <script>
     // ── Constants ─────────────────────────────────────────────────────────
-    // Defined locally so this file never silently depends on firebase-config.js
-    // exporting CRORE as a global. If firebase-config.js ever changes, numeric
-    // displays here will still be correct.
     const CRORE = 10_000_000;
 
     // ── Audio Feedback (Web Audio API – no libraries required) ────────────
@@ -447,7 +450,7 @@
         try {
             let ctx = _getCtx();
             if (type === 'bid') {
-                // Short rising tick
+                // Short rising tick for incoming bids
                 let o = ctx.createOscillator(), g = ctx.createGain();
                 o.connect(g); g.connect(ctx.destination);
                 o.type = 'sine';
@@ -486,11 +489,12 @@
 
     let currentRoomKey = null, roomRef = null;
     let currentIndex = -1, currentBid = 0, currentLeader = '-';
+    let localBidTracker = 0; // Used to trigger audio cue when new bids come in
     let playerPool = [], allRegisteredTeams = {}, activePresence = {};
     let currentAuctionState = 'idle';
     let TEAM_BUDGET = 100 * CRORE, STARTING_PURSE_CR = 100;
     let teamBudgets = {};       
-    let globalImageMap = {};
+    let globalImageMap = {}; 
     let _modalCb = null, _liveStateData = {};
     let _renderTimer = null;
 
@@ -565,11 +569,8 @@
     function backToAdminGateway() { document.getElementById('createRoomScreen').style.display='none'; document.getElementById('joinAdminRoomScreen').style.display='none'; document.getElementById('adminGatewayScreen').style.display='flex'; }
     function toggleCustomUpload() { document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value==='custom' ? 'block' : 'none'; }
 
-    // 12-Column Specific CSV Parser
+    // 12-Column Specific CSV Parser (Handles Windows \r\n line endings correctly)
     function parseCSV(text) {
-        // Normalise Windows (\r\n) and legacy Mac (\r) line endings first so
-        // the last column never contains a trailing \r that silently corrupts
-        // player names, roles, and nationality comparisons.
         let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
         let raw = lines[0].split(',');
         let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
@@ -615,7 +616,7 @@
                 db.ref('rooms/'+key).set({
                     settings:{room_name:name, starting_purse:purse, overseas_limit_enabled:true},
                     player_pool:poolData,
-                    live_state:{auction_state:'idle', current_bid:0, highest_bidder:'-', timer_end:0, current_player_index:-1, last_sold_index:-1}
+                    live_state:{auction_state:'idle', current_bid:0, highest_bidder:'-', timer_end:0, current_player_index:-1, last_sold_index:-1, bid_stack:null}
                 }).then(() => {
                     sessionStorage.setItem('roomKey', key);
                     currentRoomKey=key; roomRef=db.ref('rooms/'+currentRoomKey);
@@ -680,7 +681,7 @@
         db.ref('global_player_images').on('value', snap => {
             globalImageMap = snap.val() || {};
             if (currentIndex >= 0 && playerPool.length > 0) {
-                updateLiveUI(_liveStateData); // Force a re-render to update the image if it changes mid-auction
+                updateLiveUI(_liveStateData); 
             }
         });
 
@@ -741,6 +742,16 @@
     function updateLiveUI(data) {
         let isIdle=currentAuctionState==='idle', isPaused=currentAuctionState==='paused';
 
+        // Audio trigger for incoming franchise bids
+        if (data.auction_state === 'bidding' && data.current_bid > localBidTracker && data.highest_bidder !== '-' && data.highest_bidder !== 'Base Price') {
+             playSound('bid');
+        }
+        if (data.auction_state === 'cooldown' || data.auction_state === 'idle') {
+            localBidTracker = 0; // Reset tracking amount
+        } else {
+            localBidTracker = data.current_bid || 0;
+        }
+
         if (currentIndex>=0&&playerPool.length>0&&!isIdle) {
             let p=playerPool[currentIndex];
             if (p) {
@@ -785,10 +796,16 @@
         leaderEl.textContent=currentLeader;
         leaderEl.style.color=allRegisteredTeams[currentLeader]?.color||'#007bff';
 
+        // Render Bid Stack History
+        let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
+        let historyHtml = stackArr.slice().reverse().map(b => {
+            let tColor = allRegisteredTeams[b.bidder]?.color || '#fff';
+            return `<div class="bid-history-item"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
+        }).join('');
+        document.getElementById('adminBidHistory').innerHTML = historyHtml || '<div style="padding:4px 8px; color:#666; text-align:center;">No bids placed yet.</div>';
+
         if (window.uiTimer) clearInterval(window.uiTimer);
-        // A one-shot handle for the cooldown → bidding transition.
-        // Using setTimeout (not a recurring interval) means it fires exactly once
-        // even if the interval ticks are skewed by a sleeping tab.
+        // Transaction-based cooldown advance ensuring exactly one execution
         if (window._cooldownAdvance) clearTimeout(window._cooldownAdvance);
 
         window.uiTimer=setInterval(() => {
@@ -801,22 +818,23 @@
             if (t>10) timerEl.classList.add('timer-green');
             else if (t>5) timerEl.classList.add('timer-orange');
             else timerEl.classList.add('timer-red');
-            // Beep once per second when ≤5s remain during active bidding
             if (currentAuctionState==='bidding' && t<=5 && t>0 && t!==_lastTimerWarnSecond) {
                 _lastTimerWarnSecond=t; playSound('timer_warn');
             }
         }, 500);
 
-        // Schedule the cooldown → bidding transition as a one-shot timeout so it
-        // runs even when the interval is throttled by the browser's background tab
-        // rate-limiting.  Franchise.html participates too (via a transaction) so the
-        // auction never stalls even if this tab goes offline.
         if (currentAuctionState === 'cooldown' && data.timer_end) {
             let delay = Math.max(0, data.timer_end - Date.now());
             let biddingSecs = (window.auctionSettings?.bid_timer_secs ?? 15);
             window._cooldownAdvance = setTimeout(() => {
-                startTimer(biddingSecs, 'bidding');
-            }, delay + 200); // +200ms grace so the server timestamp isn't in the past
+                roomRef.child('live_state').transaction(ld => {
+                    if (ld && ld.auction_state === 'cooldown') {
+                        ld.auction_state = 'bidding';
+                        ld.timer_end = Date.now() + (biddingSecs * 1000);
+                    }
+                    return ld;
+                });
+            }, delay + 200);
         }
 
         let btnSold=document.getElementById('btnSold'), btnUnsold=document.getElementById('btnUnsold');
@@ -924,7 +942,6 @@
             highest_bidder: 'Base Price',
             auction_state: 'cooldown',
             timer_end: Date.now() + (cooldownSecs * 1000),
-            // Initialise fresh bid stack for this player
             bid_stack: []
         });
         persistEvent(msg);
@@ -968,7 +985,7 @@
         if (currentAuctionState === 'cooldown') {
             roomRef.child('live_state').update({ 
                 auction_state: 'bidding', 
-                timer_end: Date.now() + 15000 
+                timer_end: Date.now() + ((window.auctionSettings?.bid_timer_secs ?? 15) * 1000)
             });
             persistEvent('⏩ Cooldown bypassed. Bidding is LIVE!');
         }
@@ -1013,9 +1030,6 @@
     }
 
     // ── Multi-step Undo Bid ───────────────────────────────────────────────
-    // Each bid pushed by a franchise is stored in live_state.bid_stack as
-    // {bidder, amount}. Undoing pops the top entry and restores the one below
-    // it — so the previous actual bidder is always restored, not reset to '-'.
     window.undoLastBid = function() {
         if (currentIndex < 0 || currentAuctionState === 'sold' || currentAuctionState === 'unsold') {
             showAlert('Cannot Undo Bid', 'Auction is not currently active for a player.');
@@ -1035,13 +1049,13 @@
                 roomRef.child('live_state').transaction(liveData => {
                     if (!liveData) return liveData;
                     let arr = liveData.bid_stack ? Object.values(liveData.bid_stack) : [];
-                    if (!arr.length) return liveData; // already undone by someone else
+                    if (!arr.length) return liveData; 
                     arr.pop(); // remove the last bid
                     let prev = arr.length ? arr[arr.length - 1] : null;
                     liveData.bid_stack      = arr.length ? arr : null;
                     liveData.current_bid    = prev ? prev.amount : (p.base_price || 0);
                     liveData.highest_bidder = prev ? prev.bidder : 'Base Price';
-                    liveData.timer_end      = Date.now() + 15000;
+                    liveData.timer_end      = Date.now() + ((window.auctionSettings?.bid_timer_secs ?? 15) * 1000);
                     liveData.auction_state  = 'bidding';
                     return liveData;
                 }, (err, committed) => {
@@ -1061,15 +1075,18 @@
             () => showPrompt('Final Confirmation', 'Type RESET to wipe the entire auction:', 'RESET', val => {
                 if (val==='RESET') {
                     let resetPool=playerPool.map(p=>{p.status='available'; p.team=null; p.sold_price=null; return p;});
-                    // teams_auth is intentionally excluded — resetting the auction
-                    // must never erase team PINs or force franchises to re-register.
-                    // logged_in_teams is cleared so stale presence indicators reset.
                     roomRef.update({ player_pool:resetPool, logged_in_teams:null });
-                    // Also wipe per-team squad data but keep their PIN/repName/color
+                    
+                    // Carefully clear rosters but strictly preserve PINs
                     let teamKeys = Object.keys(allRegisteredTeams);
+                    let authUpdates = {};
                     teamKeys.forEach(t => {
-                        roomRef.child('teams_auth/' + t).update({ playingXI:[], bench:[], playerRoles:{} });
+                        authUpdates[`${t}/playingXI`] = [];
+                        authUpdates[`${t}/bench`] = [];
+                        authUpdates[`${t}/playerRoles`] = {};
                     });
+                    roomRef.child('teams_auth').update(authUpdates);
+                    
                     roomRef.child('live_state').update({ current_bid:0, highest_bidder:'-', timer_end:0, current_player_index:-1, last_sold_index:-1, auction_state:'idle', bid_stack:null });
                     roomRef.child('auction_log').remove(); 
                     persistEvent('🔄 <strong>FULL AUCTION RESET</strong> performed by auctioneer. Team PINs preserved.');
@@ -1248,7 +1265,6 @@
         playerPool.forEach((p,i)=>{
             if(p.set!==set||p.status==='sold'||p.status==='unsold') return;
             if(term&&!p.name.toLowerCase().includes(term)) return;
-            // Role filter: match any sub-string of the role field (e.g. 'BAT' matches 'BAT', 'BAT-WK' etc.)
             if(_deckRoleFilter && !(p.role||'').toUpperCase().includes(_deckRoleFilter)) return;
             let isOv=!['india','indian','ind'].includes((p.nationality||'Indian').trim().toLowerCase());
             let plane=isOv?`<span class="neon-plane">✈️</span>`:'';
