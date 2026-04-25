@@ -134,7 +134,7 @@
         .role-popup button.clear-btn:hover { background: #ff4444; color: #fff; border-color: #ff4444; }
 
         /* ─ Center Panel (Profile & Stats) ─────────────────────────────── */
-        #centerPanel { overflow-y: hidden; overflow-x: hidden; height: 100%; padding: 15px; }
+        #centerPanel { overflow-y: hidden; overflow-x: hidden; height: 100%; padding: 15px; display: flex; flex-direction: column; }
         .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all .3s; }
         .timer-green  { background: rgba(40,167,69,.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40,167,69,.4); }
         .timer-warn   { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; box-shadow: 0 0 15px rgba(253,126,20,.4); }
@@ -151,15 +151,11 @@
             font-size: 14px; font-weight: bold; flex-shrink: 0; background-color: rgba(0,0,0,.3); 
             position: relative;
         }
-
-        /* Styling for when an image is loaded */
         .player-photo-box.has-photo {
             border: 1px solid #333;
             background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.6) 100%);
             box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
         }
-
-        /* Decorative Corner Accents */
         .player-photo-box.has-photo::before {
             content: ''; position: absolute; top: -2px; left: -2px; width: 30px; height: 30px;
             border-top: 2px solid #ffc107; border-left: 2px solid #ffc107; border-radius: 12px 0 0 0;
@@ -170,8 +166,6 @@
             border-bottom: 2px solid #ffc107; border-right: 2px solid #ffc107; border-radius: 0 0 12px 0;
             z-index: 5; pointer-events: none; opacity: 0.8;
         }
-
-        /* The 'cover' forces the entire image to fill the box without empty gaps */
         .player-photo-box img { 
             width: 100%; height: 100%; object-fit: cover; object-position: top center; 
             border-radius: 10px; z-index: 2; position: relative;
@@ -190,13 +184,13 @@
         .stat-val { font-size: 16px; color: #eee; font-weight: bold; }
 
         /* ─ Bid Zone ────────────────────────────────────────────────────── */
-        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 12px 15px; text-align: center; transition: all .3s; flex-shrink: 0; }
+        .bidding-zone { background: #0a0a0f; border: 2px solid #222; border-radius: 12px; padding: 12px 15px; text-align: center; transition: all .3s; flex-shrink: 0; display: flex; flex-direction: column; }
         .current-bid-display { font-size: 45px; font-weight: bold; margin: 5px 0 10px; line-height: 1; transition: color .3s; display: flex; justify-content: center; align-items: center; gap: 15px; }
         .leader-badge { font-size: 16px; padding: 4px 12px; border-radius: 6px; border: 1px solid currentColor; display: none; transition: all .3s; }
         .status-losing  { color: #dc3545; }
         .status-winning { color: #28a745; text-shadow: 0 0 25px rgba(40,167,69,.4); }
         .status-neutral { color: #fff; }
-        .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        .action-btn-bid { width: 100%; padding: 12px; font-size: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; flex-shrink: 0; }
         .btn-bid-active       { background: #dc3545; color: #fff; box-shadow: 0 6px 20px rgba(220,53,69,.4); }
         .btn-bid-active:hover { background: #c82333; transform: translateY(-2px); }
         .btn-bid-active:active{ transform: translateY(2px); }
@@ -206,6 +200,9 @@
         .btn-bid-unsold       { background: rgba(255,7,58,.15); color: #ff073a; border: 2px solid #ff073a; cursor: not-allowed; }
         .shortcut-hint { font-size: 11px; color: #666; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .shortcut-hint .key { background: #161620; color: #ffc107; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; border-bottom: 2px solid #000; }
+        
+        .franchise-bid-history { margin-top: 10px; flex: 1; max-height: 60px; overflow-y: auto; font-size: 11px; text-align: left; border-top: 1px solid #222; padding-top: 8px; }
+        .franchise-bid-history .hist-row { display: flex; justify-content: space-between; margin-bottom: 4px; padding: 2px 4px; background: rgba(255,255,255,.02); border-radius: 4px; }
 
         /* Jump Bid Popup Menu */
         #jumpBidPopup { position: fixed; display: none; background: #161620; border: 1px solid #444; border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.8); z-index: 9999; flex-direction: column; gap: 8px; width: 140px; transform: translate(-50%, -110%); }
@@ -229,7 +226,7 @@
         .log-entry { font-family: 'Consolas', monospace; font-size: 11px; margin-bottom: 4px; color: #bbb; border-bottom: 1px dashed #222; padding-bottom: 4px; line-height: 1.4; }
         .log-time { color: #555; margin-right: 6px; }
 
-        /* ─ Right Tabs ──────────────────────────────────────────────────── */
+        /* ─ Right Tabs & Role Filters ───────────────────────────────────── */
         .tabs-panel { flex: 1.5; display: flex; flex-direction: column; overflow: hidden; min-height: 250px; }
         .tabs { display: flex; margin-bottom: 8px; background: #0a0a0f; border-radius: 8px; padding: 4px; border: 1px solid #222; flex-shrink: 0; gap: 4px; }
         .tab-btn { flex: 1; background: transparent; color: #777; padding: 6px 4px; border-radius: 6px; margin: 0; font-size: 10px; font-weight: 800; transition: all .2s; cursor: pointer; letter-spacing: .5px; border: 1px solid transparent; display: flex; justify-content: center; align-items: center; }
@@ -243,6 +240,10 @@
         .item-info { display: flex; flex-direction: column; }
         .item-name { font-weight: bold; font-size: 12px; color: #eee; margin-bottom: 1px; }
         .item-price { font-size: 9px; color: #888; }
+        
+        .role-filter-btn { flex: 1; padding: 4px 6px; font-size: 10px; background: transparent; color: #888; border: 1px solid #333; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: .2s; }
+        .role-filter-btn:hover { background: #222; color: #fff; }
+        .role-filter-btn.active { background: #22222d; color: #ffc107; border-color: #ffc107; }
 
         /* ─ Other Teams Row ─────────────────────────────────────────────── */
         .other-team-card-hz { background: #0a0a0f; border: 1px solid #222; border-top: 3px solid #444; border-radius: 8px; padding: 10px 5px; display: flex; flex-direction: column; flex: 0 0 auto; min-width: 140px; align-items: center; justify-content: center; text-align: center; transition: all .3s; position: relative; overflow: hidden; }
@@ -467,6 +468,8 @@
                     </div>
                     <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
                     <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
+                    
+                    <div id="franchiseBidHistory" class="franchise-bid-history"></div>
                 </div>
             </div>
         </div>
@@ -493,9 +496,21 @@
                         <option value="" disabled selected hidden>SQUADS</option>
                     </select>
                 </div>
-                <div id="tab-deck"   class="tab-content active"><div id="deckList"   style="flex:1; overflow-y:auto;"></div></div>
-                <div id="tab-unsold" class="tab-content">       <div id="unsoldList" style="flex:1; overflow-y:auto;"></div></div>
-                <div id="tab-squads" class="tab-content">       <div id="squadList"  style="flex:1; overflow-y:auto;"></div></div>
+                
+                <div id="tab-deck" class="tab-content active">
+                    <input type="text" id="deckSearch" class="login-input" placeholder="🔍 Search Deck..." style="padding:8px; font-size:12px; margin-bottom:8px;" oninput="renderDeck()">
+                    <div style="display:flex; gap:4px; margin-bottom:8px; flex-shrink:0;">
+                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)">ALL</button>
+                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)">BAT</button>
+                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)">BWL</button>
+                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)">ALL-R</button>
+                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)">WK</button>
+                        <button class="role-filter-btn" data-role="STAR" onclick="setRoleFilter('STAR',this)" style="font-size:12px;">⭐</button>
+                    </div>
+                    <div id="deckList" style="flex:1; overflow-y:auto; padding-right:4px;"></div>
+                </div>
+                <div id="tab-unsold" class="tab-content">       <div id="unsoldList" style="flex:1; overflow-y:auto; padding-right:4px;"></div></div>
+                <div id="tab-squads" class="tab-content">       <div id="squadList"  style="flex:1; overflow-y:auto; padding-right:4px;"></div></div>
             </div>
         </div>
     </div>
@@ -564,13 +579,14 @@
     let globalImageMap = {};
     let _latestLiveData = null;
     let isDragging = false;
+    
     // ── Watchlist (private per-browser, stored in sessionStorage) ─────────
     let _watchlist = new Set(JSON.parse(sessionStorage.getItem('auction_watchlist') || '[]'));
-    function toggleWatch(name) {
+    window.toggleWatch = function(name) {
         if (_watchlist.has(name)) _watchlist.delete(name); else _watchlist.add(name);
         sessionStorage.setItem('auction_watchlist', JSON.stringify([..._watchlist]));
         renderDeck();
-    }
+    };
 
     const logContainer = document.getElementById('logContainer');
 
@@ -599,12 +615,10 @@
         let statsBar = document.getElementById('statsBar');
         
         if (isOpening) {
-            // Calculate dynamic safe zones to prevent any clashing
             let topRowRect = document.getElementById('mainTopRow').getBoundingClientRect();
             let headerRect = document.getElementById('playerTopSection').getBoundingClientRect();
             let bidBoxRect = document.getElementById('bidZoneBox').getBoundingClientRect();
             
-            // Calculate pixel distances from the top of the relative container (.top-row)
             let topOffset = headerRect.bottom - topRowRect.top + 10;
             let bottomOffset = topRowRect.bottom - bidBoxRect.top + 10;
             
@@ -991,9 +1005,6 @@
                 recalculateBudgets();
                 renderDeck(); renderUnsold(); renderSquads();
                 updateMyTeamUI();
-                // Fix sold discrepancy: when player_pool arrives after live_state in a rapid
-                // auction, re-run updateLiveUI so the badge/button use the authoritative team
-                // from player_pool rather than the potentially stale live_state.highest_bidder.
                 if (currentAuctionState === 'sold' && _latestLiveData) {
                     let soldP = playerPool[_latestLiveData.current_player_index];
                     let amIWinning = soldP?.team === myTeamName;
@@ -1044,9 +1055,6 @@
         document.getElementById('actualBidAmount').textContent = `₹${(localCurrentBid / CRORE).toFixed(2)} Cr`;
 
         let currentLeader = data.highest_bidder || '-';
-        // When sold, player_pool.team is authoritative — it reflects what the auctioneer
-        // actually committed, fixing the race where a late in-flight bid overwrites
-        // live_state.highest_bidder after the auctioneer already wrote player_pool.
         if (currentAuctionState === 'sold' && data.current_player_index >= 0) {
             let soldP = playerPool[data.current_player_index];
             if (soldP?.status === 'sold' && soldP.team) {
@@ -1061,6 +1069,17 @@
         } else {
             leaderBadge.style.display = 'none';
         }
+        
+        // Populate Franchise Bid History Stack
+        let stack = data.bid_stack ? Object.values(data.bid_stack) : [];
+        let historyHtml = stack.slice().reverse().map(b => {
+            let color = allRegisteredTeams[b.bidder]?.color || '#fff';
+            return `<div class="hist-row">
+                <span style="color:${color}; font-weight:bold;">${esc(b.bidder)}</span>
+                <span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span>
+            </div>`;
+        }).join('');
+        document.getElementById('franchiseBidHistory').innerHTML = historyHtml || '<div style="color:#666;text-align:center;padding-top:10px;">No bids placed yet.</div>';
 
         let centerPanel = document.getElementById('centerPanel');
         centerPanel.classList.remove('glow-sold', 'glow-unsold');
@@ -1122,20 +1141,18 @@
             if (t > 10) el.classList.add('timer-green');
             else if (t > 5) el.classList.add('timer-warn');
             else el.classList.add('timer-danger');
-            // Timer warning beep at ≤5s during active bidding
+            
             if (currentAuctionState === 'bidding' && t <= 5 && t > 0 && t !== _lastTimerWarnSecond) {
                 _lastTimerWarnSecond = t; playSound('timer_warn');
             }
+            
             // ── Cooldown safety net ────────────────────────────────────────
-            // If the auctioneer's tab is sleeping or disconnected the cooldown
-            // will expire with no one to transition it.  Any franchise tab that
-            // detects an expired cooldown uses a Firebase transaction (so exactly
-            // one client wins) to advance to bidding.
+            // Forces transition to bidding if auctioneer tab is disconnected
             if (currentAuctionState === 'cooldown' && t === 0 && roomRef) {
                 let biddingSecs = (window.auctionSettings?.bid_timer_secs ?? 15);
                 roomRef.child('live_state').transaction(ld => {
-                    if (!ld || ld.auction_state !== 'cooldown') return; // abort — already advanced
-                    if (Date.now() < (ld.timer_end || 0)) return;      // not yet expired
+                    if (!ld || ld.auction_state !== 'cooldown') return; 
+                    if (Date.now() < (ld.timer_end || 0)) return;      
                     ld.auction_state = 'bidding';
                     ld.timer_end     = Date.now() + biddingSecs * 1000;
                     return ld;
@@ -1152,7 +1169,6 @@
             else if (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown') myBox.classList.add('leader-card-glow-silver');
         }
 
-        // OTHER TEAMS GLOW UPDATE
         document.querySelectorAll('.other-team-card-hz').forEach(card => {
             card.classList.remove('leader-card-glow-silver', 'sold-card-glow');
             let teamName = card.getAttribute('data-team');
@@ -1207,8 +1223,6 @@
         let xiHtml = xiPlayers.map(buildRow).join('');
         let xiCount = xiPlayers.length;
         for (let i = xiCount + 1; i <= 11; i++) xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
-        // Do not replace roster innerHTML while a drag is in progress — doing so detaches
-        // the element the browser is currently tracking, causing duplication on drop.
         if (!isDragging) {
             document.getElementById('playingXIList').innerHTML = xiHtml;
             document.getElementById('benchList').innerHTML     = benchPlayers.map(buildRow).join('');
@@ -1216,7 +1230,6 @@
         }
         document.getElementById('xiCount').textContent = `(${xiCount}/11)`;
 
-        // Other teams bottom row
         let othersHtml = '';
         Object.keys(allRegisteredTeams).forEach(t => {
             if (t === myTeamName) return;
@@ -1263,7 +1276,6 @@
         let isSquadMaxed = myRosterCount >= maxSq;
         let myBudget = teamBudgets[myTeamName] !== undefined ? teamBudgets[myTeamName] : TEAM_BUDGET;
         
-        // Check if this is the first bid
         window.isFirstBid = data.highest_bidder === 'Base Price' || data.highest_bidder === '-' || data.highest_bidder === '';
         let requiredBid = window.isFirstBid ? localCurrentBid : localCurrentBid + getCurrentBidIncrement();
         let isInsufficient = requiredBid > myBudget;
@@ -1293,7 +1305,6 @@
             setStatus('status-losing');  setBtn('btn-bid-insufficient', 'INSUFFICIENT FUNDS', false);
         } else {
             setStatus('status-losing');  
-            // Display BID BASE if no one has bid yet
             let btnText = window.isFirstBid ? `BID BASE (₹${(localCurrentBid/CRORE).toFixed(2)} Cr)` : `BID (+₹${(getCurrentBidIncrement()/100000)}L)`;
             setBtn('btn-bid-active', btnText, true);
         }
@@ -1324,10 +1335,9 @@
 
             if (amount > myBudget) return liveData; 
             
-            // Push this bid onto the bid stack so multi-step undo can restore
-            // the previous actual bidder instead of falling back to 'Base Price'.
             let stack = liveData.bid_stack ? Object.values(liveData.bid_stack) : [];
             stack.push({ bidder: myTeamName, amount: amount });
+            
             liveData.bid_stack       = stack;
             liveData.current_bid     = amount;
             liveData.highest_bidder  = myTeamName;
@@ -1360,7 +1370,6 @@
         });
     };
 
-    // Long Press Event Listeners for Main Bid Button
     const mainBtn = document.getElementById('mainActionButton');
     let bidPressTimer;
     let isLongPress = false;
@@ -1392,7 +1401,7 @@
         bidPressTimer = setTimeout(() => {
             isLongPress = true;
             openJumpMenu(e);
-        }, 600); // 600ms long press
+        }, 600); 
     };
 
     const onPointerUp = (e) => {
@@ -1409,7 +1418,7 @@
     mainBtn.addEventListener('touchend', onPointerUp);
     mainBtn.addEventListener('mouseleave', () => clearTimeout(bidPressTimer));
     mainBtn.addEventListener('touchcancel', () => clearTimeout(bidPressTimer));
-    mainBtn.oncontextmenu = function() { return false; }; // Prevent native context menu on long press
+    mainBtn.oncontextmenu = function() { return false; }; 
 
     // ── Chat ───────────────────────────────────────────────────────────────
     window.sendChatMessage = function() {
@@ -1519,8 +1528,6 @@
         if (this.classList.contains('drop-zone')) {
             this.appendChild(dragSrcEl);
         } else {
-            // insertBefore(node, null) appends to end — do NOT use `|| this` fallback
-            // which incorrectly inserts before the target when dropping on the last item.
             this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
         }
         saveRosterOrder();
@@ -1532,8 +1539,6 @@
         dragSrcEl = null;
         document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('over'));
         document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('over-zone'));
-        // Re-render from latest Firebase data now that drag is complete.
-        // This clears any stale DOM state and re-attaches drag events cleanly.
         updateMyTeamUI();
     }
     function addDragEvents(item) {
@@ -1550,7 +1555,7 @@
         roomRef.child('teams_auth/' + myTeamName).update({ playingXI: xi, bench });
     }
 
-    // ── Tab / Dropdowns ────────────────────────────────────────────────────
+    // ── Tab / Dropdowns & Filters ──────────────────────────────────────────
     function switchTab(name, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1580,27 +1585,75 @@
         if (keys.includes(prev)) sel.value = prev; else sel.value = "";
     }
 
-    // ── List Renders ───────────────────────────────────────────────────────
-    function renderDeck() {
-        let set  = document.getElementById('setSelector').value;
-        let html = '';
-        playerPool.forEach(p => {
-            if (p.set !== set || p.status === 'sold' || p.status === 'unsold') return;
-            html += `<div class="list-item"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr</span></div></div>`;
+    let _deckRoleFilter = '';
+    window.setRoleFilter = function(role, el) {
+        _deckRoleFilter = role;
+        document.querySelectorAll('.role-filter-btn').forEach(b => {
+            let active = b.dataset.role === role;
+            b.style.background = active ? '#22222d' : 'transparent';
+            b.style.color      = active ? '#ffc107' : '#888';
+            b.style.borderColor= active ? '#ffc107' : '#333';
         });
-        document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players left in this set.</p>";
-    }
+        renderDeck();
+    };
 
-    function renderUnsold() {
+    // ── List Renders ───────────────────────────────────────────────────────
+    window.renderDeck = function() {
+        let set  = document.getElementById('setSelector').value;
+        let term = (document.getElementById('deckSearch')?.value || '').toLowerCase();
+        let html = '';
+        
+        // Filter Logic
+        let filtered = playerPool.filter(p => {
+            if (p.set !== set || p.status === 'sold' || p.status === 'unsold') return false;
+            if (term && !p.name.toLowerCase().includes(term)) return false;
+            if (_deckRoleFilter === 'STAR') {
+                if (!_watchlist.has(p.name)) return false;
+            } else if (_deckRoleFilter && !(p.role || '').toUpperCase().includes(_deckRoleFilter)) {
+                return false;
+            }
+            return true;
+        });
+
+        // Sorting: Watchlisted first -> then by base price desc -> then name
+        filtered.sort((a, b) => {
+            let aStar = _watchlist.has(a.name) ? 1 : 0;
+            let bStar = _watchlist.has(b.name) ? 1 : 0;
+            if (aStar !== bStar) return bStar - aStar;
+            if (b.base_price !== a.base_price) return b.base_price - a.base_price;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+
+        filtered.forEach(p => {
+            let isStarred = _watchlist.has(p.name);
+            let starCol = isStarred ? '#ffc107' : '#444';
+            let bg = isStarred ? 'background:rgba(255,193,7,.05);' : '';
+            let roleLabel = p.role ? `<span style="font-size:9px; color:#007bff; font-weight:bold; margin-left:6px; background:rgba(0,123,255,.1); border:1px solid rgba(0,123,255,.2); padding:1px 4px; border-radius:4px;">${esc(p.role)}</span>` : '';
+            
+            html += `<div class="list-item" style="${bg}">
+                <div class="item-info">
+                    <div style="display:flex; align-items:center; margin-bottom:3px;">
+                        <span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleLabel}
+                    </div>
+                    <span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr</span>
+                </div>
+                <button onclick="toggleWatch('${esc(p.name)}')" style="background:transparent; border:none; color:${starCol}; font-size:18px; cursor:pointer; padding:0 5px; transition:0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">★</button>
+            </div>`;
+        });
+        document.getElementById('deckList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No players match your filters.</p>";
+    };
+
+    window.renderUnsold = function() {
         let html = '';
         playerPool.forEach(p => {
             if (p.status !== 'unsold') return;
-            html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span></div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
+            let roleLabel = p.role ? `<span style="font-size:9px; color:#007bff; font-weight:bold; margin-left:6px; background:rgba(0,123,255,.1); border:1px solid rgba(0,123,255,.2); padding:1px 4px; border-radius:4px;">${esc(p.role)}</span>` : '';
+            html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleLabel}</div><span class="item-price">Base: ₹${(p.base_price/CRORE).toFixed(2)} Cr | Set: ${esc(p.set)}</span></div></div>`;
         });
         document.getElementById('unsoldList').innerHTML = html || "<p style='color:#666; font-size:11px; text-align:center; margin-top:10px;'>No unsold players yet.</p>";
-    }
+    };
 
-    function renderSquads() {
+    window.renderSquads = function() {
         let team = document.getElementById('teamSelector').value;
         if (!team) { document.getElementById('squadList').innerHTML = "<p style='color:#666; font-size:11px; text-align:center;'>Select a team.</p>"; return; }
         let roster = playerPool.filter(p => p.status === 'sold' && p.team === team);
@@ -1622,7 +1675,7 @@
             return `<div class="list-item" style="border-left-color:${tColor}"><div class="item-info"><div style="display:flex; align-items:center; margin-bottom:3px;"><span class="item-name">${esc(p.name)} ${planeIcon(p)}</span>${roleHtml}${xiBadge}</div><span class="item-price" style="color:${pc}; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)} Cr</span></div></div>`;
         }).join('');
         document.getElementById('squadList').innerHTML = html || `<p style='color:#666; font-size:11px; text-align:center;'>Squad is empty.</p>`;
-    }
+    };
 
     // ── Keyboard Shortcut ──────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
