@@ -235,6 +235,11 @@
 </div>
 
 <script>
+    // ── Constants ─────────────────────────────────────────────────────────
+    // CRORE is defined here explicitly so admin.html never silently depends
+    // on firebase-config.js exporting it as a global.
+    const CRORE = 10_000_000;
+
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -386,7 +391,10 @@
 
     // 12-Column Specific CSV Parser
     function parseCSV(text) {
-        let lines = text.split('\n'), raw = lines[0].split(',');
+        // Normalise Windows (\r\n) and legacy Mac (\r) line endings first so
+        // the last column never contains a trailing \r.
+        let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+        let raw = lines[0].split(',');
         let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
         let result = [];
         
@@ -516,7 +524,7 @@
         if (!fi.files.length) { showAlert('Missing File', 'Select a CSV file.'); return; }
         let reader = new FileReader();
         reader.onload = e => {
-            let lines = e.target.result.split('\n');
+            let lines = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
             let updates = {};
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
