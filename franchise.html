@@ -507,6 +507,50 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ── Constants ─────────────────────────────────────────────────────────
+    const CRORE = 10_000_000;
+
+    // ── Audio Feedback ────────────────────────────────────────────────────
+    let _audioCtx = null;
+    function _getCtx() {
+        if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return _audioCtx;
+    }
+    function playSound(type) {
+        try {
+            let ctx = _getCtx();
+            if (type === 'bid') {
+                let o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'sine';
+                o.frequency.setValueAtTime(520, ctx.currentTime);
+                o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+                g.gain.setValueAtTime(0.2, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+                o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.12);
+            } else if (type === 'sold') {
+                [0, 0.18, 0.36].forEach(delay => {
+                    let o = ctx.createOscillator(), g = ctx.createGain();
+                    o.connect(g); g.connect(ctx.destination);
+                    o.type = 'sawtooth';
+                    o.frequency.setValueAtTime(220, ctx.currentTime + delay);
+                    g.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.12);
+                    o.start(ctx.currentTime + delay); o.stop(ctx.currentTime + delay + 0.14);
+                });
+            } else if (type === 'timer_warn') {
+                let o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'square';
+                o.frequency.setValueAtTime(660, ctx.currentTime);
+                g.gain.setValueAtTime(0.09, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+                o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.07);
+            }
+        } catch(e) { /* Audio not available */ }
+    }
+    let _lastTimerWarnSecond = -1;
+
     // ── State ──────────────────────────────────────────────────────────────
     let roomRef = null, presenceRef = null;
     let currentRoomKey = '', myTeamName = '', myTeamColor = '', myRepName = '';
@@ -520,6 +564,13 @@
     let globalImageMap = {};
     let _latestLiveData = null;
     let isDragging = false;
+    // ── Watchlist (private per-browser, stored in sessionStorage) ─────────
+    let _watchlist = new Set(JSON.parse(sessionStorage.getItem('auction_watchlist') || '[]'));
+    function toggleWatch(name) {
+        if (_watchlist.has(name)) _watchlist.delete(name); else _watchlist.add(name);
+        sessionStorage.setItem('auction_watchlist', JSON.stringify([..._watchlist]));
+        renderDeck();
+    }
 
     const logContainer = document.getElementById('logContainer');
 
@@ -1071,6 +1122,25 @@
             if (t > 10) el.classList.add('timer-green');
             else if (t > 5) el.classList.add('timer-warn');
             else el.classList.add('timer-danger');
+            // Timer warning beep at ≤5s during active bidding
+            if (currentAuctionState === 'bidding' && t <= 5 && t > 0 && t !== _lastTimerWarnSecond) {
+                _lastTimerWarnSecond = t; playSound('timer_warn');
+            }
+            // ── Cooldown safety net ────────────────────────────────────────
+            // If the auctioneer's tab is sleeping or disconnected the cooldown
+            // will expire with no one to transition it.  Any franchise tab that
+            // detects an expired cooldown uses a Firebase transaction (so exactly
+            // one client wins) to advance to bidding.
+            if (currentAuctionState === 'cooldown' && t === 0 && roomRef) {
+                let biddingSecs = (window.auctionSettings?.bid_timer_secs ?? 15);
+                roomRef.child('live_state').transaction(ld => {
+                    if (!ld || ld.auction_state !== 'cooldown') return; // abort — already advanced
+                    if (Date.now() < (ld.timer_end || 0)) return;      // not yet expired
+                    ld.auction_state = 'bidding';
+                    ld.timer_end     = Date.now() + biddingSecs * 1000;
+                    return ld;
+                });
+            }
         }, 500);
 
         let myBox = document.getElementById('myTeamBox');
@@ -1246,7 +1316,6 @@
             
             let isDataFirstBid = liveData.highest_bidder === 'Base Price' || liveData.highest_bidder === '-' || liveData.highest_bidder === '';
 
-            // If first bid, accept amount equal to current_bid. Otherwise, strictly greater.
             if (isDataFirstBid) {
                 if (amount < (liveData.current_bid || 0)) return liveData;
             } else {
@@ -1255,14 +1324,21 @@
 
             if (amount > myBudget) return liveData; 
             
+            // Push this bid onto the bid stack so multi-step undo can restore
+            // the previous actual bidder instead of falling back to 'Base Price'.
+            let stack = liveData.bid_stack ? Object.values(liveData.bid_stack) : [];
+            stack.push({ bidder: myTeamName, amount: amount });
+            liveData.bid_stack       = stack;
             liveData.current_bid     = amount;
             liveData.highest_bidder  = myTeamName;
-            liveData.timer_end       = Date.now() + 15000;
+            liveData.timer_end       = Date.now() + ((window.auctionSettings?.bid_timer_secs ?? 15) * 1000);
             liveData.auction_state   = 'bidding';
             return liveData;
         }, (err, committed, snap) => {
             if (err) console.error('Bid transaction failed:', err);
-            else if (!committed) {
+            else if (committed) {
+                playSound('bid');
+            } else {
                 let d = snap.val();
                 let isDataFirstBid = d && (d.highest_bidder === 'Base Price' || d.highest_bidder === '-' || d.highest_bidder === '');
                 if (d && isDataFirstBid && amount < (d.current_bid || 0)) showAlert('Invalid Bid', 'Bid must be at least the base price.');
