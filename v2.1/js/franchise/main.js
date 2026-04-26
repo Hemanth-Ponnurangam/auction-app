@@ -40,7 +40,7 @@ window.onload = function() {
             loadGlobalFranchises();
         }
     } else {
-        document.getElementById('gatewayScreen').style.display = 'flex';
+        document.getElementById('roomKeyScreen').style.display = 'flex';
     }
 
     initDropZones();
