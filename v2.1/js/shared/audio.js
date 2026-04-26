@@ -1,59 +1,33 @@
-/**
- * js/shared/audio.js
- * * Handles the synthesized Web Audio API sound effects.
- */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-let _audioCtx = null;
-
-function _getCtx() {
-    if (!_audioCtx) {
-        _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return _audioCtx;
-}
-
-/**
- * Plays a synthesized sound based on the auction event type.
- * @param {string} type - 'bid', 'sold', or 'timer_warn'
- */
 export function playSound(type) {
-    try {
-        let ctx = _getCtx();
-        
-        if (type === 'bid') {
-            let o = ctx.createOscillator(), g = ctx.createGain();
-            o.connect(g); g.connect(ctx.destination);
-            o.type = 'sine';
-            o.frequency.setValueAtTime(520, ctx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
-            g.gain.setValueAtTime(0.2, ctx.currentTime); // 0.2 for Franchise, Auctioneer used 0.25
-            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-            o.start(ctx.currentTime); 
-            o.stop(ctx.currentTime + 0.12);
-        } 
-        else if (type === 'sold') {
-            [0, 0.18, 0.36].forEach(delay => {
-                let o = ctx.createOscillator(), g = ctx.createGain();
-                o.connect(g); g.connect(ctx.destination);
-                o.type = 'sawtooth';
-                o.frequency.setValueAtTime(220, ctx.currentTime + delay);
-                g.gain.setValueAtTime(0.4, ctx.currentTime + delay);
-                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.12);
-                o.start(ctx.currentTime + delay); 
-                o.stop(ctx.currentTime + delay + 0.14);
-            });
-        } 
-        else if (type === 'timer_warn') {
-            let o = ctx.createOscillator(), g = ctx.createGain();
-            o.connect(g); g.connect(ctx.destination);
-            o.type = 'square';
-            o.frequency.setValueAtTime(660, ctx.currentTime);
-            g.gain.setValueAtTime(0.09, ctx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-            o.start(ctx.currentTime); 
-            o.stop(ctx.currentTime + 0.07);
-        }
-    } catch(e) { 
-        console.warn("Audio context failed or not allowed by browser:", e);
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    if (type === 'bid') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'sold') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+    } else if (type === 'timer_warn') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
     }
 }
