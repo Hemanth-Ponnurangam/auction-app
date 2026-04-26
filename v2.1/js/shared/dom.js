@@ -1,72 +1,47 @@
-/**
- * js/shared/dom.js
- * * Handles universal DOM utilities like escaping strings and managing the global App Modal.
- */
-
-let _modalCb = null;
-
-/**
- * Escapes HTML characters to prevent XSS attacks when injecting user data.
- */
 export function esc(str) {
-    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    if (!str) return '';
+    let div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
 }
 
-/**
- * Debounce utility to prevent functions (like search rendering) from firing too rapidly.
- */
-export function debounce(fn, ms) {
-    let t; 
-    return function(...a) { 
-        clearTimeout(t); 
-        t = setTimeout(() => fn.apply(this, a), ms); 
-    };
+export function closeModal() {
+    let modal = document.getElementById('appModal');
+    if (modal) modal.style.display = 'none';
 }
 
-// --- Universal Modal System ---
-
-function _openModal(title, msg, hasInput) {
-    document.getElementById('modalTitle').textContent   = title;
+export function showAlert(title, msg) {
+    document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalMessage').textContent = msg;
-    document.getElementById('modalInput').style.display = hasInput ? 'block' : 'none';
-    document.getElementById('appModal').style.display   = 'flex';
+    document.getElementById('modalInput').style.display = 'none';
+    let btnDiv = document.getElementById('modalButtons');
+    btnDiv.innerHTML = `<button class="action-btn" style="width:100%;" onclick="closeModal()">OK</button>`;
+    document.getElementById('appModal').style.display = 'flex';
 }
 
-export function closeModal(result) {
-    document.getElementById('appModal').style.display = 'none';
-    if (_modalCb) { 
-        let cb = _modalCb; 
-        _modalCb = null; 
-        cb(result); 
-    }
+export function showConfirm(title, msg, onConfirm) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = msg;
+    document.getElementById('modalInput').style.display = 'none';
+    let btnDiv = document.getElementById('modalButtons');
+    btnDiv.innerHTML = `<button class="action-btn danger" style="flex:1;" id="btnConfOk">CONFIRM</button><button class="action-btn outline" style="flex:1;" onclick="closeModal()">CANCEL</button>`;
+    document.getElementById('appModal').style.display = 'flex';
+    document.getElementById('btnConfOk').onclick = () => { closeModal(); onConfirm(); };
 }
 
-// Make closeModal globally available so inline HTML onclick="" attributes can find it
-window.closeModal = closeModal;
-
-export function showAlert(title, msg, onOk) {
-    _openModal(title, msg, false);
-    document.getElementById('modalButtons').innerHTML = `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">OK</button>`;
-    _modalCb = onOk || null;
-}
-
-export function showConfirm(title, msg, onYes, onNo) {
-    _openModal(title, msg, false);
-    document.getElementById('modalButtons').innerHTML =
-        `<button class="action-btn danger" style="flex:1;" onclick="closeModal(true)">CONFIRM</button>
-         <button class="action-btn outline" style="flex:1;" onclick="closeModal(false)">CANCEL</button>`;
-    _modalCb = r => r ? (onYes && onYes()) : (onNo && onNo());
-}
-
-export function showPrompt(title, msg, placeholder, onSubmit) {
-    _openModal(title, msg, true);
+export function showPrompt(title, msg, placeholder, onConfirm) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = msg;
     let inp = document.getElementById('modalInput');
-    inp.placeholder = placeholder || ''; 
-    inp.value = '';
-    document.getElementById('modalButtons').innerHTML =
-        `<button class="action-btn" style="flex:1;" onclick="closeModal(true)">CONFIRM</button>
-         <button class="action-btn outline" style="flex:1;" onclick="closeModal(false)">CANCEL</button>`;
-    _modalCb = r => { 
-        if (r && onSubmit) onSubmit(document.getElementById('modalInput').value.trim()); 
+    inp.style.display = 'block'; inp.value = ''; inp.placeholder = placeholder || '';
+    let btnDiv = document.getElementById('modalButtons');
+    btnDiv.innerHTML = `<button class="action-btn" style="flex:1;" id="btnPromptOk">SUBMIT</button><button class="action-btn outline" style="flex:1;" onclick="closeModal()">CANCEL</button>`;
+    document.getElementById('appModal').style.display = 'flex';
+    inp.focus();
+    document.getElementById('btnPromptOk').onclick = () => {
+        let val = inp.value.trim(); closeModal(); if(val) onConfirm(val);
     };
+    inp.onkeypress = (e) => { if (e.key === 'Enter') document.getElementById('btnPromptOk').click(); };
 }
+
+window.closeModal = closeModal;
