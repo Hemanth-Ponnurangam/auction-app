@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin – Platform Console</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
+
+<div id="adminLoginScreen" class="gateway-container">
+    <div class="gateway-card">
+        <h1 style="color:#fff; font-size:24px; margin-bottom:10px; letter-spacing:2px;">👑 GOD MODE</h1>
+        <p style="color:#aaa; margin-bottom:25px; font-size:12px;">Super Admin Access Only</p>
+        <input type="password" id="superPin" class="pin-input" placeholder="PIN" maxlength="8"
+               onkeypress="if(event.key==='Enter') handleAdminLogin()">
+        <button class="submit-btn" onclick="handleAdminLogin()">AUTHENTICATE</button>
+    </div>
+</div>
+
+<div id="masterDashboard">
+    <div class="header">
+        <h1 class="main-title">🛡️ <span>PLATFORM CONSOLE</span> <span class="badge">SUPER ADMIN</span></h1>
+        <button class="action-btn outline" onclick="logoutAdmin()">🔒 LOCK CONSOLE</button>
+    </div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchAdminTab('databases',this)">🗄️ Database Manager</button>
+        <button class="tab-btn" onclick="switchAdminTab('images',this)">📸 Image Directory</button>
+        <button class="tab-btn" onclick="switchAdminTab('rooms',this)">📡 Live Servers</button>
+        <button class="tab-btn" onclick="switchAdminTab('franchises',this)">🌐 Global Franchises</button>
+    </div>
+
+    <div id="tab-databases" class="tab-content active">
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <h2 class="panel-title">Active Preset</h2>
+                    <select id="dbSelector" class="admin-select"></select>
+                    <input type="text" id="adminDbSearch" class="admin-search" placeholder="🔍 Search players…">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="action-btn" onclick="document.getElementById('uploadModal').style.display = 'flex'">+ Upload CSV</button>
+                </div>
+            </div>
+            <div style="max-height:600px; overflow-y:auto; border:1px solid #222; border-radius:8px;">
+                <div id="presetDbList" style="padding:15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-images" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <h2 class="panel-title">Global Player Images</h2>
+                    <input type="text" id="adminImgSearch" class="admin-search" placeholder="🔍 Search mapping…">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="action-btn" onclick="document.getElementById('uploadImageCsvModal').style.display='flex'">📥 Bulk Upload CSV</button>
+                    <button class="action-btn outline">+ Add Single Image</button>
+                </div>
+            </div>
+            <p style="color:#888; font-size:12px; margin-top:0;">These images are cached globally. When a player's exact name matches, this image will automatically be displayed in the auction room.</p>
+            <div style="max-height:600px; overflow-y:auto; border:1px solid #222; border-radius:8px;">
+                <table class="db-table">
+                    <thead><tr><th>Preview</th><th>Player Name</th><th>Image URL</th><th>Actions</th></tr></thead>
+                    <tbody id="imgTableBody"><tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images mapped yet.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-rooms" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Active Auction Rooms</h2>
+                <button class="action-btn outline">🔄 Refresh</button>
+            </div>
+            <div id="roomsContainer" class="room-grid"></div>
+        </div>
+    </div>
+
+    <div id="tab-franchises" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Global Franchise Registry</h2>
+                <button class="action-btn" onclick="openAddTeamModal()">+ Add New Team</button>
+            </div>
+            <p style="color:#888; font-size:12px; margin-top:0;">These teams are available globally across all rooms.</p>
+            <div id="globalTeamsList" class="team-grid"></div>
+        </div>
+    </div>
+</div>
+
+<div id="uploadModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Upload Database</h2>
+        <label class="modal-label">Preset ID (e.g. mega_2026)</label>
+        <input type="text" id="dbNameInput" class="modal-input" placeholder="Lowercase, no spaces">
+        <label class="modal-label">CSV File</label>
+        <input type="file" id="csvFileInput" accept=".csv" style="color:#aaa; margin-bottom:15px; width:100%;">
+        <div style="font-size:11px; color:#aaa; background:#0a0a0f; padding:10px; border-radius:6px; border:1px dashed #444; margin-bottom:15px; line-height:1.7;">
+            <strong style="color:#ffc107;">STRICT 12 COLUMNS REQUIRED:</strong><br>
+            Name, Base Price, Set, Role, Franchise, Nationality, Runs, Average, SR, Wickets, Economy, Bowling SR
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" onclick="submitPresetUpload()">UPLOAD &amp; SAVE</button>
+            <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('uploadModal').style.display='none'">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="uploadImageCsvModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Bulk Upload Images</h2>
+        <label class="modal-label">CSV File</label>
+        <input type="file" id="uploadImageFile" accept=".csv" style="color:#aaa; margin-bottom:15px; width:100%;">
+        <div style="font-size:11px; color:#aaa; background:#0a0a0f; padding:10px; border-radius:6px; border:1px dashed #444; margin-bottom:15px; line-height:1.7;">
+            <strong style="color:#ffc107;">REQUIRED COLUMNS (2):</strong> Name, URL<br>
+            <em>Names must match the auction database perfectly to link automatically.</em>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;">IMPORT MAPPINGS</button>
+            <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('uploadImageCsvModal').style.display='none'">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="addTeamModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:400px;">
+        <h2 style="color:#fff; margin-top:0;">Add Global Franchise</h2>
+        <label class="modal-label">Team Code (e.g. CSK)</label>
+        <input type="text" id="ntCode" class="modal-input" style="text-transform:uppercase;" maxlength="5">
+        <label class="modal-label">Full Team Name</label>
+        <input type="text" id="ntName" class="modal-input" placeholder="e.g. Chennai Super Kings">
+        <label class="modal-label">Theme Color</label>
+        <input type="color" id="ntColor" value="#007bff" style="width:100%; height:42px; border-radius:6px; border:1px solid #333; background:#000; cursor:pointer; margin-bottom:20px; padding:2px;">
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" onclick="saveNewTeam()">ADD TEAM</button>
+            <button class="action-btn outline" style="flex:1;" onclick="closeAddTeamModal()">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="appModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:420px;">
+        <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
+        <p id="modalMessage" style="color:#aaa; margin-bottom:15px; line-height:1.6; white-space:pre-wrap;"></p>
+        <input type="text" id="modalInput" class="modal-input" style="display:none;">
+        <div id="modalButtons" style="display:flex; gap:10px;"></div>
+    </div>
+</div>
+
+<script type="module" src="js/admin/main.js"></script>
+
+</body>
+</html>
