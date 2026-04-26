@@ -1,7 +1,12 @@
-/**
- * css/franchise.css
- * Specific styles, layouts, and mobile responsiveness for the Franchise portal.
- */
+/* ─ Franchise Login Screen ─────────────────────────────────────── */
+#loginScreen { width: 100%; max-width: 450px; margin: 10vh auto auto; text-align: center; z-index: 4000; position: relative; padding: 20px; }
+.login-card { background: #161620; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,.5); border: 1px solid #2d2d3f; }
+.preset-teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+.team-btn { padding: 12px 10px; font-size: 13px; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: .5px; }
+.team-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.btn-custom { background: transparent; border: 1px dashed #666; color: #aaa; width: 100%; padding: 12px; grid-column: span 2; margin-top: 5px; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 13px; }
+.btn-custom:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,.05); }
+.label-text { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; text-align: left; }
 
 /* ─ Loading Skeletons ─────────────────────────────────────────── */
 @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
