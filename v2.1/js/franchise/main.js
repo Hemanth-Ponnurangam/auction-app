@@ -186,6 +186,13 @@ function attachFirebaseListeners() {
     state.roomRef.child('logged_in_teams').on('value', snap => {
         state.activePresence = snap.val() || {};
         updateMyTeamUI();
+        
+        let aucStatus = document.getElementById('auctioneerStatus');
+        if (aucStatus) {
+            let isAucOnline = state.activePresence['ADMIN'] || false;
+            aucStatus.className = isAucOnline ? 'live-dot' : 'offline-dot';
+            aucStatus.title = isAucOnline ? 'Auctioneer Online' : 'Auctioneer Offline';
+        }
     });
 
     // Player Pool
@@ -194,7 +201,7 @@ function attachFirebaseListeners() {
         state.playerPool = Array.isArray(raw) ? raw : Object.values(raw);
         populateSetDropdown();
         recalculateBudgets();
-        refreshLists();
+        window.refreshLists();
         updateMyTeamUI();
     });
 
@@ -203,7 +210,7 @@ function attachFirebaseListeners() {
         if (!isNaN(idx)) {
             state.playerPool[idx] = snap.val();
             recalculateBudgets();
-            refreshLists();
+            window.refreshLists();
             updateMyTeamUI();
             
             if (state.liveState.auction_state === 'sold' && _latestLiveData) {
@@ -211,6 +218,14 @@ function attachFirebaseListeners() {
                 let amIWinning = soldP?.team === state.myTeamName;
                 updateLiveUI(_latestLiveData, amIWinning);
             }
+        }
+    });
+    
+    // Global Images
+    db.ref('global_player_images').on('value', snap => {
+        state.globalImageMap = snap.val() || {};
+        if (state.liveState.current_player_index >= 0 && state.playerPool.length > 0) {
+            updateLiveUI(state.liveState, state.liveState.highest_bidder === state.myTeamName); 
         }
     });
 
@@ -223,15 +238,16 @@ function attachFirebaseListeners() {
         
         let amIWinning = (data.highest_bidder === state.myTeamName);
         updateLiveUI(data, amIWinning);
+        updateMyTeamUI(); // Trigger glow updates on team cards
     });
 
-    // Chat & Logs & Broadcast... (Implementation same as before, calling logAction and triggerChatPopup)
+    // Chat & Logs
     let isChatLoaded = false;
     state.roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
         if (!isChatLoaded) return;
         let d = snap.val();
         triggerChatPopup(d.team, d.text);
-        let col = state.allRegisteredTeams[d.team]?.color || '#fff';
+        let col = state.allRegisteredTeams[d.team]?.color || (d.team === 'SYSTEM' ? '#ffc107' : '#fff');
         logAction(`💬 <span style="color:${col}; font-weight:bold;">${esc(d.team)}</span>: ${esc(d.text)}`);
     });
     state.roomRef.child('chat_events').once('value', () => { isChatLoaded = true; });
@@ -256,6 +272,8 @@ function attachFirebaseListeners() {
             banner.classList.remove('show');
             void banner.offsetWidth; // trigger reflow
             banner.classList.add('show');
+            let connVisible = document.getElementById('connBanner').style.display !== 'none';
+            banner.style.top = connVisible ? '36px' : '0';
         } else {
             banner.classList.remove('show');
         }
@@ -267,7 +285,7 @@ function attachFirebaseListeners() {
 function updateLiveUI(data, amIWinning) {
     document.getElementById('actualBidAmount').textContent = `₹${((data.current_bid || 0) / CRORE).toFixed(2)} Cr`;
     
-    // Timer Loop Logic...
+    // Timer Loop
     if (window.uiTimer) clearInterval(window.uiTimer);
     window.uiTimer = setInterval(() => {
         let el  = document.getElementById('playerTimer');
@@ -290,7 +308,7 @@ function updateLiveUI(data, amIWinning) {
         let t = data.timer_end ? Math.max(0, Math.ceil((data.timer_end - Date.now()) / 1000)) : 0;
         el.textContent = t + 's';
 
-        let totalSecs = state.settings.bid_timer_secs;
+        let totalSecs = data.auction_state === 'cooldown' ? (state.settings.cooldown_secs || 10) : (state.settings.bid_timer_secs || 15);
         let progress  = totalSecs > 0 ? Math.min(1, t / totalSecs) : 0;
         let offset    = CIRCUM * (1 - progress);
 
@@ -309,32 +327,190 @@ function updateLiveUI(data, amIWinning) {
             _lastTimerWarnSecond = t; 
             playSound('timer_warn');
         }
-    }, 500);
+    }, 200);
 
     evaluateBidButtonStatus(amIWinning);
     
-    // Update player center console details here... (Runs, Avg, Image, etc based on data.current_player_index)
-    // Update leader badge and bid stack history...
+    // Update Central Player Stats & Images
+    let pIdx = data.current_player_index !== undefined ? data.current_player_index : -1;
+    if (pIdx >= 0 && state.playerPool.length > 0 && data.auction_state !== 'idle') {
+        let p = state.playerPool[pIdx];
+        if (p) {
+            let isOv = !['india','indian','ind'].includes((p.nationality || 'Indian').trim().toLowerCase());
+            document.getElementById('playerName').innerHTML = esc(p.name) + (isOv ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '');
+            
+            let tags = document.getElementById('playerFranchise');
+            let rl = document.getElementById('playerRole');
+            if (p.franchise) { tags.textContent = p.franchise; tags.style.display = 'inline-block'; } else tags.style.display = 'none';
+            if (p.role) { rl.textContent = p.role; rl.style.display = 'inline-block'; } else rl.style.display = 'none';
+            
+            document.getElementById('statRuns').textContent = p.runs || '-';
+            document.getElementById('statAvg').textContent = p.average || '-';
+            document.getElementById('statBatSR').textContent = p.bat_sr || '-';
+            document.getElementById('statWkts').textContent = p.wickets || '-';
+            document.getElementById('statEcon').textContent = p.economy || '-';
+            document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
+            
+            let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
+            let imgObj = state.globalImageMap[safeNameKey] || state.globalImageMap[p.name]; 
+            let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
+            
+            let photoBox = document.getElementById('playerPhoto');
+            if (imgUrl) {
+                photoBox.classList.add('has-photo');
+                photoBox.innerHTML = `<img src="${esc(imgUrl)}" alt="Player">`;
+            } else {
+                photoBox.classList.remove('has-photo');
+                photoBox.innerHTML = 'PHOTO';
+            }
+        }
+    } else {
+        document.getElementById('playerName').textContent = 'Waiting…';
+        document.getElementById('playerFranchise').style.display = 'none';
+        document.getElementById('playerRole').style.display = 'none';
+        document.getElementById('playerPhoto').innerHTML = 'PHOTO';
+        document.getElementById('playerPhoto').classList.remove('has-photo');
+        ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => { document.getElementById(id).textContent = '-'; });
+    }
+
+    // Bid History rendering
+    let leaderEl = document.getElementById('leaderBadge');
+    if (data.highest_bidder !== '-' && data.highest_bidder !== 'Base Price' && data.highest_bidder !== '') {
+        leaderEl.textContent = data.highest_bidder;
+        leaderEl.style.display = 'inline-block';
+        leaderEl.style.color = state.allRegisteredTeams[data.highest_bidder]?.color || '#007bff';
+    } else {
+        leaderEl.style.display = 'none';
+    }
+
+    let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
+    let historyHtml = stackArr.slice().reverse().map(b => {
+        let tColor = state.allRegisteredTeams[b.bidder]?.color || '#fff';
+        return `<div class="hist-row"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
+    }).join('');
+    document.getElementById('franchiseBidHistory').innerHTML = historyHtml;
 }
 
+// --- Squad Rendering (The Safely Fixed UI Function) ---
+
 function updateMyTeamUI() {
-    if (!state.myTeamName || !Object.keys(state.allRegisteredTeams).length) return;
-    
-    let myBudget = state.teamBudgets[state.myTeamName] !== undefined ? state.teamBudgets[state.myTeamName] : (state.settings.starting_purse * CRORE);
-    let myPurseCr = myBudget / CRORE;
-    let purseEl = document.getElementById('myTeamPurse');
-    purseEl.textContent = `₹${myPurseCr.toFixed(2)} Cr`;
-    
-    // Render My Squad XI and Bench (Drag and drop logic applied here)
-    if (!isDragging) {
-        // Build the HTML for the XI and Bench using state.playerPool and state.allRegisteredTeams[state.myTeamName]
-        // Attach drag events to new elements using attachDragEvents(el) from squad.js
+    try {
+        if (!state.myTeamName || !Object.keys(state.allRegisteredTeams).length) return;
+
+        let myColor = state.allRegisteredTeams[state.myTeamName]?.color || state.myTeamColor || '#fff';
+        document.getElementById('myTeamBox').style.borderColor = myColor;
+        document.getElementById('myTeamDisplay').style.color   = myColor;
+
+        let startingPurseCr = state.settings.starting_purse || 100;
+        let myBudget = state.teamBudgets[state.myTeamName] !== undefined ? state.teamBudgets[state.myTeamName] : (startingPurseCr * CRORE);
+        let myPurseCr = myBudget / CRORE;
+        let purseEl = document.getElementById('myTeamPurse');
+        if (purseEl) {
+            purseEl.textContent = `₹${myPurseCr.toFixed(2)} Cr`;
+            purseEl.style.color = myPurseCr > 0 ? '#28a745' : '#dc3545';
+        }
+
+        let myRoster = state.playerPool.filter(p => p && p.status === 'sold' && p.team === state.myTeamName);
+        
+        // SAFE ARRAY CONVERSION
+        let rawXI = state.allRegisteredTeams[state.myTeamName]?.playingXI || [];
+        let myXIOrder = Array.isArray(rawXI) ? rawXI : Object.values(rawXI);
+        
+        let rawBench = state.allRegisteredTeams[state.myTeamName]?.bench || [];
+        let myBenchOrder = Array.isArray(rawBench) ? rawBench : Object.values(rawBench);
+        
+        let myRoles = state.allRegisteredTeams[state.myTeamName]?.playerRoles || {};
+
+        let xiPlayers    = myXIOrder.map(n => myRoster.find(p => p && p.name === n)).filter(Boolean);
+        let benchPlayers = myBenchOrder.map(n => myRoster.find(p => p && p.name === n)).filter(Boolean);
+        
+        myRoster.forEach(p => { 
+            if (p && !myXIOrder.includes(p.name) && !myBenchOrder.includes(p.name)) benchPlayers.push(p); 
+        });
+
+        let myPriceRanks = [...new Set(myRoster.map(p => p.sold_price))].filter(v => v > 0).sort((a,b) => b - a);
+        let [gold,silver,bronze] = [myPriceRanks[0]||-1, myPriceRanks[1]||-1, myPriceRanks[2]||-1];
+
+        function planeIcon(p) {
+            return !['india','indian','ind'].includes((p.nationality || 'Indian').trim().toLowerCase()) 
+                ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '';
+        }
+
+        let buildRow = p => {
+            if (!p) return '';
+            let rawR   = myRoles[p.name] || '';
+            let roleHtml = rawR ? rawR.split(',').map(r => `<span style="font-size:9px; color:${r==='WK'?'#0dcaf0':'#ffc107'}; font-weight:bold;">${r}</span>`).join(' ') : '·';
+            let pc = p.sold_price===gold?'#eab308': p.sold_price===silver?'#c0c0c0': p.sold_price===bronze?'#cd7f32':'#aaa';
+            return `<div class="roster-item roster-item-drag" draggable="true" data-player="${esc(p.name)}">
+                <div style="display:flex; align-items:center;">
+                    <span>${esc(p.name)} ${planeIcon(p)}</span>
+                    <button class="role-badge" onclick="openRolePopup(event,'${esc(p.name)}')">${roleHtml}</button>
+                </div>
+                <span style="color:${pc}; font-weight:bold;">₹${((p.sold_price||0)/CRORE).toFixed(2)}Cr</span>
+            </div>`;
+        };
+
+        let xiHtml = xiPlayers.map(buildRow).join('');
+        let xiCount = xiPlayers.length;
+        for (let i = xiCount + 1; i <= 11; i++) {
+            xiHtml += `<div class="roster-item" style="border:1px dashed #333; color:#444; justify-content:center; font-style:italic;">Slot ${i}</div>`;
+        }
+
+        if (!isDragging) {
+            let xiList = document.getElementById('playingXIList');
+            let bList = document.getElementById('benchList');
+            if (xiList) xiList.innerHTML = xiHtml;
+            if (bList) bList.innerHTML = benchPlayers.map(buildRow).join('');
+            
+            document.querySelectorAll('.roster-item-drag').forEach(attachDragEvents);
+        }
+        
+        let countEl = document.getElementById('xiCount');
+        if (countEl) countEl.textContent = `(${xiCount}/11)`;
+
+        let othersHtml = '';
+        Object.keys(state.allRegisteredTeams).forEach(t => {
+            if (t === state.myTeamName) return;
+            let tData  = state.allRegisteredTeams[t] || {};
+            let tColor = tData.color || '#fff';
+            let tRep   = tData.repName || 'Unknown';
+            let rCr    = (state.teamBudgets[t] !== undefined ? state.teamBudgets[t] : (startingPurseCr * CRORE)) / CRORE;
+            let count  = state.playerPool.filter(p => p && p.status === 'sold' && p.team === t).length;
+            let isOnline = state.activePresence[t];
+            let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
+            
+            let curWin = state.liveState.highest_bidder;
+            let isValidLeader = curWin !== '-' && curWin !== 'Base Price' && curWin !== '';
+            let currentAuctionState = state.liveState.auction_state;
+            
+            let lgClass = (t === curWin && isValidLeader && (currentAuctionState==='bidding'||currentAuctionState==='cooldown')) ? ' leader-card-glow-silver' :
+                          (t === curWin && isValidLeader && currentAuctionState==='sold') ? ' sold-card-glow' : '';
+                          
+            othersHtml += `
+            <div class="other-team-card-hz${lgClass}" data-team="${esc(t)}" style="border-top-color:${tColor};">
+                <div class="team-msg-popup" id="msg-popup-${esc(t)}"></div>
+                <div style="font-weight:bold; font-size:13px; margin-bottom:2px;">${esc(t)} ${dot}</div>
+                <div class="other-team-rep-name">${esc(tRep)}</div>
+                <div class="purse-val" style="color:${rCr > 0 ? '#28a745' : '#dc3545'};">₹${rCr.toFixed(2)} Cr</div>
+                <div style="font-size:9px; color:#666; text-transform:uppercase; margin-top:2px;">${count} Players</div>
+            </div>`;
+        });
+
+        let otherList = document.getElementById('otherTeamsList');
+        if (otherList) {
+            otherList.innerHTML = othersHtml || "<div style='color:#666; font-size:12px; width:100%; text-align:center; padding:20px 0;'>No other franchises connected.</div>";
+        }
+        
+        updateAllPopups();
+
+    } catch(e) {
+        console.error("The UI rendering crashed! Error:", e);
     }
 }
 
 // --- List Render Management ---
 
-window.addEventListener('watchlistUpdated', refreshLists);
+window.addEventListener('watchlistUpdated', () => window.refreshLists());
 window.addEventListener('rosterOrderUpdated', updateMyTeamUI);
 
 let _deckRoleFilter = '';
@@ -342,11 +518,9 @@ window.setRoleFilter = function(role, el) {
     _deckRoleFilter = role;
     document.querySelectorAll('.role-filter-btn').forEach(b => {
         let active = b.dataset.role === role;
-        b.style.background = active ? '#22222d' : 'transparent';
-        b.style.color      = active ? '#ffc107' : '#888';
-        b.style.borderColor= active ? '#ffc107' : '#333';
+        b.classList.toggle('active', active);
     });
-    refreshLists();
+    window.refreshLists();
 };
 
 window.refreshLists = function() {
@@ -431,12 +605,31 @@ function logAction(msg) {
     }
 }
 
+// Settings Overlay Handlers
+window.openFranchiseSettings = () => {
+    document.getElementById('franchiseSettingsOverlay').style.display = 'flex';
+};
+
+window.exportMySquadCSV = () => {
+    // Basic CSV export for franchise
+    let sold = state.playerPool.filter(p => p.status === 'sold' && p.team === state.myTeamName);
+    let csv = `"Player","Role","Bought For (Cr)"\n` + sold.map(p => {
+        let role = (state.allRegisteredTeams[state.myTeamName]?.playerRoles && state.allRegisteredTeams[state.myTeamName].playerRoles[p.name]) || '-';
+        return `"${p.name}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
+    }).join('\n');
+    let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${state.myTeamName}_Squad.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+};
+
 // Hotkey listener
 document.addEventListener('keydown', e => {
     if (document.getElementById('mainDashboard').style.display === 'none') return;
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (e.code === 'Space') { 
         e.preventDefault(); 
-        if (!document.getElementById('mainActionButton').disabled) window.placeBid(); 
+        if (!document.getElementById('mainActionButton').disabled && typeof window.placeBid === 'function') {
+            window.placeBid(); 
+        }
     }
 });
