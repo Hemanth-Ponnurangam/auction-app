@@ -32,11 +32,9 @@ window.onload = function() {
         
         if (savedTeam && savedRep) {
             setMyTeamState(savedTeam, savedRep, savedColor);
-            document.getElementById('gatewayScreen').style.display = 'none';
             executeUIBoot();
         } else {
-            document.getElementById('gatewayScreen').style.display = 'none';
-            document.getElementById('loginScreen').style.display   = 'block';
+            document.getElementById('loginScreen').style.display = 'block';
             loadGlobalFranchises();
         }
     } else {
@@ -59,13 +57,11 @@ window.onload = function() {
 // --- Login & Gateway Wrappers ---
 
 window.showRoomKeyScreen = () => {
-    document.getElementById('gatewayScreen').style.display = 'none';
     document.getElementById('roomKeyScreen').style.display = 'flex';
 };
 
 window.backToGateway = () => {
-    document.getElementById('roomKeyScreen').style.display = 'none';
-    document.getElementById('gatewayScreen').style.display = 'flex';
+    window.location.href = 'index.html';
 };
 
 window.handleVerifyRoomKey = () => {
