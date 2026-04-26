@@ -25,6 +25,64 @@
             font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 99999;
         }
 
+        /* ─ Broadcast Banner ──────────────────────────────────────────── */
+        #broadcastBanner {
+            display: none; position: fixed; top: 0; left: 0; right: 0;
+            padding: 11px 56px 11px 16px;
+            background: linear-gradient(135deg, #fd7e14 0%, #c85c00 100%);
+            color: #000; text-align: center; font-size: 14px; font-weight: bold;
+            z-index: 99997; letter-spacing: .5px;
+            box-shadow: 0 4px 20px rgba(253,126,20,.55);
+        }
+        #broadcastBanner.show {
+            display: block;
+            animation: broadcastSlide .3s ease-out;
+        }
+        @keyframes broadcastSlide { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        #broadcastDismissBtn {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,.22); color: #000; border: none;
+            padding: 3px 10px; border-radius: 4px; cursor: pointer;
+            font-weight: bold; font-size: 12px; letter-spacing: .5px; transition: .2s;
+        }
+        #broadcastDismissBtn:hover { background: rgba(0,0,0,.42); }
+
+        /* ─ Loading Skeletons ─────────────────────────────────────────── */
+        @keyframes shimmer {
+            0%   { background-position: -600px 0; }
+            100% { background-position:  600px 0; }
+        }
+        .skeleton-row {
+            height: 34px; border-radius: 5px; margin-bottom: 4px;
+            background: linear-gradient(90deg, #161620 25%, #22222d 50%, #161620 75%);
+            background-size: 1200px 100%;
+            animation: shimmer 1.6s infinite linear;
+        }
+        .skeleton-row.short { height: 22px; width: 70%; }
+
+        /* ─ Timer Arc ─────────────────────────────────────────────────── */
+        .timer-arc-wrapper {
+            position: absolute; top: 14px; right: 14px;
+            width: 72px; height: 72px;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0; z-index: 10;
+        }
+        .timer-arc-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform: rotate(-90deg);
+        }
+        .timer-arc-svg .arc-bg    { transition: none; }
+        .timer-arc-svg .arc-fill  { transition: stroke-dashoffset .5s linear, stroke .3s; }
+        .timer-arc-text {
+            font-weight: bold; font-size: 17px; line-height: 1;
+            position: relative; z-index: 1; transition: color .3s, text-shadow .3s;
+            font-variant-numeric: tabular-nums;
+        }
+        @media (max-width: 999px) {
+            .timer-arc-wrapper { width: 54px; height: 54px; top: 8px; right: 8px; }
+            .timer-arc-text { font-size: 13px; }
+        }
+
         /* ─ Gateway / Login Screens ───────────────────────────────────── */
         .gateway-container {
             display: flex; flex-direction: column; align-items: center;
@@ -135,11 +193,10 @@
 
         /* ─ Center Panel (Profile & Stats) ─────────────────────────────── */
         #centerPanel { overflow-y: hidden; overflow-x: hidden; height: 100%; padding: 15px; display: flex; flex-direction: column; }
-        .timer-pill { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 20px; font-size: 18px; font-weight: bold; background: #222; color: #aaa; border: 2px solid #333; transition: all .3s; }
-        .timer-green  { background: rgba(40,167,69,.15); color: #28a745; border-color: #28a745; box-shadow: 0 0 15px rgba(40,167,69,.4); }
-        .timer-warn   { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; box-shadow: 0 0 15px rgba(253,126,20,.4); }
-        .timer-danger { background: rgba(220,53,69,.2); color: #ff4444; border-color: #ff4444; box-shadow: 0 0 20px rgba(220,53,69,.6); animation: pulse 1s infinite; }
-        .timer-paused { background: rgba(253,126,20,.15); color: #fd7e14; border-color: #fd7e14; }
+        .timer-green  { color: #28a745; text-shadow: 0 0 12px rgba(40,167,69,.7); }
+        .timer-warn   { color: #fd7e14; text-shadow: 0 0 12px rgba(253,126,20,.7); }
+        .timer-danger { color: #ff4444; text-shadow: 0 0 16px rgba(220,53,69,.8); animation: pulse 1s infinite; }
+        .timer-paused { color: #fd7e14; text-shadow: 0 0 12px rgba(253,126,20,.5); }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         
         .player-top-section { display: flex; gap: 20px; align-items: center; margin-bottom: 12px; }
@@ -318,13 +375,18 @@
             #playingXIList { height: auto; flex: 1 1 0; overflow-y: auto; margin-bottom: 5px; }
             #benchList { flex: 0 0 90px; }
             .log-panel { padding: 10px !important; }
-            .timer-pill { position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 14px; }
         }
     </style>
 </head>
 <body>
 
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
+
+<div id="broadcastBanner">
+    <span style="font-size:16px; margin-right:8px;">📢</span>
+    <span id="broadcastText"></span>
+    <button id="broadcastDismissBtn" onclick="dismissBroadcast()">✕ DISMISS</button>
+</div>
 
 <div id="gatewayScreen" class="gateway-container">
     <div class="gateway-card">
@@ -437,7 +499,16 @@
 
         <div class="col-center">
             <div class="panel" id="centerPanel">
-                <div class="timer-pill" id="playerTimer">--</div>
+                <!-- Timer Arc -->
+                <div class="timer-arc-wrapper" id="timerArcWrapper">
+                    <svg class="timer-arc-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                        <circle class="arc-bg"   cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="4"/>
+                        <circle class="arc-fill" id="timerArcFill" cx="36" cy="36" r="30" fill="none"
+                            stroke="#28a745" stroke-width="4" stroke-linecap="round"
+                            stroke-dasharray="188.5" stroke-dashoffset="0"/>
+                    </svg>
+                    <span class="timer-arc-text timer-green" id="playerTimer">--</span>
+                </div>
                 
                 <div class="player-top-section" id="playerTopSection">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
@@ -580,11 +651,23 @@
     let _latestLiveData = null;
     let isDragging = false;
     
-    // ── Watchlist (private per-browser, stored in sessionStorage) ─────────
-    let _watchlist = new Set(JSON.parse(sessionStorage.getItem('auction_watchlist') || '[]'));
+    // ── Watchlist (persisted to Firebase under team auth node) ────────────
+    let _watchlist    = new Set();
+    let _watchlistRef = null;
+
+    function _initWatchlistListener() {
+        if (!roomRef || !myTeamName) return;
+        _watchlistRef = roomRef.child('teams_auth/' + myTeamName + '/watchlist');
+        _watchlistRef.on('value', snap => {
+            let arr = snap.val();
+            _watchlist = new Set(Array.isArray(arr) ? arr : []);
+            renderDeck();
+        });
+    }
+
     window.toggleWatch = function(name) {
         if (_watchlist.has(name)) _watchlist.delete(name); else _watchlist.add(name);
-        sessionStorage.setItem('auction_watchlist', JSON.stringify([..._watchlist]));
+        if (_watchlistRef) _watchlistRef.set([..._watchlist]);
         renderDeck();
     };
 
@@ -648,6 +731,10 @@
             if (statsBar) statsBar.style.display = 'grid';
         }
     });
+
+    window.dismissBroadcast = function() {
+        document.getElementById('broadcastBanner').classList.remove('show');
+    };
 
     // ── Modal System ───────────────────────────────────────────────────────
     function showAlert(title, msg, onOk) {
@@ -857,6 +944,7 @@
         presenceRef.onDisconnect().remove();
         logAction(`✅ <strong>${esc(myRepName)}</strong> connected as ${esc(myTeamName)}.`);
         attachFirebaseListeners();
+        _initWatchlistListener();
     }
 
     function logout() {
@@ -935,6 +1023,21 @@
 
     // ── Firebase Listeners ─────────────────────────────────────────────────
     function attachFirebaseListeners() {
+        // ── Broadcast Banner ──────────────────────────────────────────────
+        roomRef.child('broadcast').on('value', snap => {
+            let d      = snap.val();
+            let banner = document.getElementById('broadcastBanner');
+            if (d && d.active && d.message) {
+                document.getElementById('broadcastText').textContent = d.message;
+                // Re-trigger slide animation
+                banner.classList.remove('show');
+                void banner.offsetWidth;
+                banner.classList.add('show');
+            } else {
+                banner.classList.remove('show');
+            }
+        });
+
         let isChatLoaded = false;
         roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
             if (!isChatLoaded) return;
@@ -988,6 +1091,15 @@
             activePresence = snap.val() || {};
             updateMyTeamUI();
         });
+
+        // Show loading skeletons while player pool loads
+        function skeletonRows(n, short) {
+            return Array(n).fill(null).map(() => `<div class="skeleton-row${short?' short':''}"></div>`).join('');
+        }
+        document.getElementById('deckList').innerHTML    = skeletonRows(7);
+        document.getElementById('unsoldList').innerHTML  = skeletonRows(4);
+        document.getElementById('squadList').innerHTML   = skeletonRows(5);
+        document.getElementById('otherTeamsList').innerHTML = skeletonRows(3);
 
         roomRef.child('player_pool').once('value', snap => {
             let raw = snap.val() || [];
@@ -1132,20 +1244,45 @@
 
         if (window.uiTimer) clearInterval(window.uiTimer);
         window.uiTimer = setInterval(() => {
-            let el = document.getElementById('playerTimer');
+            let el  = document.getElementById('playerTimer');
+            let arc = document.getElementById('timerArcFill');
+            const CIRCUM = 188.5; // 2π × r30
+
             el.classList.remove('timer-green','timer-warn','timer-danger','timer-paused');
-            if (currentAuctionState === 'idle')   { el.textContent = '--'; return; }
-            if (currentAuctionState === 'paused') { el.textContent = '⏸'; el.classList.add('timer-paused'); return; }
+
+            if (currentAuctionState === 'idle') {
+                el.textContent = '--';
+                if (arc) { arc.style.stroke = '#333'; arc.style.strokeDashoffset = '0'; }
+                return;
+            }
+            if (currentAuctionState === 'paused') {
+                el.textContent = '⏸'; el.classList.add('timer-paused');
+                if (arc) arc.style.stroke = '#fd7e14';
+                return;
+            }
+
             let t = data.timer_end ? Math.max(0, Math.ceil((data.timer_end - Date.now()) / 1000)) : 0;
             el.textContent = t + 's';
-            if (t > 10) el.classList.add('timer-green');
-            else if (t > 5) el.classList.add('timer-warn');
-            else el.classList.add('timer-danger');
-            
+
+            let totalSecs = (window.auctionSettings?.bid_timer_secs ?? 15);
+            let progress  = totalSecs > 0 ? Math.min(1, t / totalSecs) : 0;
+            let offset    = CIRCUM * (1 - progress);
+
+            if (t > 10) {
+                el.classList.add('timer-green');
+                if (arc) { arc.style.stroke = '#28a745'; arc.style.strokeDashoffset = offset; }
+            } else if (t > 5) {
+                el.classList.add('timer-warn');
+                if (arc) { arc.style.stroke = '#fd7e14'; arc.style.strokeDashoffset = offset; }
+            } else {
+                el.classList.add('timer-danger');
+                if (arc) { arc.style.stroke = '#ff4444'; arc.style.strokeDashoffset = offset; }
+            }
+
             if (currentAuctionState === 'bidding' && t <= 5 && t > 0 && t !== _lastTimerWarnSecond) {
                 _lastTimerWarnSecond = t; playSound('timer_warn');
             }
-            
+
             // ── Cooldown safety net ────────────────────────────────────────
             // Forces transition to bidding if auctioneer tab is disconnected
             if (currentAuctionState === 'cooldown' && t === 0 && roomRef) {
