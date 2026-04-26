@@ -18,21 +18,21 @@ window.onload = function() {
                 isSuperAdmin = true;
                 executeAdminBoot();
             } else {
-                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('adminLoginScreen').style.display = 'flex';
             }
         });
     } else {
-        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('adminLoginScreen').style.display = 'flex';
     }
 };
 
 window.handleAdminLogin = () => {
-    let pin = document.getElementById('adminPinInput').value.trim();
+    let pin = document.getElementById('superPin').value.trim();
     verifySuperAdmin(pin).then(valid => {
         if (valid) {
             sessionStorage.setItem('superAdminPin', pin);
             isSuperAdmin = true;
-            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminLoginScreen').style.display = 'none';
             executeAdminBoot();
         }
     });
@@ -44,7 +44,7 @@ window.logoutAdmin = () => {
 };
 
 function executeAdminBoot() {
-    document.getElementById('mainDashboard').style.display = 'flex';
+    document.getElementById('masterDashboard').style.display = 'flex';
     attachFirebaseListeners();
 }
 
