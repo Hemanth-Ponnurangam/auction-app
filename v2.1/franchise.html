@@ -34,43 +34,37 @@
         <p style="color:#888; margin-bottom:25px; font-size:13px;">Ask your auctioneer for the 4-digit room PIN.</p>
         <input type="password" id="joinRoomKey" class="login-input" placeholder="4-Digit Room PIN" maxlength="4" style="text-align:center; font-size:20px; letter-spacing:5px;" onkeypress="if(event.key==='Enter') handleVerifyRoomKey()">
         <button class="submit-btn" style="margin-bottom:10px;" onclick="handleVerifyRoomKey()">ENTER ROOM</button>
-        <button class="back-btn" onclick="backToGateway()">← Back</button>
+        <button class="back-btn" onclick="window.location.href='index.html'">← Back to Home</button>
     </div>
 </div>
 
-<div id="rolePopup" class="role-popup">
-    <button onclick="setRole('C')" title="Captain">C</button>
-    <button onclick="setRole('VC')" title="Vice Captain">VC</button>
-    <button onclick="setRole('WK')" title="Wicket Keeper">WK</button>
-    <button onclick="setRole('')" class="clear-btn" title="Clear Role">❌</button>
-</div>
-
-<div id="jumpBidPopup">
-    <button class="jb-5" onclick="placeExactBid(50000000)">5 CR</button>
-    <button class="jb-10" onclick="placeExactBid(100000000)">10 CR</button>
-    <button class="jb-manual" onclick="promptManualBid()">MANUAL</button>
-    <button class="jb-cancel" onclick="closeJumpMenu()">CANCEL</button>
-</div>
-
-<div id="loginScreen">
-    <div class="login-card">
+<div id="loginScreen" class="gateway-container" style="display:none;">
+    <div class="gateway-card">
         <h1 id="loginTitle" style="color:#fff; font-size:24px; margin-bottom:5px;">Franchise Access</h1>
         <p id="loginSub" style="color:#888; margin-bottom:25px; font-size:13px;">Select or create a team to enter the room.</p>
+        
         <div id="presetSelection">
-            <div class="preset-teams-grid" id="globalTeamsGrid"><p style="grid-column:span 2; color:#666; font-size:11px;">Loading…</p></div>
+            <div class="preset-teams-grid" id="globalTeamsGrid">
+                <p style="grid-column:span 2; color:#666; font-size:11px;">Loading…</p>
+            </div>
             <button class="btn-custom" onclick="prepareCustomLogin()">➕ Create Custom Team</button>
+            <button class="back-btn" style="margin-top:20px;" onclick="window.location.href='index.html'">← Back to Home</button>
         </div>
+        
         <div id="pinEntryDiv" style="display:none; text-align:left;">
             <label class="label-text">Representative Name</label>
             <input type="text" id="repNameInput" class="login-input" placeholder="e.g. Rahul">
+            
             <div id="customFields" style="display:none;">
                 <label class="label-text">Franchise Code (e.g. PWI)</label>
                 <input type="text" id="customCodeInput" class="login-input" placeholder="3-4 Letters" maxlength="4" style="text-transform:uppercase;">
                 <label class="label-text">Theme Color</label>
                 <input type="color" id="customColorInput" class="login-input" value="#9900ff" style="padding:2px 5px; height:40px; cursor:pointer;">
             </div>
+            
             <label class="label-text">4-Digit Auth PIN</label>
             <input type="password" id="pinInput" class="login-input" placeholder="Enter PIN" maxlength="4" pattern="\d*" onkeypress="if(event.key==='Enter') handleSubmitAuth()">
+            
             <button class="submit-btn" onclick="handleSubmitAuth()">Enter Room</button>
             <button class="back-btn" onclick="backToSelection()">← Back to Teams</button>
         </div>
