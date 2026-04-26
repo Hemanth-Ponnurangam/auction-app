@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auctioneer Command Center</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auctioneer.css">
+</head>
+<body>
+<div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
+
+<div id="broadcastBanner">
+    <span class="broadcast-icon">📢</span>
+    <span id="broadcastText"></span>
+    <button id="broadcastClearBtn" onclick="clearBroadcast()">✕ DISMISS</button>
+</div>
+
+<div id="adminGatewayScreen" class="gateway-container">
+    <div class="gateway-card">
+        <h1 style="color:#fff; font-size:28px; margin-bottom:30px; letter-spacing:2px;">🔨 <span style="color:#ffc107;">AUCTIONEER</span></h1>
+        <p style="color:#aaa; margin-bottom:25px;">Manage the auction room</p>
+        <button class="btn-massive" style="background:linear-gradient(145deg,#2d2d3d,#222); color:#fff; border:1px solid #444;" onclick="showCreateRoom()">CREATE NEW ROOM</button>
+        <button class="btn-massive btn-auctioneer" onclick="showJoinAdminRoom()">JOIN EXISTING ROOM</button>
+        <button class="back-btn" style="margin-top:20px;" onclick="window.location.href='franchise.html'">← Back to Main Menu</button>
+    </div>
+</div>
+
+<div id="createRoomScreen" class="gateway-container" style="display:none;">
+    <div class="gateway-card">
+        <h2 style="color:#fff; margin-bottom:10px;">Create New Room</h2>
+        <input type="text" id="newRoomName" class="login-input" placeholder="Room Name (e.g. Mega Auction 2026)">
+        <input type="password" id="newRoomKey" class="login-input" placeholder="Set 4-Digit Room Key" maxlength="4" style="text-align:center; font-size:20px; letter-spacing:5px;">
+        <label style="display:block; text-align:left; color:#888; font-size:11px; text-transform:uppercase; margin-bottom:5px;">Starting Purse (Cr)</label>
+        <input type="number" id="newRoomPurse" class="login-input" value="100" min="1">
+        <label style="display:block; text-align:left; color:#888; font-size:11px; text-transform:uppercase; margin-bottom:5px;">Select Player Database</label>
+        <select id="dbSelection" class="login-input" onchange="toggleCustomUpload()"></select>
+        <div id="customDbUpload" class="file-upload-wrapper" style="display:none;">
+            <label style="font-size:11px; color:#888; text-transform:uppercase;">Upload .CSV File</label>
+            <input type="file" id="csvFileInput" accept=".csv">
+            <div class="upload-instructions">Required (12 Cols): <strong>Name, Base Price, Set, Role, Franchise, Nationality, Runs, Average, SR, Wickets, Economy, Bowling SR</strong></div>
+        </div>
+        <button class="submit-btn" style="margin:15px 0 10px;" onclick="createNewRoom()">CREATE ROOM</button>
+        <button class="back-btn" onclick="backToAdminGateway()">← Back</button>
+    </div>
+</div>
+
+<div id="joinAdminRoomScreen" class="gateway-container" style="display:none;">
+    <div class="gateway-card">
+        <h2 style="color:#fff; margin-bottom:10px;">Join Existing Room</h2>
+        <input type="password" id="joinAdminKey" class="login-input" placeholder="Enter 4-Digit Key" maxlength="4" style="text-align:center; font-size:20px; letter-spacing:5px;">
+        <button class="submit-btn" style="margin-bottom:10px;" onclick="joinAdminRoom()">ENTER ROOM</button>
+        <button class="back-btn" onclick="backToAdminGateway()">← Back</button>
+    </div>
+</div>
+
+<div id="settingsOverlay" class="settings-overlay">
+    <div class="settings-card">
+        <h2 style="color:#fff; margin-top:0; margin-bottom:25px; text-align:center; letter-spacing:1px; font-size:22px;">⚙️ AUCTION SETTINGS</h2>
+        <div class="setting-row" style="background:rgba(255,255,255,.02); padding:10px; border-radius:8px; margin-bottom:20px;">
+            <div class="setting-label">Room PIN (Share with teams)</div>
+            <input type="text" id="set-room-key" class="setting-input" style="color:#28a745; background:transparent; border:none;" readonly>
+        </div>
+        <div class="setting-row">
+            <div class="setting-label">Room Name</div>
+            <input type="text" id="set-room-name" class="setting-input wide">
+        </div>
+        <div class="setting-row">
+            <div class="setting-label">Starting Purse (Cr)</div>
+            <input type="number" id="set-purse" class="setting-input" value="100" min="1">
+        </div>
+        
+        <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px; flex-wrap:wrap; gap:10px;">
+            <div class="setting-label" style="width:100%;">Differential Bid Slabs (Cr &rarr; L)</div>
+            <div style="display:flex; width:100%; gap:5px; align-items:center;">
+                <span style="color:#aaa; font-size:11px;">0 to</span>
+                <input type="number" id="set-limit-mid" class="setting-input" value="2" style="width:50px;" oninput="document.getElementById('label-mid-start').textContent=this.value">
+                <span style="color:#aaa; font-size:11px;">Cr: +</span>
+                <input type="number" id="set-inc-base" class="setting-input" value="20" style="width:50px;" title="Base Tier Increment">
+                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+            </div>
+            <div style="display:flex; width:100%; gap:5px; align-items:center;">
+                <span id="label-mid-start" style="color:#ffc107; font-weight:bold; width:20px; text-align:center;">2</span>
+                <span style="color:#aaa; font-size:11px;">to</span>
+                <input type="number" id="set-limit-high" class="setting-input" value="5" style="width:50px;" oninput="document.getElementById('label-high-start').textContent=this.value">
+                <span style="color:#aaa; font-size:11px;">Cr: +</span>
+                <input type="number" id="set-inc-mid" class="setting-input" value="50" style="width:50px;" title="Mid Tier Increment">
+                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+            </div>
+            <div style="display:flex; width:100%; gap:5px; align-items:center;">
+                <span style="color:#aaa; font-size:11px;">Above</span>
+                <span id="label-high-start" style="color:#ffc107; font-weight:bold; width:20px; text-align:center;">5</span>
+                <span style="color:#aaa; font-size:11px;">Cr: +</span>
+                <input type="number" id="set-inc-high" class="setting-input" value="100" style="width:50px;" title="High Tier Increment">
+                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+            </div>
+        </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Bid Timer (seconds)</div>
+            <input type="number" id="set-bid-timer" class="setting-input" value="15" min="5" max="120" title="Duration of the bidding countdown">
+        </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Cooldown Duration (seconds)</div>
+            <input type="number" id="set-cooldown" class="setting-input" value="10" min="3" max="60" title="Pre-bidding reveal countdown">
+        </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Strict Overseas Limit</div>
+            <select id="set-overseas-rule" class="setting-input wide" style="width:100px;">
+                <option value="true">Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+            <input type="number" id="set-max-ov" class="setting-input" value="8" style="width:60px;" title="Max Foreigners">
+        </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Squad Size Limits</div>
+            <input type="number" id="set-min-squad" class="setting-input" value="18" style="width:60px;" title="Minimum Squad">
+            <span style="color:#666;">to</span>
+            <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;" title="Maximum Squad">
+        </div>
+        <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px; margin-top:20px; border-top:1px solid #222; padding-top:15px;">
+            <div class="setting-label">Export Auction Data</div>
+            <div style="display:flex; gap:10px; width:100%;">
+                <select id="exportTeamSelector" style="flex:1; color:#fff; background:#111118; border:1px solid #333; border-radius:6px; padding:8px;"></select>
+                <button style="background:#28a745; border:1px solid #1e7e34; padding:8px 12px; color:#fff; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="exportSquadCSV()">📥 CSV</button>
+                <button style="background:#dc3545; border:1px solid #bd2130; padding:8px 12px; color:#fff; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="exportSquadPDF()">📄 PDF</button>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button class="btn-massive btn-auctioneer" style="padding:15px; font-size:14px;" onclick="saveSettings()">SAVE SETTINGS</button>
+            <button class="btn-massive" style="padding:15px; font-size:14px; background:#333; color:#fff; border:none; border-radius:10px;" onclick="document.getElementById('settingsOverlay').style.display='none'">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<div id="appModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
+        <p id="modalMessage" style="color:#aaa; margin-bottom:15px; line-height:1.6; white-space:pre-wrap;"></p>
+        <input type="text" id="modalInput" class="modal-input" style="display:none;">
+        <div id="modalButtons" style="display:flex; gap:10px;"></div>
+    </div>
+</div>
+
+<div id="adminDashboardWrapper">
+    <div style="position:relative; width:100%; max-width:1400px; margin:0 auto; text-align:center; padding-top:5px; margin-bottom:5px;">
+        <h1 class="main-title">🔨 <span id="headerRoomName">IPL AUCTIONEER</span> COMMAND CENTER</h1>
+        <button class="gear-btn" onclick="openSettings()">⚙️ Settings</button>
+    </div>
+    <div class="dashboard">
+        <div class="col-left">
+            <div class="panel" style="flex:0 0 auto; padding:12px 15px;">
+                <div class="hotkey-hint">
+                    <span style="font-weight:bold;">SHORTCUTS:</span>
+                    <span class="key-badge">Space</span> Random |
+                    <span class="key-badge">S</span> Sold |
+                    <span class="key-badge">X</span> Unsold |
+                    <span class="key-badge">P</span> Pause
+                </div>
+                <div class="data-box">
+                    <div class="player-top-section">
+                        <div class="player-photo-box" id="playerPhoto" style="width:100px; height:100px;">PHOTO</div>
+                        <div class="player-header" style="margin-bottom:0; padding-right:0;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div>
+                                    <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">On the Block</span>
+                                    <div class="player-name" id="adminPlayer" style="font-size:24px; color:#28a745;">Waiting...</div>
+                                    <div style="display:flex; gap:8px; margin-top:5px; flex-wrap:wrap;">
+                                        <div class="past-teams" id="adminPlayerTags" style="display:none;"></div>
+                                        <div class="player-role-pill" id="adminPlayerRole" style="display:none;"></div>
+                                    </div>
+                                </div>
+                                <div style="text-align:right; line-height:1; display:flex; align-items:center; justify-content:flex-end;">
+                                    <div class="timer-arc-wrapper">
+                                        <svg class="timer-arc-svg" viewBox="0 0 108 108">
+                                            <circle cx="54" cy="54" r="46" fill="none" stroke="#1c1c28" stroke-width="7"/>
+                                            <circle id="timerArc" cx="54" cy="54" r="46" fill="none"
+                                                    stroke="#28a745" stroke-width="7"
+                                                    stroke-dasharray="289.03" stroke-dashoffset="0"
+                                                    stroke-linecap="round"/>
+                                        </svg>
+                                        <span id="adminTimer" class="timer-text timer-green">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-bar">
+                        <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
+                        <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
+                        <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
+                        <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
+                        <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
+                        <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
+                    </div>
+
+                    <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="width:45%;">
+                            <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
+                            <span id="adminBid" class="highlight" style="font-size:1.8rem; margin-top:2px;">₹0.00 Cr</span>
+                        </div>
+                        <div style="width:50%; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
+                                <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.4rem; margin-top:2px;">-</span>
+                            </div>
+                            <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)">🎲</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bid-history-container" id="adminBidHistory"></div>
+                </div>
+                <div class="flex-row">
+                    <button id="btnSold" class="btn-green" style="padding:10px; font-size:14px;" onclick="sellPlayer()">SOLD</button>
+                    <button id="btnUnsold" class="btn-red" style="padding:10px; font-size:14px;" onclick="passPlayer()">UNSOLD</button>
+                </div>
+            </div>
+            <div class="panel" style="flex:1; display:flex; flex-direction:column; padding:0; overflow:hidden; min-height:0;">
+                <div id="budgetCards" class="budget-grid"></div>
+            </div>
+        </div>
+
+        <div class="col-right">
+            <div class="panel" style="flex:0 0 auto; padding: 12px 15px;">
+                <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:10px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Auction Controls</label>
+                
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px; height: 35px;">
+                        <button class="btn-undo" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="undoLastSale()" title="Undo Sale">⏪</button>
+                        <button class="btn-undo" style="flex:1; padding:0; border-radius:6px; font-size:18px; border: 1px solid #0dcaf0; color: #0dcaf0; display:flex; align-items:center; justify-content:center;" onclick="undoLastBid()" title="Undo Last Bid">↩️</button>
+                        <button id="btnPause" class="btn-pause" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="togglePause()" title="Pause / Resume">⏸</button>
+                        <button class="btn-push" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="bypassCooldown()" title="Force Start">⏩</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; height: 35px;">
+                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(15,'bidding')">15s</button>
+                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(30,'bidding')">30s</button>
+                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(60,'bidding')">60s</button>
+                        <div style="width: 1px; height: 80%; background: #333; margin: 0 2px;"></div>
+                        <button class="btn-outline-danger" style="flex:1; padding:0; height:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px;" onclick="confirmResetAuction()">
+                            <span style="font-size:16px;">☢️</span> RESET
+                        </button>
+                    </div>
+
+                    <div class="broadcast-row">
+                        <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
+                        <input type="text" id="broadcastInput" class="broadcast-input"
+                               placeholder="📢  Broadcast to all screens…" maxlength="80"
+                               onkeypress="if(event.key==='Enter') sendBroadcast()">
+                        <button class="btn-broadcast-send" onclick="sendBroadcast()">SEND</button>
+                        <button class="btn-broadcast-clear" onclick="clearBroadcast()" title="Dismiss broadcast">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel tabs-panel">
+                <input type="text" id="auctioneerSearch" class="login-input" placeholder="🔍 Search Player…" style="padding:8px; margin-bottom:12px; font-size:13px;">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('deck',this)">📋 DECK</button>
+                    <button class="tab-btn" onclick="switchTab('unsold',this)">♻️ UNSOLD</button>
+                    <button class="tab-btn" onclick="switchTab('squads',this)">🛡️ SQUADS</button>
+                    <button class="tab-btn" onclick="switchTab('logs',this)">📜 LOGS</button>
+                </div>
+                <div id="tab-deck" class="tab-content active">
+                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+                        <label style="color:#aaa; font-size:11px; font-weight:bold; letter-spacing:1px;">SET:</label>
+                        <select id="setSelector" class="compact-select" onchange="refreshLists()"></select>
+                    </div>
+                    <div style="display:flex; gap:5px; margin-bottom:8px; flex-shrink:0; flex-wrap:wrap;">
+                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#22222d; color:#ffc107; border:1px solid #ffc107; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">ALL</button>
+                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">BAT</button>
+                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">BWL</button>
+                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">ALL-R</button>
+                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">WK</button>
+                    </div>
+                    <div id="deckList" style="flex:1; overflow-y:auto; padding-right:5px;"></div>
+                </div>
+                <div id="tab-unsold" class="tab-content">
+                    <div id="unsoldList" style="flex:1; overflow-y:auto; padding-right:5px;"></div>
+                </div>
+                <div id="tab-squads" class="tab-content">
+                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                        <label style="color:#aaa; font-size:11px; font-weight:bold; letter-spacing:1px;">TEAM:</label>
+                        <select id="teamSelector" class="compact-select" onchange="refreshLists()"></select>
+                    </div>
+                    <div id="squadList" style="flex:1; overflow-y:auto; padding-right:5px;"></div>
+                </div>
+                <div id="tab-logs" class="tab-content">
+                    <div class="chat-input-area" style="margin-bottom:10px; flex-shrink:0;">
+                        <input type="text" id="chatInput" class="chat-input" maxlength="60" placeholder="Send global message…" onkeypress="if(event.key==='Enter') sendChatMessage()">
+                        <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
+                    </div>
+                    <div id="logContainer" style="display:flex; flex-direction:column; flex:1; overflow-y:auto; padding-right:5px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/auctioneer/main.js"></script>
+
+</body>
+</html>

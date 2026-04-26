@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Live Auction – Franchise Room</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/franchise.css">
+</head>
+<body>
+
+<div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
+
+<div id="broadcastBanner">
+    <span style="font-size:16px; margin-right:8px;">📢</span>
+    <span id="broadcastText"></span>
+    <button id="broadcastDismissBtn" onclick="dismissBroadcast()">✕ DISMISS</button>
+</div>
+
+<div id="gatewayScreen" class="gateway-container">
+    <div class="gateway-card">
+        <h1 style="color:#fff; font-size:28px; margin-bottom:30px; letter-spacing:2px;">🏏 IPL <span style="color:#ffc107;">AUCTION</span></h1>
+        <p style="color:#aaa; margin-bottom:25px;">Select your role to proceed</p>
+        <button class="btn-massive btn-franchise" onclick="showRoomKeyScreen()">FRANCHISE</button>
+        <button class="btn-massive btn-auctioneer" onclick="window.location.href='auctioneer.html'">AUCTIONEER</button>
+    </div>
+</div>
+
+<div id="roomKeyScreen" class="gateway-container" style="display:none;">
+    <div class="gateway-card">
+        <h2 style="color:#fff; margin-bottom:10px;">Enter Room Key</h2>
+        <p style="color:#888; margin-bottom:25px; font-size:13px;">Ask your auctioneer for the 4-digit room PIN.</p>
+        <input type="password" id="joinRoomKey" class="login-input" placeholder="4-Digit Room PIN" maxlength="4" style="text-align:center; font-size:20px; letter-spacing:5px;" onkeypress="if(event.key==='Enter') handleVerifyRoomKey()">
+        <button class="submit-btn" style="margin-bottom:10px;" onclick="handleVerifyRoomKey()">ENTER ROOM</button>
+        <button class="back-btn" onclick="backToGateway()">← Back</button>
+    </div>
+</div>
+
+<div id="rolePopup" class="role-popup">
+    <button onclick="setRole('C')" title="Captain">C</button>
+    <button onclick="setRole('VC')" title="Vice Captain">VC</button>
+    <button onclick="setRole('WK')" title="Wicket Keeper">WK</button>
+    <button onclick="setRole('')" class="clear-btn" title="Clear Role">❌</button>
+</div>
+
+<div id="jumpBidPopup">
+    <button class="jb-5" onclick="placeExactBid(50000000)">5 CR</button>
+    <button class="jb-10" onclick="placeExactBid(100000000)">10 CR</button>
+    <button class="jb-manual" onclick="promptManualBid()">MANUAL</button>
+    <button class="jb-cancel" onclick="closeJumpMenu()">CANCEL</button>
+</div>
+
+<div id="loginScreen">
+    <div class="login-card">
+        <h1 id="loginTitle" style="color:#fff; font-size:24px; margin-bottom:5px;">Franchise Access</h1>
+        <p id="loginSub" style="color:#888; margin-bottom:25px; font-size:13px;">Select or create a team to enter the room.</p>
+        <div id="presetSelection">
+            <div class="preset-teams-grid" id="globalTeamsGrid"><p style="grid-column:span 2; color:#666; font-size:11px;">Loading…</p></div>
+            <button class="btn-custom" onclick="prepareCustomLogin()">➕ Create Custom Team</button>
+        </div>
+        <div id="pinEntryDiv" style="display:none; text-align:left;">
+            <label class="label-text">Representative Name</label>
+            <input type="text" id="repNameInput" class="login-input" placeholder="e.g. Rahul">
+            <div id="customFields" style="display:none;">
+                <label class="label-text">Franchise Code (e.g. PWI)</label>
+                <input type="text" id="customCodeInput" class="login-input" placeholder="3-4 Letters" maxlength="4" style="text-transform:uppercase;">
+                <label class="label-text">Theme Color</label>
+                <input type="color" id="customColorInput" class="login-input" value="#9900ff" style="padding:2px 5px; height:40px; cursor:pointer;">
+            </div>
+            <label class="label-text">4-Digit Auth PIN</label>
+            <input type="password" id="pinInput" class="login-input" placeholder="Enter PIN" maxlength="4" pattern="\d*" onkeypress="if(event.key==='Enter') handleSubmitAuth()">
+            <button class="submit-btn" onclick="handleSubmitAuth()">Enter Room</button>
+            <button class="back-btn" onclick="backToSelection()">← Back to Teams</button>
+        </div>
+    </div>
+</div>
+
+<div id="appModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
+        <p id="modalMessage" style="color:#aaa; margin-bottom:15px; line-height:1.6; white-space:pre-wrap;"></p>
+        <input type="text" id="modalInput" class="modal-input" style="display:none;">
+        <div id="modalButtons" style="display:flex; gap:10px;"></div>
+    </div>
+</div>
+
+<div id="franchiseSettingsOverlay" class="settings-overlay">
+    <div class="settings-card">
+        <h2 style="color:#fff; margin-top:0; margin-bottom:20px; text-align:center; font-size:20px;">⚙️ FRANCHISE SETTINGS</h2>
+        <div id="rulesList" style="margin-bottom:20px; font-size:13px; line-height:1.6; color:#ccc; background:#0a0a0f; padding:15px; border-radius:8px; border:1px solid #333;"></div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="action-btn" onclick="exportMySquadCSV()">📥 Download My Squad (CSV)</button>
+            <button class="action-btn danger" onclick="exportMySquadPDF()">📄 Download My Squad (PDF)</button>
+            <button class="action-btn outline" onclick="exportAllSquadsCSV()">📥 Download All Squads (CSV)</button>
+            <button class="action-btn outline" onclick="exportAllSquadsPDF()">📄 Download All Squads (PDF)</button>
+        </div>
+        <button class="btn-massive" style="margin-top:20px; padding:12px; background:#333; color:#fff;" onclick="document.getElementById('franchiseSettingsOverlay').style.display='none'">CLOSE</button>
+    </div>
+</div>
+
+<div id="mainDashboard">
+    
+    <div class="mobile-nav">
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('myTeamBox', this)">🏏 Squad</button>
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('logPanelMobile', this)">📜 Logs</button>
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('tabsPanelMobile', this)">📋 Deck</button>
+        <button class="mobile-nav-btn" onclick="toggleMobilePanel('otherTeamsList', this)">🌐 Teams</button>
+    </div>
+
+    <div class="top-row" id="mainTopRow">
+        <div class="col-left">
+            <div class="panel my-team-card mobile-overlay-panel" id="myTeamBox">
+                <div class="team-msg-popup" id="msg-popup-myteam"></div>
+                <button class="logout-btn" onclick="logout()">LEAVE</button>
+                <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
+                <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
+                <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
+                <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
+                <div class="roster-list drop-zone" id="playingXIList"></div>
+                <div class="roster-header" style="margin-top:6px;">BENCH</div>
+                <div class="roster-list drop-zone" id="benchList"></div>
+            </div>
+        </div>
+
+        <div class="col-center">
+            <div class="panel" id="centerPanel">
+                <div class="timer-arc-wrapper" id="timerArcWrapper">
+                    <svg class="timer-arc-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                        <circle class="arc-bg"   cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="4"/>
+                        <circle class="arc-fill" id="timerArcFill" cx="36" cy="36" r="30" fill="none"
+                            stroke="#28a745" stroke-width="4" stroke-linecap="round"
+                            stroke-dasharray="188.5" stroke-dashoffset="0"/>
+                    </svg>
+                    <span class="timer-arc-text timer-green" id="playerTimer">--</span>
+                </div>
+                
+                <div class="player-top-section" id="playerTopSection">
+                    <div class="player-photo-box" id="playerPhoto">PHOTO</div>
+                    <div class="player-header">
+                        <span class="label-text">On The Block</span>
+                        <div class="player-name" id="playerName">Waiting…</div>
+                        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                            <div class="past-teams" id="playerFranchise" style="display:none;"></div>
+                            <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-bar" id="statsBar">
+                    <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
+                    <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
+                    <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
+                    <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
+                    <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
+                    <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
+                </div>
+
+                <div class="bidding-zone" id="bidZoneBox">
+                    <span class="label-text" style="font-size:12px;">Current Bid</span>
+                    <div class="current-bid-display status-neutral" id="currentBidContainer">
+                        <span id="actualBidAmount">₹0.00 Cr</span>
+                        <span class="leader-badge" id="leaderBadge">-</span>
+                    </div>
+                    <button id="mainActionButton" class="action-btn-bid btn-bid-locked" disabled>WAITING…</button>
+                    <div class="shortcut-hint">Press <span class="key">Space</span> or Tap to Bid. Hold for manual input.</div>
+                    
+                    <div id="franchiseBidHistory" class="franchise-bid-history"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-right" id="rightColumnWrapper">
+            <div class="panel log-panel mobile-overlay-panel" id="logPanelMobile">
+                <div class="log-header">
+                    <span>📜 Live Activity <span id="auctioneerStatus" class="offline-dot" title="Auctioneer Offline"></span></span>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" class="chat-input" maxlength="30" placeholder="Type message…" onkeypress="if(event.key==='Enter') sendChatMessage()">
+                        <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
+                    </div>
+                </div>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+            
+            <div class="panel tabs-panel mobile-overlay-panel" id="tabsPanelMobile">
+                <div class="tabs">
+                    <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); refreshLists()">
+                        <option value="" disabled selected hidden>ON DECK</option>
+                    </select>
+                    <button id="unsoldTabBtn" class="tab-btn" onclick="switchTab('unsold',this)">UNSOLD</button>
+                    <select id="teamSelector" class="tab-btn" onchange="switchTab('squads',this); refreshLists()">
+                        <option value="" disabled selected hidden>SQUADS</option>
+                    </select>
+                </div>
+                
+                <div id="tab-deck" class="tab-content active">
+                    <input type="text" id="deckSearch" class="login-input" placeholder="🔍 Search Deck..." style="padding:8px; font-size:12px; margin-bottom:8px;" oninput="refreshLists()">
+                    <div style="display:flex; gap:4px; margin-bottom:8px; flex-shrink:0;">
+                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)">ALL</button>
+                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)">BAT</button>
+                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)">BWL</button>
+                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)">ALL-R</button>
+                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)">WK</button>
+                        <button class="role-filter-btn" data-role="STAR" onclick="setRoleFilter('STAR',this)" style="font-size:12px;">⭐</button>
+                    </div>
+                    <div id="deckList" style="flex:1; overflow-y:auto; padding-right:4px;"></div>
+                </div>
+                <div id="tab-unsold" class="tab-content">       <div id="unsoldList" style="flex:1; overflow-y:auto; padding-right:4px;"></div></div>
+                <div id="tab-squads" class="tab-content">       <div id="squadList"  style="flex:1; overflow-y:auto; padding-right:4px;"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-row mobile-overlay-panel" id="otherTeamsList"></div>
+</div>
+
+<script type="module" src="js/franchise/main.js"></script>
+
+<script>
+    window.toggleMobilePanel = function(panelId, btnEl) {
+        if (window.innerWidth >= 1000) return;
+        
+        let panels = ['myTeamBox', 'logPanelMobile', 'tabsPanelMobile', 'otherTeamsList'];
+        let targetPanel = document.getElementById(panelId);
+        let isOpening = !targetPanel.classList.contains('show');
+        
+        panels.forEach(p => { 
+            let el = document.getElementById(p); 
+            if(el) {
+                el.classList.remove('show'); 
+                el.style.top = ''; el.style.bottom = '';
+            }
+        });
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+        
+        let statsBar = document.getElementById('statsBar');
+        
+        if (isOpening) {
+            let topRowRect = document.getElementById('mainTopRow').getBoundingClientRect();
+            let headerRect = document.getElementById('playerTopSection').getBoundingClientRect();
+            let bidBoxRect = document.getElementById('bidZoneBox').getBoundingClientRect();
+            
+            let topOffset = headerRect.bottom - topRowRect.top + 10;
+            let bottomOffset = topRowRect.bottom - bidBoxRect.top + 10;
+            
+            targetPanel.style.top = topOffset + 'px';
+            targetPanel.style.bottom = bottomOffset + 'px';
+            
+            targetPanel.classList.add('show');
+            if (btnEl) btnEl.classList.add('active');
+            if (statsBar) statsBar.style.display = 'none';
+        } else {
+            if (statsBar) statsBar.style.display = 'grid';
+        }
+    };
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1000) {
+            let panels = ['myTeamBox', 'logPanelMobile', 'tabsPanelMobile', 'otherTeamsList'];
+            panels.forEach(p => {
+                let el = document.getElementById(p);
+                if (el) {
+                    el.classList.remove('show');
+                    el.style.top = ''; el.style.bottom = '';
+                }
+            });
+            document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+            let statsBar = document.getElementById('statsBar');
+            if (statsBar) statsBar.style.display = 'grid';
+        }
+    });
+
+    window.dismissBroadcast = function() {
+        document.getElementById('broadcastBanner').classList.remove('show');
+    };
+</script>
+
+</body>
+</html>
