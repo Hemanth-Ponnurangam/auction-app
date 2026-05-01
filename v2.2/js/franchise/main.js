@@ -695,3 +695,94 @@ document.getElementById('suggestBidBtn')?.addEventListener('click', () => {
 document.getElementById('requestPaddleBtn')?.addEventListener('click', () => {
     database.ref(`/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
 });
+
+
+// --- V2.2 MULTIPLAYER WAR ROOM LOGIC ---
+
+let isPaddleHolder = false;
+
+// Wait for Firebase to confirm the user is logged in before setting up the War Room
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        const myUid = user.uid;
+        const myName = user.displayName || "Rep";
+        
+        // Assuming your existing logic saves the team ID to a global variable or local storage 
+        // Swap 'localStorage.getItem("teamId")' if you use a specific global variable like `currentTeamId`
+        const teamId = localStorage.getItem("teamId") || window.currentTeamId || "UNKNOWN_TEAM";
+        
+        if(teamId !== "UNKNOWN_TEAM") {
+            initializeWarRoom(teamId, myUid, myName);
+        }
+    }
+});
+
+function initializeWarRoom(teamId, myUid, myName) {
+    const connectedRef = database.ref('.info/connected');
+    const userStatusRef = database.ref(`/franchises/${teamId}/onlineUsers/${myUid}`);
+
+    // 1. Live Roster Dot
+    connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+            userStatusRef.set(true);
+            userStatusRef.onDisconnect().remove();
+        }
+    });
+
+    database.ref(`/franchises/${teamId}/onlineUsers`).on('value', (snap) => {
+        const count = snap.numChildren();
+        const countElement = document.getElementById('onlineRepsCount');
+        if(countElement) countElement.innerText = count;
+    });
+
+    // 2. Paddle Delegation
+    database.ref(`/franchises/${teamId}/paddle`).on('value', (snap) => {
+        const paddleData = snap.val();
+        const bidBtn = document.getElementById('bidBtn');
+        const reqBtn = document.getElementById('requestPaddleBtn');
+        const sugBtn = document.getElementById('suggestBidBtn');
+        const nameTag = document.getElementById('paddleHolderName');
+
+        if (paddleData && paddleData.uid === myUid) {
+            isPaddleHolder = true;
+            if(bidBtn) bidBtn.style.display = 'block';
+            if(reqBtn) reqBtn.style.display = 'none';
+            if(sugBtn) sugBtn.style.display = 'none';
+        } else {
+            isPaddleHolder = false;
+            if(bidBtn) bidBtn.style.display = 'none';
+            if(reqBtn) reqBtn.style.display = 'block';
+            if(sugBtn) sugBtn.style.display = 'block';
+        }
+        
+        if(nameTag) nameTag.innerText = paddleData ? paddleData.name : "Available";
+    });
+
+    // 3. Visual Pings
+    database.ref(`/franchises/${teamId}/suggestedBid`).on('value', (snap) => {
+        if (isPaddleHolder && snap.exists()) {
+            const bidBtn = document.getElementById('bidBtn');
+            if(bidBtn) {
+                bidBtn.classList.add('pulse-green');
+                setTimeout(() => bidBtn.classList.remove('pulse-green'), 2000);
+            }
+        }
+    });
+
+    // 4. Button Click Listeners (Using cloning to prevent duplicate listeners if re-initialized)
+    const sugBtn = document.getElementById('suggestBidBtn');
+    if(sugBtn) {
+        sugBtn.replaceWith(sugBtn.cloneNode(true));
+        document.getElementById('suggestBidBtn').addEventListener('click', () => {
+            database.ref(`/franchises/${teamId}/suggestedBid`).set(Date.now());
+        });
+    }
+
+    const reqBtn = document.getElementById('requestPaddleBtn');
+    if(reqBtn) {
+        reqBtn.replaceWith(reqBtn.cloneNode(true));
+        document.getElementById('requestPaddleBtn').addEventListener('click', () => {
+            database.ref(`/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
+        });
+    }
+}
