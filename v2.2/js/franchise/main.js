@@ -786,3 +786,29 @@ function initializeWarRoom(teamId, myUid, myName) {
         });
     }
 }
+
+
+// --- V2.2 GLOBAL SCOPE BRIDGE (FRANCHISE PORTAL) ---
+// This exposes module functions to the HTML inline onclick attributes
+
+// Gateway & Login Controls
+window.backToGateway = typeof backToGateway !== 'undefined' ? backToGateway : null;
+window.handleVerifyRoomKey = typeof handleVerifyRoomKey !== 'undefined' ? handleVerifyRoomKey : null;
+window.prepareCustomLogin = typeof prepareCustomLogin !== 'undefined' ? prepareCustomLogin : null;
+window.handleSubmitAuth = typeof handleSubmitAuth !== 'undefined' ? handleSubmitAuth : null;
+window.backToSelection = typeof backToSelection !== 'undefined' ? backToSelection : null;
+
+// Dashboard & Settings Controls
+window.logout = typeof logout !== 'undefined' ? logout : null;
+window.openFranchiseSettings = typeof openFranchiseSettings !== 'undefined' ? openFranchiseSettings : null;
+window.exportMySquadCSV = typeof exportMySquadCSV !== 'undefined' ? exportMySquadCSV : null;
+window.exportMySquadPDF = typeof exportMySquadPDF !== 'undefined' ? exportMySquadPDF : null;
+window.exportAllSquadsCSV = typeof exportAllSquadsCSV !== 'undefined' ? exportAllSquadsCSV : null;
+window.exportAllSquadsPDF = typeof exportAllSquadsPDF !== 'undefined' ? exportAllSquadsPDF : null;
+
+// Tab & UI Controls
+window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
+window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
+window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
+window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
+window.dismissBroadcast = typeof dismissBroadcast !== 'undefined' ? dismissBroadcast : null;
