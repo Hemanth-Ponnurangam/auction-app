@@ -695,3 +695,40 @@ document.addEventListener('keydown', e => {
     if (e.key.toLowerCase() === 'p' && !document.getElementById('btnPause').disabled) window.togglePause();
     if (e.code === 'Space') { e.preventDefault(); window.pullRandomFromSet(); }
 });
+
+
+// --- V2.2 GLOBAL SCOPE BRIDGE ---
+// This exposes module functions to the HTML inline onclick attributes
+
+// Gateway Screen Controls
+window.showCreateRoom = typeof showCreateRoom !== 'undefined' ? showCreateRoom : null;
+window.showJoinAdminRoom = typeof showJoinAdminRoom !== 'undefined' ? showJoinAdminRoom : null;
+window.createNewRoom = typeof createNewRoom !== 'undefined' ? createNewRoom : null;
+window.joinAdminRoom = typeof joinAdminRoom !== 'undefined' ? joinAdminRoom : null;
+window.backToAdminGateway = typeof backToAdminGateway !== 'undefined' ? backToAdminGateway : null;
+window.toggleCustomUpload = typeof toggleCustomUpload !== 'undefined' ? toggleCustomUpload : null;
+
+// Dashboard Controls
+window.openSettings = typeof openSettings !== 'undefined' ? openSettings : null;
+window.saveSettings = typeof saveSettings !== 'undefined' ? saveSettings : null;
+window.exportSquadCSV = typeof exportSquadCSV !== 'undefined' ? exportSquadCSV : null;
+window.exportSquadPDF = typeof exportSquadPDF !== 'undefined' ? exportSquadPDF : null;
+window.clearBroadcast = typeof clearBroadcast !== 'undefined' ? clearBroadcast : null;
+
+// Auction Mechanics
+window.sellPlayer = typeof sellPlayer !== 'undefined' ? sellPlayer : null;
+window.passPlayer = typeof passPlayer !== 'undefined' ? passPlayer : null;
+window.undoLastSale = typeof undoLastSale !== 'undefined' ? undoLastSale : null;
+window.undoLastBid = typeof undoLastBid !== 'undefined' ? undoLastBid : null;
+window.togglePause = typeof togglePause !== 'undefined' ? togglePause : null;
+window.bypassCooldown = typeof bypassCooldown !== 'undefined' ? bypassCooldown : null;
+window.startTimer = typeof startTimer !== 'undefined' ? startTimer : null;
+window.confirmResetAuction = typeof confirmResetAuction !== 'undefined' ? confirmResetAuction : null;
+window.sendBroadcast = typeof sendBroadcast !== 'undefined' ? sendBroadcast : null;
+window.pullRandomFromSet = typeof pullRandomFromSet !== 'undefined' ? pullRandomFromSet : null;
+
+// Tab & UI Controls
+window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
+window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
+window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
+window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
