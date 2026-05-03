@@ -19,7 +19,7 @@
 
 <div id="broadcastBanner">
     <span class="broadcast-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
     </span>
     <span id="broadcastText"></span>
     <button id="broadcastClearBtn" onclick="clearBroadcast()">✕ DISMISS</button>
@@ -38,16 +38,14 @@
 <div id="createRoomScreen" class="gateway-container" style="display:none;">
     <div class="gateway-card">
         <h2 style="color:#fff; margin-bottom:10px;">Create New Room</h2>
-        <input type="text" id="newRoomName" class="login-input" placeholder="Room Name (e.g. Mega Auction 2026)">
+        <input type="text" id="newRoomName" class="login-input" placeholder="Room Name">
         <input type="password" id="newRoomKey" class="login-input" placeholder="Set 4-Digit Room Key" maxlength="4" style="text-align:center; font-size:20px; letter-spacing:5px;">
-        <label style="display:block; text-align:left; color:#888; font-size:11px; text-transform:uppercase; margin-bottom:5px;">Starting Purse (Cr)</label>
+        <label style="display:block; text-align:left; color:#888; font-size:11px; margin-bottom:5px;">Starting Purse (Cr)</label>
         <input type="number" id="newRoomPurse" class="login-input" value="100" min="1">
-        <label style="display:block; text-align:left; color:#888; font-size:11px; text-transform:uppercase; margin-bottom:5px;">Select Player Database</label>
+        <label style="display:block; text-align:left; color:#888; font-size:11px; margin-bottom:5px;">Select Database</label>
         <select id="dbSelection" class="login-input" onchange="toggleCustomUpload()"></select>
         <div id="customDbUpload" class="file-upload-wrapper" style="display:none;">
-            <label style="font-size:11px; color:#888; text-transform:uppercase;">Upload .CSV File</label>
             <input type="file" id="csvFileInput" accept=".csv">
-            <div class="upload-instructions">Required (12 Cols): <strong>Name, Base Price, Set, Role, Franchise, Nationality, Runs, Average, SR, Wickets, Economy, Bowling SR</strong></div>
         </div>
         <button class="submit-btn" style="margin:15px 0 10px;" onclick="createNewRoom()">CREATE ROOM</button>
         <button class="back-btn" onclick="backToAdminGateway()">← Back</button>
@@ -65,79 +63,58 @@
 
 <div id="settingsOverlay" class="settings-overlay">
     <div class="settings-card">
-        <h2 style="color:#fff; margin-top:0; margin-bottom:25px; text-align:center; letter-spacing:1px; font-size:22px;">⚙️ AUCTION SETTINGS</h2>
-        <div class="setting-row" style="background:rgba(255,255,255,.02); padding:10px; border-radius:8px; margin-bottom:20px;">
-            <div class="setting-label">Room PIN (Share with teams)</div>
+        <h2 style="color:#fff; margin-top:0; margin-bottom:25px; text-align:center; font-size:20px;">⚙️ AUCTION SETTINGS</h2>
+        
+        <div class="setting-row" style="background:rgba(255,255,255,.02); padding:10px; border-radius:8px; margin-bottom:15px;">
+            <div class="setting-label">Room PIN</div>
             <input type="text" id="set-room-key" class="setting-input" style="color:#28a745; background:transparent; border:none;" readonly>
         </div>
-        <div class="setting-row">
-            <div class="setting-label">Room Name</div>
-            <input type="text" id="set-room-name" class="setting-input wide">
-        </div>
-        <div class="setting-row">
-            <div class="setting-label">Starting Purse (Cr)</div>
-            <input type="number" id="set-purse" class="setting-input" value="100" min="1">
-        </div>
         
-        <div class="setting-row" style="margin-top:15px; border-top:1px solid #222; padding-top:15px; flex-wrap:wrap; gap:10px;">
+        <div class="setting-row"><div class="setting-label">Room Name</div><input type="text" id="set-room-name" class="setting-input wide"></div>
+        <div class="setting-row"><div class="setting-label">Starting Purse (Cr)</div><input type="number" id="set-purse" class="setting-input" value="100" min="1"></div>
+        
+        <!-- Differential Bid Slabs -->
+        <div class="setting-row" style="margin-top:10px; border-top:1px solid #222; padding-top:10px; flex-wrap:wrap; gap:10px;">
             <div class="setting-label" style="width:100%;">Differential Bid Slabs (Cr &rarr; L)</div>
             <div style="display:flex; width:100%; gap:5px; align-items:center;">
                 <span style="color:#aaa; font-size:11px;">0 to</span>
-                <input type="number" id="set-limit-mid" class="setting-input" value="2" style="width:50px;" oninput="document.getElementById('label-mid-start').textContent=this.value">
+                <input type="number" id="set-limit-mid" class="setting-input" value="2" style="width:50px;">
                 <span style="color:#aaa; font-size:11px;">Cr: +</span>
-                <input type="number" id="set-inc-base" class="setting-input" value="20" style="width:50px;" title="Base Tier Increment">
-                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+                <input type="number" id="set-inc-base" class="setting-input" value="20" style="width:50px;">
             </div>
             <div style="display:flex; width:100%; gap:5px; align-items:center;">
-                <span id="label-mid-start" style="color:#ffc107; font-weight:bold; width:20px; text-align:center;">2</span>
+                <span id="label-mid-start" style="color:#ffc107; font-weight:bold; width:20px;">2</span>
                 <span style="color:#aaa; font-size:11px;">to</span>
-                <input type="number" id="set-limit-high" class="setting-input" value="5" style="width:50px;" oninput="document.getElementById('label-high-start').textContent=this.value">
+                <input type="number" id="set-limit-high" class="setting-input" value="5" style="width:50px;">
                 <span style="color:#aaa; font-size:11px;">Cr: +</span>
-                <input type="number" id="set-inc-mid" class="setting-input" value="50" style="width:50px;" title="Mid Tier Increment">
-                <span style="color:#aaa; font-size:11px;">Lakhs</span>
+                <input type="number" id="set-inc-mid" class="setting-input" value="50" style="width:50px;">
             </div>
             <div style="display:flex; width:100%; gap:5px; align-items:center;">
                 <span style="color:#aaa; font-size:11px;">Above</span>
-                <span id="label-high-start" style="color:#ffc107; font-weight:bold; width:20px; text-align:center;">5</span>
+                <span id="label-high-start" style="color:#ffc107; font-weight:bold; width:20px;">5</span>
                 <span style="color:#aaa; font-size:11px;">Cr: +</span>
-                <input type="number" id="set-inc-high" class="setting-input" value="100" style="width:50px;" title="High Tier Increment">
-                <span style="color:#aaa; font-size:11px;">Lakhs</span>
-            </div>
-        </div>
-        <div class="setting-row" style="margin-top:10px;">
-            <div class="setting-label">Bid Timer (seconds)</div>
-            <input type="number" id="set-bid-timer" class="setting-input" value="15" min="5" max="120" title="Duration of the bidding countdown">
-        </div>
-        <div class="setting-row" style="margin-top:10px;">
-            <div class="setting-label">Cooldown Duration (seconds)</div>
-            <input type="number" id="set-cooldown" class="setting-input" value="10" min="3" max="60" title="Pre-bidding reveal countdown">
-        </div>
-        <div class="setting-row" style="margin-top:10px;">
-            <div class="setting-label">Strict Overseas Limit</div>
-            <select id="set-overseas-rule" class="setting-input wide" style="width:100px;">
-                <option value="true">Enabled</option>
-                <option value="false">Disabled</option>
-            </select>
-            <input type="number" id="set-max-ov" class="setting-input" value="8" style="width:60px;" title="Max Foreigners">
-        </div>
-        <div class="setting-row" style="margin-top:10px;">
-            <div class="setting-label">Squad Size Limits</div>
-            <input type="number" id="set-min-squad" class="setting-input" value="18" style="width:60px;" title="Minimum Squad">
-            <span style="color:#666;">to</span>
-            <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;" title="Maximum Squad">
-        </div>
-        <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px; margin-top:20px; border-top:1px solid #222; padding-top:15px;">
-            <div class="setting-label">Export Auction Data</div>
-            <div style="display:flex; gap:10px; width:100%;">
-                <select id="exportTeamSelector" style="flex:1; color:#fff; background:#111118; border:1px solid #333; border-radius:6px; padding:8px;"></select>
-                <button style="background:#28a745; border:1px solid #1e7e34; padding:8px 12px; color:#fff; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="exportSquadCSV()">📥 CSV</button>
-                <button style="background:#dc3545; border:1px solid #bd2130; padding:8px 12px; color:#fff; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="exportSquadPDF()">📄 PDF</button>
+                <input type="number" id="set-inc-high" class="setting-input" value="100" style="width:50px;">
             </div>
         </div>
         
-        <!-- Moved Shortcuts to Settings -->
+        <!-- Other limits -->
+        <div class="setting-row" style="margin-top:10px;"><div class="setting-label">Bid Timer</div><input type="number" id="set-bid-timer" class="setting-input" value="15"></div>
+        <div class="setting-row" style="margin-top:10px;"><div class="setting-label">Cooldown</div><input type="number" id="set-cooldown" class="setting-input" value="10"></div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Max Overseas</div>
+            <select id="set-overseas-rule" class="setting-input wide" style="width:90px;"><option value="true">On</option><option value="false">Off</option></select>
+            <input type="number" id="set-max-ov" class="setting-input" value="8" style="width:60px;">
+        </div>
+        <div class="setting-row" style="margin-top:10px;">
+            <div class="setting-label">Squad Size</div>
+            <input type="number" id="set-min-squad" class="setting-input" value="18" style="width:60px;">
+            <span style="color:#666;">to</span>
+            <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;">
+        </div>
+        
+        <!-- Keyboard Shortcuts Moved Here -->
         <div style="background: rgba(0,0,0,0.3); border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 11px; color: #888; text-align: center;">
-            <span style="font-weight:bold; color: #fff; margin-right: 8px;">KEYBOARD SHORTCUTS:</span>
+            <span style="font-weight:bold; color: #fff; margin-right: 8px;">SHORTCUTS:</span>
             <span class="key-badge">Space</span> Random &nbsp;|&nbsp;
             <span class="key-badge">S</span> Sold &nbsp;|&nbsp;
             <span class="key-badge">X</span> Unsold &nbsp;|&nbsp;
@@ -145,13 +122,15 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn-massive btn-auctioneer" style="padding:15px; font-size:14px; flex:2;" onclick="saveSettings()">SAVE SETTINGS</button>
-            <button class="btn-massive" style="padding:15px; font-size:14px; background:#333; color:#fff; border:none; border-radius:10px; flex:1;" onclick="document.getElementById('settingsOverlay').style.display='none'">CLOSE</button>
-            <button class="btn-outline-danger" style="padding:15px; font-size:14px; border-radius:10px; flex:1; display:flex; align-items:center; justify-content:center; gap:8px; margin: 10px 0;" onclick="confirmResetAuction()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.8-6.6L21 8"/><path d="M21 2v6h-6"/></svg>
-                RESET
-            </button>
+            <button class="btn-massive btn-auctioneer" style="padding:15px; font-size:12px; flex:2;" onclick="saveSettings()">SAVE SETTINGS</button>
+            <button class="btn-massive" style="padding:15px; font-size:12px; background:#333; color:#fff; border:none; border-radius:10px; flex:1;" onclick="document.getElementById('settingsOverlay').style.display='none'">CLOSE</button>
         </div>
+        
+        <!-- Reset Moved Here -->
+        <button class="btn-outline-danger" style="width: 100%; padding:12px; font-size:12px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top: 10px;" onclick="confirmResetAuction()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.8-6.6L21 8"/><path d="M21 2v6h-6"/></svg>
+            RESET AUCTION ROOM
+        </button>
     </div>
 </div>
 
@@ -168,7 +147,6 @@
     <div style="position:relative; width:100%; max-width:1400px; margin:0 auto; text-align:center; padding-top:5px; margin-bottom:5px;">
         <h1 class="main-title">🔨 <span id="headerRoomName">IPL AUCTIONEER</span> COMMAND CENTER</h1>
         
-        <!-- Shrunk Settings Button with SVG -->
         <button class="gear-btn" style="font-size:11px;" onclick="openSettings()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             SETTINGS
@@ -178,55 +156,50 @@
     <div class="dashboard">
         <div class="col-left">
             <div class="panel" style="flex:0 0 auto; padding:12px 15px;">
-                <!-- Shortcuts removed from here -->
                 
-                <div class="data-box" style="margin-bottom: 12px;">
-                    <div class="player-top-section" style="align-items: center; gap: 15px; margin-top: 5px;">
-                        <div class="player-photo-box" id="playerPhoto" style="width:100px; height:100px; flex-shrink:0;">PHOTO</div>
+                <div class="data-box" style="margin-bottom:0; padding:12px; background:#0a0a0f; border:1px solid #222; border-radius:8px;">
+                    
+                    <!-- TOP ROW: Photo, Info, Bid History, Timer Stack -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 15px;">
                         
-                        <div class="player-header" style="flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                            
-                            <!-- 1. Player Info -->
-                            <div style="flex: 1; min-width: 0;">
-                                <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">On the Block</span>
-                                <div class="player-name" id="adminPlayer" style="font-size:24px; color:#28a745; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting...</div>
-                                <div style="display:flex; gap:8px; margin-top:5px; flex-wrap:wrap;">
-                                    <div class="past-teams" id="adminPlayerTags" style="display:none;"></div>
-                                    <div class="player-role-pill" id="adminPlayerRole" style="display:none;"></div>
+                        <!-- Photo & Info -->
+                        <div style="display:flex; gap:12px; align-items:center; flex: 1; min-width:0;">
+                            <div class="player-photo-box" id="playerPhoto" style="width:75px; height:75px; border-radius:6px; flex-shrink:0;">PHOTO</div>
+                            <div style="min-width:0;">
+                                <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">On the Block</span>
+                                <div class="player-name" id="adminPlayer" style="font-size:22px; color:#28a745; margin-bottom:4px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting...</div>
+                                <div style="display:flex; gap:6px;">
+                                    <div class="past-teams" id="adminPlayerTags" style="display:none; font-size:9px; background:#222; padding:2px 6px; border-radius:4px; color:#ffc107;"></div>
+                                    <div class="player-role-pill" id="adminPlayerRole" style="display:none; font-size:9px; background:#222; padding:2px 6px; border-radius:4px; color:#0dcaf0;"></div>
                                 </div>
                             </div>
-
-                            <!-- 2. MOVED BID HISTORY -->
-                            <div class="bid-history-container" id="adminBidHistory" style="width: 150px; height: 96px; margin: 0; padding: 6px; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #222; border-radius: 8px; flex-shrink: 0; overflow-y: auto; overflow-x: hidden;">
-                                <!-- JS injects history here -->
-                            </div>
-
-                            <!-- 3. Vertical Timer Buttons -->
-                            <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 6px; height: 96px; flex-shrink: 0;">
-                                <button class="btn-clock master-clock" style="border-radius:6px; font-size:11px; padding:0 8px; flex:1;" onclick="startTimer(15,'bidding')">15s</button>
-                                <button class="btn-clock master-clock" style="border-radius:6px; font-size:11px; padding:0 8px; flex:1;" onclick="startTimer(30,'bidding')">30s</button>
-                                <button class="btn-clock master-clock" style="border-radius:6px; font-size:11px; padding:0 8px; flex:1;" onclick="startTimer(60,'bidding')">60s</button>
-                            </div>
-
-                            <!-- 4. Timer -->
-                            <div style="flex-shrink: 0; display: flex; align-items: center;">
-                                <div class="timer-arc-wrapper" style="width:96px; height:96px; padding: 4px; box-sizing: border-box;">
-                                    <svg class="timer-arc-svg" viewBox="0 0 108 108" style="overflow: visible;">
-                                        <circle cx="54" cy="54" r="46" fill="none" stroke="#1c1c28" stroke-width="7"/>
-                                        <circle id="timerArc" cx="54" cy="54" r="46" fill="none"
-                                                stroke="#28a745" stroke-width="7"
-                                                stroke-dasharray="289.03" stroke-dashoffset="0"
-                                                stroke-linecap="round"/>
-                                    </svg>
-                                    <span id="adminTimer" class="timer-text timer-green" style="font-size:1.8rem !important;">--</span>
-                                </div>
-                            </div>
-
                         </div>
+
+                        <!-- Transparent Bid History Box -->
+                        <div class="bid-history-container" id="adminBidHistory" style="width: 160px; height: 75px; margin: 0; padding: 4px; background: transparent; border: 1px dashed #333; border-radius: 6px; overflow-y: auto; font-size: 11px; flex-shrink:0;">
+                            <!-- Injects here -->
+                        </div>
+
+                        <!-- Timer Buttons Stack -->
+                        <div style="display:flex; flex-direction:column; gap:4px; justify-content:center; flex-shrink:0;">
+                            <button class="btn-clock master-clock" style="padding:2px 6px; font-size:10px; border-radius:4px; background:transparent; color:#fd7e14; border:1px solid #fd7e14; cursor:pointer;" onclick="startTimer(15,'bidding')">15s</button>
+                            <button class="btn-clock master-clock" style="padding:2px 6px; font-size:10px; border-radius:4px; background:transparent; color:#fd7e14; border:1px solid #fd7e14; cursor:pointer;" onclick="startTimer(30,'bidding')">30s</button>
+                            <button class="btn-clock master-clock" style="padding:2px 6px; font-size:10px; border-radius:4px; background:transparent; color:#fd7e14; border:1px solid #fd7e14; cursor:pointer;" onclick="startTimer(60,'bidding')">60s</button>
+                        </div>
+
+                        <!-- Timer -->
+                        <div class="timer-arc-wrapper" style="width:75px; height:75px; flex-shrink:0;">
+                            <svg class="timer-arc-svg" viewBox="0 0 108 108" style="overflow:visible;">
+                                <circle cx="54" cy="54" r="46" fill="none" stroke="#1c1c28" stroke-width="7"/>
+                                <circle id="timerArc" cx="54" cy="54" r="46" fill="none" stroke="#28a745" stroke-width="7" stroke-dasharray="289.03" stroke-dashoffset="0" stroke-linecap="round"/>
+                            </svg>
+                            <span id="adminTimer" class="timer-text timer-green" style="font-size:1.4rem !important;">--</span>
+                        </div>
+
                     </div>
 
                     <!-- Stats Bar -->
-                    <div class="stats-bar">
+                    <div class="stats-bar" style="margin-top:12px; margin-bottom:12px; background:#111; border:1px solid #222; border-radius:6px;">
                         <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
                         <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
                         <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
@@ -235,45 +208,50 @@
                         <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                     </div>
 
-                    <!-- Bidding Data & SVG CONTROL PAD -->
-                    <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-end;">
-                        <div style="width:40%;">
-                            <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
-                            <span id="adminBid" class="highlight" style="font-size:2rem; margin-top:2px;">₹0.00 Cr</span>
-                        </div>
-                        <div style="width:60%; display:flex; justify-content:space-between; align-items:flex-end;">
+                    <!-- BOTTOM ROW: Bidding Info & Uniform Control Pad -->
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                        <div style="display:flex; gap:20px;">
                             <div>
-                                <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
-                                <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.4rem; margin-top:2px;">-</span>
+                                <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
+                                <span id="adminBid" class="highlight" style="font-size:1.6rem; margin-top:2px; display:block; color:#28a745; font-weight:bold;">₹0.00 Cr</span>
                             </div>
+                            <div>
+                                <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
+                                <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.2rem; margin-top:2px; display:block; font-weight:bold;">-</span>
+                            </div>
+                        </div>
+
+                        <!-- Uniform SVG Control Pad -->
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <!-- Undo Sale -->
+                            <button class="action-btn" onclick="undoLastSale()" title="Undo Sale" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#fff; cursor:pointer;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+                            </button>
+                            <!-- Undo Bid -->
+                            <button class="action-btn" onclick="undoLastBid()" title="Undo Last Bid" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#0dcaf0; cursor:pointer;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l4-4 4 4M7 5v8a6 6 0 1 0 6-6"/></svg>
+                            </button>
+                            <!-- Pause -->
+                            <button id="btnPause" class="action-btn" onclick="togglePause()" title="Pause / Resume" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#fd7e14; cursor:pointer;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            </button>
+                            <!-- Force Start -->
+                            <button class="action-btn" onclick="bypassCooldown()" title="Force Start" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#fff; cursor:pointer;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                            </button>
                             
-                            <!-- Control Pad with clean SVGs -->
-                            <div style="display:flex; gap:6px; align-items:center;">
-                                <button class="btn-undo" onclick="undoLastSale()" title="Undo Sale" style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
-                                </button>
-                                <button class="btn-undo" onclick="undoLastBid()" title="Undo Last Bid" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #0dcaf0; color: #0dcaf0; display: flex; align-items: center; justify-content: center;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l4-4 4 4M7 5v8a6 6 0 1 0 6-6"/></svg>
-                                </button>
-                                <button id="btnPause" class="btn-pause" onclick="togglePause()" title="Pause / Resume" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #fd7e14; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3);">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                                </button>
-                                <button class="btn-push" onclick="bypassCooldown()" title="Force Start" style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
-                                </button>
-                                <div style="width: 1px; height: 24px; background: #333; margin: 0 2px;"></div>
-                                <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)" style="padding: 6px 10px; display: flex; align-items: center; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle></svg>
-                                </button>
-                            </div>
+                            <div style="width: 1px; height: 20px; background: #444; margin: 0 2px;"></div>
+                            
+                            <!-- Random Dice -->
+                            <button id="randomDiceBtn" class="action-btn" onclick="pullRandomFromSet()" title="Random Player" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#fff; cursor:pointer;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle></svg>
+                            </button>
+                            
+                            <!-- Condensed WAITING/SOLD button right inside the control pad -->
+                            <button id="dynamicSellBtn" style="background:#444; color:#aaa; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; margin-left:8px; cursor:not-allowed; text-transform:uppercase; transition:.2s;">WAITING...</button>
                         </div>
                     </div>
                 </div>
-                
-                <div class="flex-row">
-                    <button id="dynamicSellBtn" class="btn-unsold" style="padding:10px; font-size:14px; width:100%; border-radius:6px; font-weight:bold;">WAITING...</button>
-                </div>
-
             </div>
             
             <div class="panel" style="flex:1; display:flex; flex-direction:column; padding:0; overflow:hidden; min-height:0;">
@@ -283,7 +261,7 @@
 
         <div class="col-right">
             
-            <!-- Broadcast Message Input (Pulled out of the panel container) -->
+            <!-- Broadcast Message Input pulled OUT of the panel -->
             <div class="broadcast-row" style="margin-bottom: 12px; margin-top:0; padding: 8px 12px; background: #161620; border: 1px solid #2d2d3f; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,.2);">
                 <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
                 <div style="color: #888; margin-right: 8px; display:flex; align-items:center;">
@@ -293,9 +271,6 @@
                        placeholder="Broadcast to all screens…" maxlength="80"
                        onkeypress="if(event.key==='Enter') sendBroadcast()" style="margin:0;">
                 <button class="btn-broadcast-send" onclick="sendBroadcast()">SEND</button>
-                <button class="btn-broadcast-clear" onclick="clearBroadcast()" title="Dismiss broadcast" style="padding: 6px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
             </div>
 
             <div class="panel tabs-panel">
@@ -312,11 +287,11 @@
                         <select id="setSelector" class="compact-select" onchange="refreshLists()"></select>
                     </div>
                     <div style="display:flex; gap:5px; margin-bottom:8px; flex-shrink:0; flex-wrap:wrap;">
-                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#22222d; color:#ffc107; border:1px solid #ffc107; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">ALL</button>
-                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">BAT</button>
-                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">BWL</button>
-                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">ALL-R</button>
-                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">WK</button>
+                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)">ALL</button>
+                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)">BAT</button>
+                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)">BWL</button>
+                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)">ALL-R</button>
+                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)">WK</button>
                     </div>
                     <div id="deckList" style="flex:1; overflow-y:auto; padding-right:5px;"></div>
                 </div>
