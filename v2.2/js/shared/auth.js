@@ -35,6 +35,10 @@ export function submitTeamAuth(code, pin, color, repName) {
         sessionStorage.setItem('myAuctionTeam', code);
         sessionStorage.setItem('myRepName', repName);
         sessionStorage.setItem('myTeamColor', color);
+        
+        // ADD THIS LINE to immediately update live state without refreshing
+        setMyTeamState(code, repName, color); 
+        
         return true;
     });
 }
