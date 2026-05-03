@@ -258,6 +258,7 @@ function attachFirebaseListeners() {
         }
     });
     
+    // PATCH: Properly target the logged_in_teams node so Franchise portals can see the Auctioneer is online
     state.roomRef.child('logged_in_teams/ADMIN').set(true);
     state.roomRef.child('logged_in_teams/ADMIN').onDisconnect().remove();
 }
@@ -417,9 +418,10 @@ function updateLiveUI(data) {
         }, delay + 200);
     }
 
-    // Button States
-    let btnSold = document.getElementById('btnSold'), btnUnsold = document.getElementById('btnUnsold');
-    let diceBtn = document.getElementById('randomDiceBtn'), clocks = document.querySelectorAll('.master-clock');
+    // PATCH: Rebuilt Button States for the consolidated dynamicSellBtn
+    let dynBtn = document.getElementById('dynamicSellBtn');
+    let diceBtn = document.getElementById('randomDiceBtn');
+    let clocks = document.querySelectorAll('.master-clock');
     let pauseBtn = document.getElementById('btnPause');
     let hasBids = (currentLeader !== '-' && currentLeader !== 'Base Price');
     let active = (data.auction_state === 'bidding' || data.auction_state === 'cooldown');
@@ -432,11 +434,25 @@ function updateLiveUI(data) {
     };
 
     if (isIdle || data.auction_state === 'sold' || data.auction_state === 'unsold') {
-        setBtn(btnSold, false); setBtn(btnUnsold, false); clocks.forEach(b => setBtn(b, false));
+        if (dynBtn) {
+            dynBtn.disabled = true;
+            dynBtn.style.opacity = '0.3';
+            dynBtn.textContent = 'WAITING...';
+            dynBtn.className = 'btn-unsold'; // Reverts to neutral neutral style
+            dynBtn.style.cursor = 'not-allowed';
+        }
+        clocks.forEach(b => setBtn(b, false));
         setBtn(pauseBtn, false);
         if (!isIdle) diceBtn.style.opacity = '1';
     } else {
-        setBtn(btnSold, true); setBtn(btnUnsold, !hasBids && active);
+        if (dynBtn) {
+            dynBtn.disabled = false;
+            dynBtn.style.opacity = '1';
+            dynBtn.style.cursor = 'pointer';
+            dynBtn.textContent = hasBids ? 'SOLD (S)' : 'UNSOLD (X)';
+            dynBtn.className = hasBids ? 'btn-green' : 'btn-red';
+            dynBtn.onclick = hasBids ? window.sellPlayer : window.passPlayer;
+        }
         clocks.forEach(b => setBtn(b, true));
         setBtn(pauseBtn, active || isPaused);
         diceBtn.style.opacity = '0.3';
@@ -470,6 +486,7 @@ function updateBudgetTracker() {
                 else if (state.liveState.auction_state === 'bidding' || state.liveState.auction_state === 'cooldown') leaderClass = ' leader-card-glow-silver';
             }
 
+            // PATCH: Added display:inline-block and bumped max-width to 75px for the rep name span
             html += `<div class="budget-card${leaderClass}">
                 <button class="delete-team-btn" onclick="confirmDeleteTeam('${esc(team)}')" title="Delete Team">&times;</button>
                 <div>
@@ -478,7 +495,7 @@ function updateBudgetTracker() {
                     <div style="color:#666; font-size:9px; text-transform:uppercase;">${count} Players</div>
                 </div>
                 <div style="margin-top:auto; padding-top:4px; border-top:1px solid #222; font-size:9px; color:#888; display:flex; justify-content:space-between; align-items:center;">
-                    <span id="rep-name-${esc(team)}" style="text-transform:uppercase; letter-spacing:.5px; max-width: 60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tData.repName || 'Unclaimed')}</span>
+                    <span id="rep-name-${esc(team)}" style="display:inline-block; text-transform:uppercase; letter-spacing:.5px; max-width: 75px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tData.repName || 'Unclaimed')}</span>
                     <span id="rep-pin-${esc(team)}" style="display:none; color:#ffc107; font-weight:bold; letter-spacing:1px;">${esc(tData.pin || 'None')}</span>
                     <span class="pin-eye" onclick="togglePin('${esc(team)}')">👁️</span>
                 </div>
@@ -690,8 +707,8 @@ document.addEventListener('keydown', e => {
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (document.getElementById('adminDashboardWrapper').style.display === 'none') return;
     
-    if (e.key.toLowerCase() === 's' && !document.getElementById('btnSold').disabled) window.sellPlayer();
-    if (e.key.toLowerCase() === 'x' && !document.getElementById('btnUnsold').disabled) window.passPlayer();
+    if (e.key.toLowerCase() === 's' && !document.getElementById('dynamicSellBtn').disabled && document.getElementById('dynamicSellBtn').className === 'btn-green') window.sellPlayer();
+    if (e.key.toLowerCase() === 'x' && !document.getElementById('dynamicSellBtn').disabled && document.getElementById('dynamicSellBtn').className === 'btn-red') window.passPlayer();
     if (e.key.toLowerCase() === 'p' && !document.getElementById('btnPause').disabled) window.togglePause();
     if (e.code === 'Space') { e.preventDefault(); window.pullRandomFromSet(); }
 });
