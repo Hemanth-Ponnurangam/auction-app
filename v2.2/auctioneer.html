@@ -153,6 +153,7 @@
         <h1 class="main-title">🔨 <span id="headerRoomName">IPL AUCTIONEER</span> COMMAND CENTER</h1>
         <button class="gear-btn" onclick="openSettings()">⚙️ Settings</button>
     </div>
+    
     <div class="dashboard">
         <div class="col-left">
             <div class="panel" style="flex:0 0 auto; padding:12px 15px;">
@@ -163,35 +164,47 @@
                     <span class="key-badge">X</span> Unsold |
                     <span class="key-badge">P</span> Pause
                 </div>
-                <div class="data-box">
-                    <div class="player-top-section">
-                        <div class="player-photo-box" id="playerPhoto" style="width:100px; height:100px;">PHOTO</div>
-                        <div class="player-header" style="margin-bottom:0; padding-right:0;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div>
-                                    <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">On the Block</span>
-                                    <div class="player-name" id="adminPlayer" style="font-size:24px; color:#28a745;">Waiting...</div>
-                                    <div style="display:flex; gap:8px; margin-top:5px; flex-wrap:wrap;">
-                                        <div class="past-teams" id="adminPlayerTags" style="display:none;"></div>
-                                        <div class="player-role-pill" id="adminPlayerRole" style="display:none;"></div>
-                                    </div>
-                                </div>
-                                <div style="text-align:right; line-height:1; display:flex; align-items:center; justify-content:flex-end;">
-                                    <div class="timer-arc-wrapper">
-                                        <svg class="timer-arc-svg" viewBox="0 0 108 108">
-                                            <circle cx="54" cy="54" r="46" fill="none" stroke="#1c1c28" stroke-width="7"/>
-                                            <circle id="timerArc" cx="54" cy="54" r="46" fill="none"
-                                                    stroke="#28a745" stroke-width="7"
-                                                    stroke-dasharray="289.03" stroke-dashoffset="0"
-                                                    stroke-linecap="round"/>
-                                        </svg>
-                                        <span id="adminTimer" class="timer-text timer-green">--</span>
-                                    </div>
+                
+                <div class="data-box" style="margin-bottom: 12px;">
+                    <!-- RESTRUCTURED TOP ROW: Photo, Info, Bid History, Timer -->
+                    <div class="player-top-section" style="align-items: center; gap: 15px;">
+                        <div class="player-photo-box" id="playerPhoto" style="width:108px; height:108px; flex-shrink:0;">PHOTO</div>
+                        
+                        <div class="player-header" style="flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                            
+                            <!-- 1. Player Info -->
+                            <div style="flex: 1; min-width: 0;">
+                                <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">On the Block</span>
+                                <div class="player-name" id="adminPlayer" style="font-size:24px; color:#28a745; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting...</div>
+                                <div style="display:flex; gap:8px; margin-top:5px; flex-wrap:wrap;">
+                                    <div class="past-teams" id="adminPlayerTags" style="display:none;"></div>
+                                    <div class="player-role-pill" id="adminPlayerRole" style="display:none;"></div>
                                 </div>
                             </div>
+
+                            <!-- 2. MOVED BID HISTORY: Compact & Vertical -->
+                            <div class="bid-history-container" id="adminBidHistory" style="width: 140px; height: 108px; margin: 0; padding: 4px; background: rgba(0,0,0,0.3); border: 1px solid #222; border-radius: 8px; flex-shrink: 0; overflow-y: auto;">
+                                <!-- JS injects history here -->
+                            </div>
+
+                            <!-- 3. Timer -->
+                            <div style="flex-shrink: 0; display: flex; align-items: center;">
+                                <div class="timer-arc-wrapper" style="width:108px; height:108px;">
+                                    <svg class="timer-arc-svg" viewBox="0 0 108 108">
+                                        <circle cx="54" cy="54" r="46" fill="none" stroke="#1c1c28" stroke-width="7"/>
+                                        <circle id="timerArc" cx="54" cy="54" r="46" fill="none"
+                                                stroke="#28a745" stroke-width="7"
+                                                stroke-dasharray="289.03" stroke-dashoffset="0"
+                                                stroke-linecap="round"/>
+                                    </svg>
+                                    <span id="adminTimer" class="timer-text timer-green">--</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
+                    <!-- Stats Bar -->
                     <div class="stats-bar">
                         <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
                         <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
@@ -201,30 +214,35 @@
                         <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                     </div>
 
-                    <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-                        <div style="width:45%;">
+                    <!-- Bidding Data & PAUSE/DICE controls -->
+                    <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-end;">
+                        <div style="width:40%;">
                             <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
-                            <span id="adminBid" class="highlight" style="font-size:1.8rem; margin-top:2px;">₹0.00 Cr</span>
+                            <span id="adminBid" class="highlight" style="font-size:2rem; margin-top:2px;">₹0.00 Cr</span>
                         </div>
-                        <div style="width:50%; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="width:60%; display:flex; justify-content:space-between; align-items:flex-end;">
                             <div>
                                 <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
                                 <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.4rem; margin-top:2px;">-</span>
                             </div>
-                            <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)">🎲</button>
+                            <!-- MOVED PAUSE BUTTON next to DICE -->
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button id="btnPause" class="btn-pause" onclick="togglePause()" title="Pause / Resume" style="padding: 6px 14px; font-size: 20px; border-radius: 8px; border: 1px solid #fd7e14; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3);">⏸</button>
+                                <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)">🎲</button>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="bid-history-container" id="adminBidHistory"></div>
                 </div>
                 
-                <!-- V2.2 Consolidated Dynamic Buttons -->
+                <!-- Dynamic Sold/Unsold/Undo Buttons -->
                 <div class="flex-row">
-                    <button id="dynamicSellBtn" class="btn-unsold" style="padding:10px; font-size:14px; flex:1; border-radius:6px; font-weight:bold;">UNSOLD</button>
-                    <button id="undoBtn" class="btn-undo" style="padding:10px; font-size:14px; margin-left:10px; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius:6px; background: transparent; font-weight:bold;">UNDO (Ctrl+Z)</button>
+                    <button id="dynamicSellBtn" class="btn-unsold" style="padding:10px; font-size:14px; flex:1; border-radius:6px; font-weight:bold;">WAITING...</button>
+                    <button id="undoBtn" class="btn-undo" onclick="undoLastSale()" style="padding:10px; font-size:14px; margin-left:10px; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius:6px; background: transparent; font-weight:bold;">UNDO SALE (Ctrl+Z)</button>
                 </div>
 
             </div>
+            
+            <!-- Franchise Budget Grid now has much more room -->
             <div class="panel" style="flex:1; display:flex; flex-direction:column; padding:0; overflow:hidden; min-height:0;">
                 <div id="budgetCards" class="budget-grid"></div>
             </div>
@@ -235,23 +253,24 @@
                 <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:10px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Auction Controls</label>
                 
                 <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <!-- Neatly aligned grid for action buttons -->
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px;">
-                        <button class="btn-undo" style="padding:8px 0; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center;" onclick="undoLastSale()" title="Undo Sale">⏪</button>
-                        <button class="btn-undo" style="padding:8px 0; border-radius:6px; font-size:16px; border: 1px solid #0dcaf0; color: #0dcaf0; display:flex; align-items:center; justify-content:center;" onclick="undoLastBid()" title="Undo Last Bid">↩️</button>
-                        <button id="btnPause" class="btn-pause" style="padding:8px 0; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center;" onclick="togglePause()" title="Pause / Resume">⏸</button>
-                        <button class="btn-push" style="padding:8px 0; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center;" onclick="bypassCooldown()" title="Force Start">⏩</button>
+                    
+                    <!-- Cleaned up Top Right Buttons -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px; height: 35px;">
+                        <button class="btn-undo" style="flex:1; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="undoLastSale()" title="Undo Sale">⏪</button>
+                        <button class="btn-undo" style="flex:1; border-radius:6px; font-size:18px; border: 1px solid #0dcaf0; color: #0dcaf0; display:flex; align-items:center; justify-content:center;" onclick="undoLastBid()" title="Undo Last Bid">↩️</button>
+                        <button class="btn-push" style="flex:1; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="bypassCooldown()" title="Force Start">⏩</button>
                     </div>
                     
-                    <!-- Timers and Reset evenly spaced -->
-                    <div style="display: flex; gap: 8px; margin-bottom: 10px; height: 32px;">
-                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:11px; padding:0;" onclick="startTimer(15,'bidding')">15s</button>
-                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:11px; padding:0;" onclick="startTimer(30,'bidding')">30s</button>
-                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:11px; padding:0;" onclick="startTimer(60,'bidding')">60s</button>
-                        <button class="btn-outline-danger" style="flex:2; border-radius:6px; font-size:11px; padding:0; display:flex; align-items:center; justify-content:center; gap:4px;" onclick="confirmResetAuction()">☢️ RESET</button>
+                    <div style="display: flex; gap: 8px; align-items: center; height: 35px;">
+                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:12px; padding:0;" onclick="startTimer(15,'bidding')">15s</button>
+                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:12px; padding:0;" onclick="startTimer(30,'bidding')">30s</button>
+                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:12px; padding:0;" onclick="startTimer(60,'bidding')">60s</button>
+                        <button class="btn-outline-danger" style="flex:2; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; height:100%; padding:0;" onclick="confirmResetAuction()">
+                            <span style="font-size:16px;">☢️</span> RESET
+                        </button>
                     </div>
 
-                    <div class="broadcast-row" style="margin-top:0; padding-top:0; border-top:none;">
+                    <div class="broadcast-row">
                         <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
                         <input type="text" id="broadcastInput" class="broadcast-input"
                                placeholder="📢  Broadcast to all screens…" maxlength="80"
@@ -261,9 +280,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- MOVED BID HISTORY: Out of the left column and into the right to free up vertical space -->
-            <div class="bid-history-container" id="adminBidHistory" style="margin: 0 0 10px 0; height: 75px; background: #0a0a0f; border: 1px solid #222; border-radius: 8px; overflow-y: auto; font-size: 11px; flex-shrink: 0;"></div>
 
             <div class="panel tabs-panel">
                 <input type="text" id="auctioneerSearch" class="login-input" placeholder="🔍 Search Player…" style="padding:8px; margin-bottom:12px; font-size:13px;">
