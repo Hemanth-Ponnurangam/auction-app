@@ -20,7 +20,7 @@
 .panel { background: #161620; border: 1px solid #2d2d3f; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.4); position: relative; transition: all .3s ease; box-sizing: border-box; min-height: 0; display: flex; flex-direction: column; }
 
 @media (min-width: 1000px) {
-    #mainDashboard { height: calc(100vh - 30px); }
+    #mainDashboard { height: calc(100vh - 30px); margin: 15px auto; } /* Added margin to fix top trim */
     .top-row { flex-direction: row; align-items: stretch; }
     .col-left   { flex: 3; display: flex; flex-direction: column; min-height: 0; height: 100%; }
     .col-center { flex: 4; display: flex; flex-direction: column; min-height: 0; height: 100%; }
@@ -28,6 +28,9 @@
     #playingXIList { flex: 1 1 auto; overflow-y: auto; margin-bottom: 8px; display: flex; flex-direction: column; min-height: 260px; }
     #benchList { flex: 0 0 100px; overflow-y: auto; min-height: 0; }
 }
+
+.tabs { padding: 4px; gap: 4px; }
+select.tab-btn { padding: 4px; max-width: 35%; font-size: 10px; }
 
 /* ─ Timer Arc (Franchise Size) ─────────────────────────────────── */
 .timer-arc-wrapper { position: absolute; top: 14px; right: 14px; width: 72px; height: 72px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 10; }
