@@ -41,7 +41,7 @@ export function submitTeamAuth(code, pin, color, repName) {
 
 export function verifySuperAdmin(pin) {
     return db.ref('super_admin_pin').once('value').then(snap => {
-        let correct = snap.val() || '12345678';
+        let correct = snap.val() || '4545';
         if (pin === correct) return true;
         showAlert('Access Denied', 'Incorrect God Mode PIN.');
         return false;
