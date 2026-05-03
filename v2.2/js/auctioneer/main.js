@@ -258,8 +258,8 @@ function attachFirebaseListeners() {
         }
     });
     
-    state.roomRef.child('admin_presence').set(true);
-    state.roomRef.child('admin_presence').onDisconnect().remove();
+    state.roomRef.child('logged_in_teams/ADMIN').set(true);
+    state.roomRef.child('logged_in_teams/ADMIN').onDisconnect().remove();
 }
 
 function _reposBroadcastBanner(connBannerVisible) {
