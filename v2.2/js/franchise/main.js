@@ -643,7 +643,7 @@ auth.onAuthStateChanged((user) => {
         
         // Assuming your existing logic saves the team ID to a global variable or local storage 
         // Swap 'localStorage.getItem("teamId")' if you use a specific global variable like `currentTeamId`
-        const teamId = localStorage.getItem("teamId") || window.currentTeamId || "UNKNOWN_TEAM";
+        const teamId = sessionStorage.getItem("myAuctionTeam") || state.myTeamName || "UNKNOWN_TEAM";
         
         if(teamId !== "UNKNOWN_TEAM") {
             initializeWarRoom(teamId, myUid, myName);
