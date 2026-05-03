@@ -458,8 +458,13 @@ function updateLiveUI(data) {
         diceBtn.style.opacity = '0.3';
     }
     
-    if (isPaused) { pauseBtn.innerHTML = '▶'; pauseBtn.classList.add('is-paused'); }
-    else { pauseBtn.innerHTML = '⏸'; pauseBtn.classList.remove('is-paused'); }
+    if (isPaused) { 
+        pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; 
+        pauseBtn.classList.add('is-paused'); 
+    } else { 
+        pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; 
+        pauseBtn.classList.remove('is-paused'); 
+    }
 
     updateBudgetTracker();
 }
