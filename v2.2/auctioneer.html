@@ -112,6 +112,7 @@
             <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;">
         </div>
         
+        <!-- Keyboard Shortcuts -->
         <div style="background: rgba(0,0,0,0.3); border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 11px; color: #888; text-align: center;">
             <span style="font-weight:bold; color: #fff; margin-right: 8px;">SHORTCUTS:</span>
             <span class="key-badge">Space</span> Random &nbsp;|&nbsp;
@@ -125,7 +126,7 @@
             <button class="btn-massive" style="padding:15px; font-size:12px; background:#333; color:#fff; border:none; border-radius:10px; flex:1;" onclick="document.getElementById('settingsOverlay').style.display='none'">CLOSE</button>
         </div>
         
-        <!-- Reset Moved Here -->
+        <!-- Reset Room -->
         <button class="btn-outline-danger" style="width: 100%; padding:12px; font-size:12px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top: 10px;" onclick="confirmResetAuction()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.8-6.6L21 8"/><path d="M21 2v6h-6"/></svg>
             RESET AUCTION ROOM
@@ -266,7 +267,7 @@
 
         <div class="col-right">
             
-            <!-- Broadcast Message Input -->
+            <!-- Broadcast Message Input pulled OUT of the panel -->
             <div class="broadcast-row" style="margin-bottom: 12px; margin-top:0; padding: 8px 12px; background: #161620; border: 1px solid #2d2d3f; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,.2);">
                 <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
                 <div style="color: #888; margin-right: 8px; display:flex; align-items:center;">
