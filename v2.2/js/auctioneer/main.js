@@ -20,8 +20,6 @@ let _prevTimerEnd = 0;
 let localBidTracker = 0;
 let _lastTimerWarnSecond = -1;
 
-// --- Boot Sequence & Room Management ---
-
 window.onload = function() {
     let savedKey = sessionStorage.getItem('roomKey');
     if (savedKey) {
@@ -35,7 +33,6 @@ window.onload = function() {
 window.showCreateRoom = () => {
     document.getElementById('adminGatewayScreen').style.display = 'none';
     document.getElementById('createRoomScreen').style.display = 'flex';
-    
     let sel = document.getElementById('dbSelection');
     sel.innerHTML = '<option value="custom">Upload Custom CSV</option>';
     
@@ -45,15 +42,12 @@ window.showCreateRoom = () => {
             sel.innerHTML = '';
             keys.forEach(k => { 
                 let o = document.createElement('option'); 
-                o.value = 'preset_' + k; 
-                o.text = `Preset: ${k.toUpperCase()} (${dbs[k].length} Players)`; 
+                o.value = 'preset_' + k; o.text = `Preset: ${k.toUpperCase()} (${dbs[k].length} Players)`; 
                 sel.appendChild(o); 
             });
             let co = document.createElement('option'); co.value = 'custom'; co.text = 'Upload Custom CSV'; sel.appendChild(co);
             sel.value = 'preset_' + keys[0];
-        } else { 
-            sel.value = 'custom'; 
-        }
+        } else { sel.value = 'custom'; }
         window.toggleCustomUpload();
     });
 };
@@ -78,16 +72,13 @@ function parseCSV(text) {
     let raw = lines[0].split(',');
     let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
     let result = [];
-    
     for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
         let obj = { status: 'available' };
-        
         for (let j = 0; j < hdrs.length; j++) {
             let v = (cols[j]||'').replace(/['"]+/g,'').trim();
             let h = hdrs[j];
-            
             if (h === 'baseprice') {
                 let num = Number(v) || 0;
                 obj.base_price = (num > 0 && num <= 100) ? num * CRORE : num;
@@ -144,7 +135,7 @@ window.createNewRoom = () => {
             reader.onload = e => { 
                 let pool = parseCSV(e.target.result); 
                 if(pool.length && pool[0].name !== undefined) init(pool); 
-                else showAlert('CSV Error','Could not parse the file. Ensure you use the exact 12 columns.'); 
+                else showAlert('CSV Error','Could not parse the file.'); 
             };
             reader.readAsText(fi.files[0]);
         }
@@ -158,9 +149,7 @@ window.joinAdminRoom = () => {
             sessionStorage.setItem('roomKey', key); 
             setRoomState(key, db.ref('rooms/'+key)); 
             executeAdminBoot(); 
-        } else {
-            showAlert('Not Found','Invalid Room Key!');
-        }
+        } else { showAlert('Not Found','Invalid Room Key!'); }
     });
 };
 
@@ -172,13 +161,12 @@ function executeAdminBoot() {
     attachFirebaseListeners();
 }
 
-// --- Firebase Listeners ---
-
 function attachFirebaseListeners() {
     db.ref('.info/connected').on('value', snap => {
         let connVisible = !snap.val();
         document.getElementById('connBanner').style.display = connVisible ? 'block' : 'none';
-        _reposBroadcastBanner(connVisible);
+        let bb = document.getElementById('broadcastBanner');
+        if (bb) bb.style.top = (connVisible && bb.style.display !== 'none') ? '36px' : '0';
     });
 
     let isChatLoaded = false;
@@ -246,26 +234,16 @@ function attachFirebaseListeners() {
     state.roomRef.child('broadcast').on('value', snap => {
         let d = snap.val();
         let banner = document.getElementById('broadcastBanner');
-        let dot = document.getElementById('broadcastActiveDot');
         if (d && d.active && d.message) {
             document.getElementById('broadcastText').textContent = d.message;
             banner.style.display = 'block';
-            if (dot) dot.style.display = 'inline-block';
-            _reposBroadcastBanner(document.getElementById('connBanner').style.display !== 'none');
         } else {
             banner.style.display = 'none';
-            if (dot) dot.style.display = 'none';
         }
     });
     
-    // PATCH: Properly target the logged_in_teams node so Franchise portals can see the Auctioneer is online
     state.roomRef.child('logged_in_teams/ADMIN').set(true);
     state.roomRef.child('logged_in_teams/ADMIN').onDisconnect().remove();
-}
-
-function _reposBroadcastBanner(connBannerVisible) {
-    let bb = document.getElementById('broadcastBanner');
-    if (bb) bb.style.top = (connBannerVisible && bb.style.display !== 'none') ? '36px' : '0';
 }
 
 function scheduleRender() { 
@@ -278,13 +256,8 @@ function logLocal(msg, date) {
     let logDiv = document.getElementById('logContainer');
     let entry = document.createElement('div'); entry.className = 'log-entry';
     entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
-    if (logDiv) {
-        logDiv.appendChild(entry);
-        logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight;
-    }
+    if (logDiv) { logDiv.appendChild(entry); logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight; }
 }
-
-// --- Live UI Updates ---
 
 function updateLiveUI(data) {
     let isIdle = data.auction_state === 'idle';
@@ -293,27 +266,20 @@ function updateLiveUI(data) {
     let currentBid = data.current_bid || 0;
     let currentLeader = data.highest_bidder || '-';
 
-    // Audio trigger for incoming bids
-    if (data.auction_state === 'bidding' && currentBid > localBidTracker && currentLeader !== '-' && currentLeader !== 'Base Price') {
-        playSound('bid');
-    }
+    if (data.auction_state === 'bidding' && currentBid > localBidTracker && currentLeader !== '-' && currentLeader !== 'Base Price') playSound('bid');
     localBidTracker = (data.auction_state === 'cooldown' || isIdle) ? 0 : currentBid;
 
-    // Track arc total duration
     if (data.timer_end && data.timer_end !== _prevTimerEnd && !isPaused) {
         _arcTimerTotal = Math.max(1000, data.timer_end - Date.now());
         _prevTimerEnd = data.timer_end;
     }
 
-    // Update Player Info Panel
     if (currentIndex >= 0 && state.playerPool.length > 0 && !isIdle) {
         let p = state.playerPool[currentIndex];
         if (p) {
             let isOv = !['india','indian','ind'].includes((p.nationality || 'Indian').trim().toLowerCase());
             document.getElementById('adminPlayer').innerHTML = esc(p.name) + (isOv ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '');
-            
-            let tags = document.getElementById('adminPlayerTags');
-            let rl = document.getElementById('adminPlayerRole');
+            let tags = document.getElementById('adminPlayerTags'), rl = document.getElementById('adminPlayerRole');
             if (p.franchise) { tags.textContent = p.franchise; tags.style.display = 'inline-block'; } else tags.style.display = 'none';
             if (p.role) { rl.textContent = p.role; rl.style.display = 'inline-block'; } else rl.style.display = 'none';
             
@@ -329,11 +295,8 @@ function updateLiveUI(data) {
             let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
             
             let photoBox = document.getElementById('playerPhoto');
-            if (imgUrl) {
-                photoBox.innerHTML = `<img src="${esc(imgUrl)}" style="width:100%; height:100%; object-fit:cover;">`;
-            } else {
-                photoBox.innerHTML = 'PHOTO';
-            }
+            if (imgUrl) photoBox.innerHTML = `<img src="${esc(imgUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">`;
+            else photoBox.innerHTML = 'PHOTO';
         }
     } else {
         document.getElementById('adminPlayer').textContent = 'Waiting…';
@@ -348,15 +311,13 @@ function updateLiveUI(data) {
     leaderEl.textContent = currentLeader;
     leaderEl.style.color = state.allRegisteredTeams[currentLeader]?.color || '#007bff';
 
-    // Render Bid History
     let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
     let historyHtml = stackArr.slice().reverse().map(b => {
         let tColor = state.allRegisteredTeams[b.bidder]?.color || '#fff';
-        return `<div class="bid-history-item"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
+        return `<div class="bid-history-item" style="display:flex; justify-content:space-between; padding:2px; border-bottom:1px solid #333;"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
     }).join('');
-    document.getElementById('adminBidHistory').innerHTML = historyHtml || '<div style="padding:4px 8px; color:#666; text-align:center;">No bids placed yet.</div>';
+    document.getElementById('adminBidHistory').innerHTML = historyHtml || '<div style="text-align:center; color:#666; padding-top:25px;">No bids yet</div>';
 
-    // Timer Arc Management
     if (window.uiTimer) clearInterval(window.uiTimer);
     if (window._cooldownAdvance) clearTimeout(window._cooldownAdvance);
 
@@ -403,7 +364,6 @@ function updateLiveUI(data) {
         }
     }, 200);
 
-    // Auto-advance cooldown
     if (data.auction_state === 'cooldown' && data.timer_end) {
         let delay = Math.max(0, data.timer_end - Date.now());
         let biddingSecs = state.settings.bid_timer_secs || 15;
@@ -418,7 +378,7 @@ function updateLiveUI(data) {
         }, delay + 200);
     }
 
-    // PATCH: Rebuilt Button States for the consolidated dynamicSellBtn
+    // Direct Inline Dynamic Styling for the controls (safely avoids CSS conflicts)
     let dynBtn = document.getElementById('dynamicSellBtn');
     let diceBtn = document.getElementById('randomDiceBtn');
     let clocks = document.querySelectorAll('.master-clock');
@@ -436,34 +396,41 @@ function updateLiveUI(data) {
     if (isIdle || data.auction_state === 'sold' || data.auction_state === 'unsold') {
         if (dynBtn) {
             dynBtn.disabled = true;
-            dynBtn.style.opacity = '0.3';
+            dynBtn.style.background = '#444';
+            dynBtn.style.color = '#888';
             dynBtn.textContent = 'WAITING...';
-            dynBtn.className = 'btn-unsold'; // Reverts to neutral neutral style
             dynBtn.style.cursor = 'not-allowed';
         }
         clocks.forEach(b => setBtn(b, false));
         setBtn(pauseBtn, false);
-        if (!isIdle) diceBtn.style.opacity = '1';
+        if (!isIdle && diceBtn) diceBtn.style.opacity = '1';
     } else {
         if (dynBtn) {
             dynBtn.disabled = false;
-            dynBtn.style.opacity = '1';
             dynBtn.style.cursor = 'pointer';
             dynBtn.textContent = hasBids ? 'SOLD (S)' : 'UNSOLD (X)';
-            dynBtn.className = hasBids ? 'btn-green' : 'btn-red';
+            dynBtn.style.background = hasBids ? '#28a745' : '#dc3545';
+            dynBtn.style.color = '#fff';
             dynBtn.onclick = hasBids ? window.sellPlayer : window.passPlayer;
         }
         clocks.forEach(b => setBtn(b, true));
         setBtn(pauseBtn, active || isPaused);
-        diceBtn.style.opacity = '0.3';
+        if (diceBtn) diceBtn.style.opacity = '0.3';
     }
     
+    // SVG Pause Toggle Update
     if (isPaused) { 
-        pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; 
-        pauseBtn.classList.add('is-paused'); 
+        if (pauseBtn) {
+            pauseBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; 
+            pauseBtn.style.background = '#fd7e14';
+            pauseBtn.style.color = '#fff';
+        }
     } else { 
-        pauseBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; 
-        pauseBtn.classList.remove('is-paused'); 
+        if (pauseBtn) {
+            pauseBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; 
+            pauseBtn.style.background = '#22222d';
+            pauseBtn.style.color = '#fd7e14';
+        }
     }
 
     updateBudgetTracker();
@@ -491,7 +458,6 @@ function updateBudgetTracker() {
                 else if (state.liveState.auction_state === 'bidding' || state.liveState.auction_state === 'cooldown') leaderClass = ' leader-card-glow-silver';
             }
 
-            // PATCH: Added display:inline-block and bumped max-width to 75px for the rep name span
             html += `<div class="budget-card${leaderClass}">
                 <button class="delete-team-btn" onclick="confirmDeleteTeam('${esc(team)}')" title="Delete Team">&times;</button>
                 <div>
@@ -512,12 +478,7 @@ function updateBudgetTracker() {
     document.getElementById('budgetCards').innerHTML = html;
 }
 
-// --- List Render Management ---
-
-let _deckRoleFilter = '';
-
 window.setRoleFilter = function(role, el) {
-    _deckRoleFilter = role;
     document.querySelectorAll('.role-filter-btn').forEach(b => {
         let active = b.dataset.role === role;
         b.style.background = active ? '#22222d' : '#111';
@@ -530,10 +491,9 @@ window.setRoleFilter = function(role, el) {
 window.refreshLists = function() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('auctioneerSearch')?.value.toLowerCase() || '';
-    renderDeckList('deckList', set, deckSearch, _deckRoleFilter, null, true); // true = isAuctioneer
-    
-    renderUnsoldList('unsoldList', deckSearch, true); // true = isAuctioneer
-    
+    let roleFilter = document.querySelector('.role-filter-btn.active')?.dataset.role || '';
+    renderDeckList('deckList', set, deckSearch, roleFilter, null, true); 
+    renderUnsoldList('unsoldList', deckSearch, true); 
     let team = document.getElementById('teamSelector')?.value || '';
     renderSquadList('squadList', team, deckSearch);
 };
@@ -561,65 +521,40 @@ function populateDropdowns() {
     if (prevT && keys.includes(prevT)) tSel.value = prevT; else if (keys.length > 0) tSel.value = keys[0];
 }
 
-// Hook search bar to refresh lists
 document.getElementById('auctioneerSearch')?.addEventListener('input', () => window.refreshLists());
 
-// --- Admin Controls & Chat ---
-
 window.confirmDeleteTeam = (teamCode) => {
-    showPrompt('Delete Franchise',
-        `Enter the PIN for '${teamCode}' to confirm deletion:`,
-        '4-digit PIN',
-        val => {
-            if (state.allRegisteredTeams[teamCode] && state.allRegisteredTeams[teamCode].pin === val) {
-                state.roomRef.child('teams_auth/' + teamCode).remove();
-                state.roomRef.child('logged_in_teams/' + teamCode).remove();
-                persistEvent(`🗑️ Franchise <strong>${esc(teamCode)}</strong> deleted by auctioneer.`);
-            } else { 
-                showAlert('Wrong PIN','Incorrect PIN. Deletion cancelled.'); 
-            }
-        }
-    );
+    showPrompt('Delete Franchise', `Enter the PIN for '${teamCode}' to confirm deletion:`, '4-digit PIN', val => {
+        if (state.allRegisteredTeams[teamCode] && state.allRegisteredTeams[teamCode].pin === val) {
+            state.roomRef.child('teams_auth/' + teamCode).remove();
+            state.roomRef.child('logged_in_teams/' + teamCode).remove();
+            persistEvent(`🗑️ Franchise <strong>${esc(teamCode)}</strong> deleted by auctioneer.`);
+        } else { showAlert('Wrong PIN','Incorrect PIN. Deletion cancelled.'); }
+    });
 };
 
 window.togglePin = (teamCode) => {
     let n = document.getElementById(`rep-name-${teamCode}`), p = document.getElementById(`rep-pin-${teamCode}`);
-    if (n && p) { 
-        let show = n.style.display !== 'none'; 
-        n.style.display = show ? 'none' : 'block'; 
-        p.style.display = show ? 'block' : 'none'; 
-    }
+    if (n && p) { let show = n.style.display !== 'none'; n.style.display = show ? 'none' : 'block'; p.style.display = show ? 'block' : 'none'; }
 };
 
 window.sendBroadcast = () => {
-    let inp = document.getElementById('broadcastInput');
-    let msg = inp.value.trim();
+    let inp = document.getElementById('broadcastInput'), msg = inp.value.trim();
     if (!msg) { inp.focus(); return; }
-    if (!state.roomRef) return;
-    state.roomRef.child('broadcast').set({ message: msg, active: true, ts: Date.now() });
-    inp.value = '';
-    persistEvent(`📢 Auctioneer broadcast: <em>${esc(msg)}</em>`);
+    if (state.roomRef) state.roomRef.child('broadcast').set({ message: msg, active: true, ts: Date.now() });
+    inp.value = ''; persistEvent(`📢 Auctioneer broadcast: <em>${esc(msg)}</em>`);
 };
 
-window.clearBroadcast = () => {
-    if (!state.roomRef) return;
-    state.roomRef.child('broadcast').set({ message: '', active: false, ts: Date.now() });
-};
+window.clearBroadcast = () => { if (state.roomRef) state.roomRef.child('broadcast').set({ message: '', active: false, ts: Date.now() }); };
 
 window.sendChatMessage = () => {
     let inp = document.getElementById('chatInput'), msg = inp.value.trim();
-    if (msg && state.roomRef) { 
-        state.roomRef.child('chat_events').push({ team: 'ADMIN', text: msg, time: Date.now() }); 
-        inp.value = ''; 
-    }
+    if (msg && state.roomRef) { state.roomRef.child('chat_events').push({ team: 'ADMIN', text: msg, time: Date.now() }); inp.value = ''; }
 };
-
-// --- Settings Overlay ---
 
 window.openSettings = () => {
     document.getElementById('settingsOverlay').style.display = 'flex';
     document.getElementById('set-room-key').value = state.roomKey || '';
-    
     let s = state.settings;
     document.getElementById('set-room-name').value = s.room_name || 'IPL Auction';
     document.getElementById('set-purse').value = s.starting_purse || 100;
@@ -636,24 +571,15 @@ window.openSettings = () => {
     document.getElementById('set-max-squad').value = s.max_squad || 25;
     document.getElementById('set-bid-timer').value = s.bid_timer_secs || 15;
     document.getElementById('set-cooldown').value = s.cooldown_secs || 10;
-    
-    let exp = document.getElementById('exportTeamSelector');
-    exp.innerHTML = '<option value="ALL">All Teams</option>';
-    Object.keys(state.allRegisteredTeams).forEach(t => { 
-        let o = document.createElement('option'); o.value = t; o.text = t; exp.appendChild(o); 
-    });
 };
 
 window.saveSettings = () => {
     let rName = document.getElementById('set-room-name').value.trim();
-    let purse = parseInt(document.getElementById('set-purse').value) || 100;
-    let oLimit = document.getElementById('set-overseas-rule').value === 'true';
-    
     if (state.roomRef && rName) {
         state.roomRef.child('settings').update({
             room_name: rName, 
-            starting_purse: purse, 
-            overseas_limit_enabled: oLimit,
+            starting_purse: parseInt(document.getElementById('set-purse').value) || 100, 
+            overseas_limit_enabled: document.getElementById('set-overseas-rule').value === 'true',
             limit_mid: parseFloat(document.getElementById('set-limit-mid').value) || 2,
             limit_high: parseFloat(document.getElementById('set-limit-high').value) || 5,
             inc_base: parseInt(document.getElementById('set-inc-base').value) || 20,
@@ -670,8 +596,6 @@ window.saveSettings = () => {
     }
 };
 
-// --- Exports ---
-
 window.exportSquadCSV = () => {
     let team = document.getElementById('exportTeamSelector').value;
     let sold = state.playerPool.filter(p => p.status === 'sold' && (team === 'ALL' || p.team === team));
@@ -679,11 +603,8 @@ window.exportSquadCSV = () => {
         let role = (state.allRegisteredTeams[p.team]?.playerRoles && state.allRegisteredTeams[p.team].playerRoles[p.name]) || '-';
         return `"${p.name}","${p.team}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
     }).join('\n');
-    
     let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `IPL_${team}_Export.csv`;
+    let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `IPL_${team}_Export.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 };
 
@@ -691,96 +612,58 @@ window.exportSquadPDF = () => {
     let team = document.getElementById('exportTeamSelector').value;
     let sold = state.playerPool.filter(p => p.status === 'sold' && (team === 'ALL' || p.team === team));
     if (!sold.length) { showAlert('No Data','No sold players for this selection.'); return; }
-    
     let div = document.createElement('div');
     div.style.cssText = 'padding:20px; font-family:sans-serif; color:#000; background:#fff;';
     div.innerHTML = `<h2 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">IPL Auction Result — ${team}</h2>
-    <table style="width:100%; border-collapse:collapse; font-size:14px;">
-        <tr style="background:#eee;"><th style="padding:10px; border:1px solid #ccc;">Player</th><th style="padding:10px; border:1px solid #ccc;">Nat</th><th style="padding:10px; border:1px solid #ccc;">Team</th><th style="padding:10px; border:1px solid #ccc;">Role</th><th style="padding:10px; border:1px solid #ccc;">Price (Cr)</th></tr>
+    <table style="width:100%; border-collapse:collapse; font-size:14px;"><tr style="background:#eee;"><th style="padding:10px; border:1px solid #ccc;">Player</th><th style="padding:10px; border:1px solid #ccc;">Nat</th><th style="padding:10px; border:1px solid #ccc;">Team</th><th style="padding:10px; border:1px solid #ccc;">Role</th><th style="padding:10px; border:1px solid #ccc;">Price (Cr)</th></tr>
         ${sold.map(p => {
             let role = (state.allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
             return `<tr><td style="padding:10px; border:1px solid #ccc;">${p.name}</td><td style="padding:10px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:10px; border:1px solid #ccc;">${p.team}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}</td></tr>`;
-        }).join('')}
-    </table>`;
-    
+        }).join('')}</table>`;
     html2pdf().set({ margin:10, filename:`IPL_${team}_Export.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'} }).from(div).save();
 };
-
-// --- Keyboard Shortcuts ---
 
 document.addEventListener('keydown', e => {
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (document.getElementById('adminDashboardWrapper').style.display === 'none') return;
-    
     if (e.key.toLowerCase() === 's' && !document.getElementById('dynamicSellBtn').disabled && document.getElementById('dynamicSellBtn').className === 'btn-green') window.sellPlayer();
     if (e.key.toLowerCase() === 'x' && !document.getElementById('dynamicSellBtn').disabled && document.getElementById('dynamicSellBtn').className === 'btn-red') window.passPlayer();
     if (e.key.toLowerCase() === 'p' && !document.getElementById('btnPause').disabled) window.togglePause();
     if (e.code === 'Space') { e.preventDefault(); window.pullRandomFromSet(); }
 });
 
-
-// --- Auction Timer Controls ---
-
 window.togglePause = () => {
     if (!state.roomRef) return;
     let currentState = state.liveState.auction_state;
-
     if (currentState === 'paused') {
-        // Resume: restore the remaining time from paused_remaining
         let remaining = state.liveState.paused_remaining || (state.settings.bid_timer_secs || 15) * 1000;
-        state.roomRef.child('live_state').update({
-            auction_state: 'bidding',
-            timer_end: Date.now() + remaining,
-            paused_remaining: null
-        });
+        state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: Date.now() + remaining, paused_remaining: null });
     } else if (currentState === 'bidding') {
-        // Pause: save how much time is left
         let remaining = state.liveState.timer_end ? Math.max(0, state.liveState.timer_end - Date.now()) : 0;
-        state.roomRef.child('live_state').update({
-            auction_state: 'paused',
-            timer_end: 0,
-            paused_remaining: remaining
-        });
+        state.roomRef.child('live_state').update({ auction_state: 'paused', timer_end: 0, paused_remaining: remaining });
     }
 };
 
 window.bypassCooldown = () => {
-    if (!state.roomRef) return;
-    if (state.liveState.auction_state !== 'cooldown') return;
-    let biddingSecs = state.settings.bid_timer_secs || 15;
-    state.roomRef.child('live_state').update({
-        auction_state: 'bidding',
-        timer_end: Date.now() + (biddingSecs * 1000)
-    });
+    if (!state.roomRef || state.liveState.auction_state !== 'cooldown') return;
+    state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: Date.now() + ((state.settings.bid_timer_secs || 15) * 1000) });
 };
 
 window.startTimer = (secs, auctionState) => {
-    if (!state.roomRef) return;
-    state.roomRef.child('live_state').update({
-        auction_state: auctionState || 'bidding',
-        timer_end: Date.now() + (secs * 1000)
-    });
+    if (state.roomRef) state.roomRef.child('live_state').update({ auction_state: auctionState || 'bidding', timer_end: Date.now() + (secs * 1000) });
 };
 
-// --- V2.2 GLOBAL SCOPE BRIDGE ---
-// This exposes module functions to the HTML inline onclick attributes
-
-// Gateway Screen Controls
 window.showCreateRoom = typeof showCreateRoom !== 'undefined' ? showCreateRoom : null;
 window.showJoinAdminRoom = typeof showJoinAdminRoom !== 'undefined' ? showJoinAdminRoom : null;
 window.createNewRoom = typeof createNewRoom !== 'undefined' ? createNewRoom : null;
 window.joinAdminRoom = typeof joinAdminRoom !== 'undefined' ? joinAdminRoom : null;
 window.backToAdminGateway = typeof backToAdminGateway !== 'undefined' ? backToAdminGateway : null;
 window.toggleCustomUpload = typeof toggleCustomUpload !== 'undefined' ? toggleCustomUpload : null;
-
-// Dashboard Controls
 window.openSettings = typeof openSettings !== 'undefined' ? openSettings : null;
 window.saveSettings = typeof saveSettings !== 'undefined' ? saveSettings : null;
 window.exportSquadCSV = typeof exportSquadCSV !== 'undefined' ? exportSquadCSV : null;
 window.exportSquadPDF = typeof exportSquadPDF !== 'undefined' ? exportSquadPDF : null;
 window.clearBroadcast = typeof clearBroadcast !== 'undefined' ? clearBroadcast : null;
-
-// Auction Mechanics
 window.sellPlayer = typeof sellPlayer !== 'undefined' ? sellPlayer : null;
 window.passPlayer = typeof passPlayer !== 'undefined' ? passPlayer : null;
 window.undoLastSale = typeof undoLastSale !== 'undefined' ? undoLastSale : null;
@@ -791,8 +674,6 @@ window.startTimer = typeof startTimer !== 'undefined' ? startTimer : null;
 window.confirmResetAuction = typeof confirmResetAuction !== 'undefined' ? confirmResetAuction : null;
 window.sendBroadcast = typeof sendBroadcast !== 'undefined' ? sendBroadcast : null;
 window.pullRandomFromSet = typeof pullRandomFromSet !== 'undefined' ? pullRandomFromSet : null;
-
-// Tab & UI Controls
 window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
 window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
 window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
