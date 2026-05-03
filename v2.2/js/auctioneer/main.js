@@ -513,14 +513,26 @@ function populateDropdowns() {
     let sets = new Set(); 
     state.playerPool.forEach(p => { if (p.set) sets.add(p.set); });
     let setSel = document.getElementById('setSelector'), prev = setSel.value;
-    setSel.innerHTML = '<option value="" disabled hidden>SELECT SET</option>';
-    sets.forEach(s => { let o = document.createElement('option'); o.value = s; o.text = s; setSel.appendChild(o); });
+    setSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT SET</option>';
+    sets.forEach(s => { 
+        let o = document.createElement('option'); 
+        o.value = s; o.text = s; 
+        o.style.background = '#161620'; // Forces Dark Mode on Options
+        o.style.color = '#fff'; 
+        setSel.appendChild(o); 
+    });
     if (prev && sets.has(prev)) setSel.value = prev; else if (sets.size > 0) setSel.value = Array.from(sets)[0];
 
     let tSel = document.getElementById('teamSelector'), prevT = tSel.value;
-    tSel.innerHTML = '<option value="" disabled hidden>SELECT TEAM</option>';
+    tSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT TEAM</option>';
     let keys = Object.keys(state.allRegisteredTeams);
-    keys.forEach(t => { let o = document.createElement('option'); o.value = t; o.text = t; tSel.appendChild(o); });
+    keys.forEach(t => { 
+        let o = document.createElement('option'); 
+        o.value = t; o.text = t; 
+        o.style.background = '#161620'; // Forces Dark Mode on Options
+        o.style.color = state.allRegisteredTeams[t]?.color || '#fff'; 
+        tSel.appendChild(o); 
+    });
     if (prevT && keys.includes(prevT)) tSel.value = prevT; else if (keys.length > 0) tSel.value = keys[0];
 }
 
