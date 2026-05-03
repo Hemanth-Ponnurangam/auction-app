@@ -19,7 +19,7 @@
 
 <div id="broadcastBanner">
     <span class="broadcast-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
     </span>
     <span id="broadcastText"></span>
     <button id="broadcastClearBtn" onclick="clearBroadcast()">✕ DISMISS</button>
@@ -112,7 +112,6 @@
             <input type="number" id="set-max-squad" class="setting-input" value="25" style="width:60px;">
         </div>
         
-        <!-- Keyboard Shortcuts Moved Here -->
         <div style="background: rgba(0,0,0,0.3); border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 11px; color: #888; text-align: center;">
             <span style="font-weight:bold; color: #fff; margin-right: 8px;">SHORTCUTS:</span>
             <span class="key-badge">Space</span> Random &nbsp;|&nbsp;
@@ -209,20 +208,23 @@
                     </div>
 
                     <!-- BOTTOM ROW: Bidding Info & Uniform Control Pad -->
+                    <!-- 3 Equal Flex Columns to Center the Bidder -->
                     <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                        <div style="display:flex; gap:20px;">
-                            <div>
-                                <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
-                                <span id="adminBid" class="highlight" style="font-size:1.6rem; margin-top:2px; display:block; color:#28a745; font-weight:bold;">₹0.00 Cr</span>
-                            </div>
-                            <div>
-                                <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
-                                <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.2rem; margin-top:2px; display:block; font-weight:bold;">-</span>
-                            </div>
+                        
+                        <!-- Left: Current Bid -->
+                        <div style="flex: 1;">
+                            <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
+                            <span id="adminBid" class="highlight" style="font-size:1.6rem; margin-top:2px; display:block; color:#28a745; font-weight:bold;">₹0.00 Cr</span>
+                        </div>
+                        
+                        <!-- Center: Current Bidder -->
+                        <div style="flex: 1; text-align: center;">
+                            <span style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Current Bidder</span>
+                            <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.3rem; margin-top:2px; display:block; font-weight:bold;">-</span>
                         </div>
 
-                        <!-- Uniform SVG Control Pad -->
-                        <div style="display:flex; gap:6px; align-items:center;">
+                        <!-- Right: Uniform SVG Control Pad -->
+                        <div style="flex: 1; display:flex; gap:6px; align-items:center; justify-content: flex-end;">
                             <!-- Undo Sale -->
                             <button class="action-btn" onclick="undoLastSale()" title="Undo Sale" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#fff; cursor:pointer;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
@@ -246,12 +248,15 @@
                             <button id="randomDiceBtn" class="action-btn" onclick="pullRandomFromSet()" title="Random Player" style="background:#22222d; border:1px solid #444; padding:6px 10px; border-radius:6px; color:#fff; cursor:pointer;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle></svg>
                             </button>
-                            
-                            <!-- Condensed WAITING/SOLD button right inside the control pad -->
-                            <button id="dynamicSellBtn" style="background:#444; color:#aaa; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; margin-left:8px; cursor:not-allowed; text-transform:uppercase; transition:.2s;">WAITING...</button>
                         </div>
                     </div>
+                </div> <!-- End of .data-box -->
+
+                <!-- Restored Full Width Sold/Unsold Button -->
+                <div class="flex-row" style="margin-top: 12px;">
+                    <button id="dynamicSellBtn" class="btn-unsold" style="padding:12px; font-size:15px; width:100%; border-radius:6px; font-weight:bold; letter-spacing: 1px;">WAITING...</button>
                 </div>
+
             </div>
             
             <div class="panel" style="flex:1; display:flex; flex-direction:column; padding:0; overflow:hidden; min-height:0;">
@@ -261,7 +266,7 @@
 
         <div class="col-right">
             
-            <!-- Broadcast Message Input pulled OUT of the panel -->
+            <!-- Broadcast Message Input -->
             <div class="broadcast-row" style="margin-bottom: 12px; margin-top:0; padding: 8px 12px; background: #161620; border: 1px solid #2d2d3f; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,.2);">
                 <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
                 <div style="color: #888; margin-right: 8px; display:flex; align-items:center;">
@@ -286,12 +291,13 @@
                         <label style="color:#aaa; font-size:11px; font-weight:bold; letter-spacing:1px;">SET:</label>
                         <select id="setSelector" class="compact-select" onchange="refreshLists()"></select>
                     </div>
+                    <!-- Fixed White Buttons: Explicitly restored dark inline styles -->
                     <div style="display:flex; gap:5px; margin-bottom:8px; flex-shrink:0; flex-wrap:wrap;">
-                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)">ALL</button>
-                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)">BAT</button>
-                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)">BWL</button>
-                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)">ALL-R</button>
-                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)">WK</button>
+                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#22222d; color:#ffc107; border:1px solid #ffc107; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">ALL</button>
+                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">BAT</button>
+                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">BWL</button>
+                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">ALL-R</button>
+                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)" style="flex:1; padding:4px 6px; font-size:10px; background:#111; color:#888; border:1px solid #333; border-radius:5px; cursor:pointer; font-weight:bold; text-transform:uppercase;">WK</button>
                     </div>
                     <div id="deckList" style="flex:1; overflow-y:auto; padding-right:5px;"></div>
                 </div>
