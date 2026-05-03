@@ -697,6 +697,49 @@ document.addEventListener('keydown', e => {
 });
 
 
+// --- Auction Timer Controls ---
+
+window.togglePause = () => {
+    if (!state.roomRef) return;
+    let currentState = state.liveState.auction_state;
+
+    if (currentState === 'paused') {
+        // Resume: restore the remaining time from paused_remaining
+        let remaining = state.liveState.paused_remaining || (state.settings.bid_timer_secs || 15) * 1000;
+        state.roomRef.child('live_state').update({
+            auction_state: 'bidding',
+            timer_end: Date.now() + remaining,
+            paused_remaining: null
+        });
+    } else if (currentState === 'bidding') {
+        // Pause: save how much time is left
+        let remaining = state.liveState.timer_end ? Math.max(0, state.liveState.timer_end - Date.now()) : 0;
+        state.roomRef.child('live_state').update({
+            auction_state: 'paused',
+            timer_end: 0,
+            paused_remaining: remaining
+        });
+    }
+};
+
+window.bypassCooldown = () => {
+    if (!state.roomRef) return;
+    if (state.liveState.auction_state !== 'cooldown') return;
+    let biddingSecs = state.settings.bid_timer_secs || 15;
+    state.roomRef.child('live_state').update({
+        auction_state: 'bidding',
+        timer_end: Date.now() + (biddingSecs * 1000)
+    });
+};
+
+window.startTimer = (secs, auctionState) => {
+    if (!state.roomRef) return;
+    state.roomRef.child('live_state').update({
+        auction_state: auctionState || 'bidding',
+        timer_end: Date.now() + (secs * 1000)
+    });
+};
+
 // --- V2.2 GLOBAL SCOPE BRIDGE ---
 // This exposes module functions to the HTML inline onclick attributes
 
