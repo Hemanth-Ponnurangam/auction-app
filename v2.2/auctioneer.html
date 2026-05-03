@@ -18,7 +18,9 @@
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
 
 <div id="broadcastBanner">
-    <span class="broadcast-icon">📢</span>
+    <span class="broadcast-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+    </span>
     <span id="broadcastText"></span>
     <button id="broadcastClearBtn" onclick="clearBroadcast()">✕ DISMISS</button>
 </div>
@@ -132,11 +134,22 @@
                 <button style="background:#dc3545; border:1px solid #bd2130; padding:8px 12px; color:#fff; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="exportSquadPDF()">📄 PDF</button>
             </div>
         </div>
-        <div style="display:flex; gap:10px; margin-top:25px;">
+        
+        <!-- Moved Shortcuts to Settings -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 11px; color: #888; text-align: center;">
+            <span style="font-weight:bold; color: #fff; margin-right: 8px;">KEYBOARD SHORTCUTS:</span>
+            <span class="key-badge">Space</span> Random &nbsp;|&nbsp;
+            <span class="key-badge">S</span> Sold &nbsp;|&nbsp;
+            <span class="key-badge">X</span> Unsold &nbsp;|&nbsp;
+            <span class="key-badge">P</span> Pause
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn-massive btn-auctioneer" style="padding:15px; font-size:14px; flex:2;" onclick="saveSettings()">SAVE SETTINGS</button>
             <button class="btn-massive" style="padding:15px; font-size:14px; background:#333; color:#fff; border:none; border-radius:10px; flex:1;" onclick="document.getElementById('settingsOverlay').style.display='none'">CLOSE</button>
-            <button class="btn-outline-danger" style="padding:15px; font-size:14px; border-radius:10px; flex:1; display:flex; align-items:center; justify-content:center; gap:6px; margin: 10px 0;" onclick="confirmResetAuction()">
-                <span style="font-size:16px;">☢️</span> RESET
+            <button class="btn-outline-danger" style="padding:15px; font-size:14px; border-radius:10px; flex:1; display:flex; align-items:center; justify-content:center; gap:8px; margin: 10px 0;" onclick="confirmResetAuction()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.8-6.6L21 8"/><path d="M21 2v6h-6"/></svg>
+                RESET
             </button>
         </div>
     </div>
@@ -154,22 +167,20 @@
 <div id="adminDashboardWrapper">
     <div style="position:relative; width:100%; max-width:1400px; margin:0 auto; text-align:center; padding-top:5px; margin-bottom:5px;">
         <h1 class="main-title">🔨 <span id="headerRoomName">IPL AUCTIONEER</span> COMMAND CENTER</h1>
-        <button class="gear-btn" onclick="openSettings()">⚙️ Settings</button>
+        
+        <!-- Shrunk Settings Button with SVG -->
+        <button class="gear-btn" style="font-size:11px;" onclick="openSettings()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            SETTINGS
+        </button>
     </div>
     
     <div class="dashboard">
         <div class="col-left">
             <div class="panel" style="flex:0 0 auto; padding:12px 15px;">
-                <div class="hotkey-hint">
-                    <span style="font-weight:bold;">SHORTCUTS:</span>
-                    <span class="key-badge">Space</span> Random |
-                    <span class="key-badge">S</span> Sold |
-                    <span class="key-badge">X</span> Unsold |
-                    <span class="key-badge">P</span> Pause
-                </div>
+                <!-- Shortcuts removed from here -->
                 
                 <div class="data-box" style="margin-bottom: 12px;">
-                    <!-- RESTRUCTURED TOP ROW: Photo, Info, Bid History, Vert Buttons, Timer -->
                     <div class="player-top-section" style="align-items: center; gap: 15px; margin-top: 5px;">
                         <div class="player-photo-box" id="playerPhoto" style="width:100px; height:100px; flex-shrink:0;">PHOTO</div>
                         
@@ -185,7 +196,7 @@
                                 </div>
                             </div>
 
-                            <!-- 2. MOVED BID HISTORY: Compact & Vertical & Slightly Left -->
+                            <!-- 2. MOVED BID HISTORY -->
                             <div class="bid-history-container" id="adminBidHistory" style="width: 150px; height: 96px; margin: 0; padding: 6px; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #222; border-radius: 8px; flex-shrink: 0; overflow-y: auto; overflow-x: hidden;">
                                 <!-- JS injects history here -->
                             </div>
@@ -197,7 +208,7 @@
                                 <button class="btn-clock master-clock" style="border-radius:6px; font-size:11px; padding:0 8px; flex:1;" onclick="startTimer(60,'bidding')">60s</button>
                             </div>
 
-                            <!-- 4. Timer (Padding added to stop top trimming) -->
+                            <!-- 4. Timer -->
                             <div style="flex-shrink: 0; display: flex; align-items: center;">
                                 <div class="timer-arc-wrapper" style="width:96px; height:96px; padding: 4px; box-sizing: border-box;">
                                     <svg class="timer-arc-svg" viewBox="0 0 108 108" style="overflow: visible;">
@@ -224,7 +235,7 @@
                         <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                     </div>
 
-                    <!-- Bidding Data & CONTROL PAD -->
+                    <!-- Bidding Data & SVG CONTROL PAD -->
                     <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-end;">
                         <div style="width:40%;">
                             <span style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Current Bid</span>
@@ -236,47 +247,55 @@
                                 <span id="adminLeader" class="highlight" style="color:#007bff; font-size:1.4rem; margin-top:2px;">-</span>
                             </div>
                             
-                            <!-- MOVED: Undo, Pause, Push, Dice combined into one block -->
+                            <!-- Control Pad with clean SVGs -->
                             <div style="display:flex; gap:6px; align-items:center;">
-                                <button class="btn-undo" onclick="undoLastSale()" title="Undo Sale" style="padding: 6px 10px; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">⏪</button>
-                                <button class="btn-undo" onclick="undoLastBid()" title="Undo Last Bid" style="padding: 6px 10px; font-size: 16px; border-radius: 8px; border: 1px solid #0dcaf0; color: #0dcaf0; display: flex; align-items: center; justify-content: center;">↩️</button>
-                                <button id="btnPause" class="btn-pause" onclick="togglePause()" title="Pause / Resume" style="padding: 6px 10px; font-size: 18px; border-radius: 8px; border: 1px solid #fd7e14; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3);">⏸</button>
-                                <button class="btn-push" onclick="bypassCooldown()" title="Force Start" style="padding: 6px 10px; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">⏩</button>
+                                <button class="btn-undo" onclick="undoLastSale()" title="Undo Sale" style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+                                </button>
+                                <button class="btn-undo" onclick="undoLastBid()" title="Undo Last Bid" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #0dcaf0; color: #0dcaf0; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l4-4 4 4M7 5v8a6 6 0 1 0 6-6"/></svg>
+                                </button>
+                                <button id="btnPause" class="btn-pause" onclick="togglePause()" title="Pause / Resume" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #fd7e14; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3);">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                </button>
+                                <button class="btn-push" onclick="bypassCooldown()" title="Force Start" style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                                </button>
                                 <div style="width: 1px; height: 24px; background: #333; margin: 0 2px;"></div>
-                                <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)" style="padding: 6px 12px; font-size: 18px;">🎲</button>
+                                <button id="randomDiceBtn" class="btn-dice" onclick="pullRandomFromSet()" title="Pull Random (Space)" style="padding: 6px 10px; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Dynamic Sold/Unsold Buttons -->
                 <div class="flex-row">
                     <button id="dynamicSellBtn" class="btn-unsold" style="padding:10px; font-size:14px; width:100%; border-radius:6px; font-weight:bold;">WAITING...</button>
                 </div>
 
             </div>
             
-            <!-- Franchise Budget Grid now has maximum room -->
             <div class="panel" style="flex:1; display:flex; flex-direction:column; padding:0; overflow:hidden; min-height:0;">
                 <div id="budgetCards" class="budget-grid"></div>
             </div>
         </div>
 
         <div class="col-right">
-            <!-- Simplified Top Right Controls -->
-            <div class="panel" style="flex:0 0 auto; padding: 12px 15px;">
-                <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:8px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Broadcast Message</label>
-                
-                <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <div class="broadcast-row" style="margin-top:0; padding-top:0; border-top:none;">
-                        <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
-                        <input type="text" id="broadcastInput" class="broadcast-input"
-                               placeholder="📢  Broadcast to all screens…" maxlength="80"
-                               onkeypress="if(event.key==='Enter') sendBroadcast()">
-                        <button class="btn-broadcast-send" onclick="sendBroadcast()">SEND</button>
-                        <button class="btn-broadcast-clear" onclick="clearBroadcast()" title="Dismiss broadcast">✕</button>
-                    </div>
+            
+            <!-- Broadcast Message Input (Pulled out of the panel container) -->
+            <div class="broadcast-row" style="margin-bottom: 12px; margin-top:0; padding: 8px 12px; background: #161620; border: 1px solid #2d2d3f; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,.2);">
+                <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
+                <div style="color: #888; margin-right: 8px; display:flex; align-items:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                 </div>
+                <input type="text" id="broadcastInput" class="broadcast-input"
+                       placeholder="Broadcast to all screens…" maxlength="80"
+                       onkeypress="if(event.key==='Enter') sendBroadcast()" style="margin:0;">
+                <button class="btn-broadcast-send" onclick="sendBroadcast()">SEND</button>
+                <button class="btn-broadcast-clear" onclick="clearBroadcast()" title="Dismiss broadcast" style="padding: 6px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 
             <div class="panel tabs-panel">
