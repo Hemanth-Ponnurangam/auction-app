@@ -458,21 +458,24 @@ function updateBudgetTracker() {
                 else if (state.liveState.auction_state === 'bidding' || state.liveState.auction_state === 'cooldown') leaderClass = ' leader-card-glow-silver';
             }
 
-            html += `<div class="budget-card${leaderClass}">
+            html += `<div class="budget-card${leaderClass}" style="display:flex; flex-direction:column;">
                 <button class="delete-team-btn" onclick="confirmDeleteTeam('${esc(team)}')" title="Delete Team">&times;</button>
-                <div>
-                    <div style="font-weight:bold; color:${tColor}; font-size:14px; margin-bottom:2px; display:flex; align-items:center; justify-content:center;">${esc(team)} ${dot}</div>
-                    <div style="color:${remaining > 0 ? '#28a745' : '#dc3545'}; font-size:15px; font-weight:bold; margin-bottom:2px;">₹${(remaining/CRORE).toFixed(2)} Cr</div>
-                    <div style="color:#666; font-size:9px; text-transform:uppercase;">${count} Players</div>
+                
+                <!-- Added Flex Centering & Increased Font Sizes -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="font-weight:bold; color:${tColor}; font-size:15px; margin-bottom:4px; display:flex; align-items:center; justify-content:center;">${esc(team)} ${dot}</div>
+                    <div style="color:${remaining > 0 ? '#28a745' : '#dc3545'}; font-size:20px; font-weight:bold; margin-bottom:4px;">₹${(remaining/CRORE).toFixed(2)} Cr</div>
+                    <div style="color:#888; font-size:10px; font-weight:bold; text-transform:uppercase;">${count} Players</div>
                 </div>
-                <div style="margin-top:auto; padding-top:4px; border-top:1px solid #222; font-size:9px; color:#888; display:flex; justify-content:space-between; align-items:center;">
+                
+                <div style="margin-top:auto; padding-top:6px; border-top:1px solid #222; font-size:10px; color:#888; display:flex; justify-content:space-between; align-items:center;">
                     <span id="rep-name-${esc(team)}" style="display:inline-block; text-transform:uppercase; letter-spacing:.5px; max-width: 75px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tData.repName || 'Unclaimed')}</span>
                     <span id="rep-pin-${esc(team)}" style="display:none; color:#ffc107; font-weight:bold; letter-spacing:1px;">${esc(tData.pin || 'None')}</span>
                     <span class="pin-eye" onclick="togglePin('${esc(team)}')">👁️</span>
                 </div>
             </div>`;
         } else {
-            html += `<div class="budget-card-empty">WAITING...</div>`;
+            html += `<div class="budget-card-empty" style="flex:1; display:flex; align-items:center; justify-content:center; color:#333;">WAITING...</div>`;
         }
     }
     document.getElementById('budgetCards').innerHTML = html;
