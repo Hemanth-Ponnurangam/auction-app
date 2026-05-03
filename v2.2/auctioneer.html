@@ -235,24 +235,23 @@
                 <label style="color:#666; font-size:10px; text-transform:uppercase; margin-bottom:10px; display:block; font-weight:bold; text-align:center; letter-spacing:1px;">Auction Controls</label>
                 
                 <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <div style="display: flex; gap: 8px; margin-bottom: 10px; height: 35px;">
-                        <button class="btn-undo" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="undoLastSale()" title="Undo Sale">⏪</button>
-                        <button class="btn-undo" style="flex:1; padding:0; border-radius:6px; font-size:18px; border: 1px solid #0dcaf0; color: #0dcaf0; display:flex; align-items:center; justify-content:center;" onclick="undoLastBid()" title="Undo Last Bid">↩️</button>
-                        <button id="btnPause" class="btn-pause" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="togglePause()" title="Pause / Resume">⏸</button>
-                        <button class="btn-push" style="flex:1; padding:0; border-radius:6px; font-size:18px; display:flex; align-items:center; justify-content:center;" onclick="bypassCooldown()" title="Force Start">⏩</button>
+                    <!-- Neatly aligned grid for action buttons -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px;">
+                        <button class="btn-undo" style="padding:8px 0; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center;" onclick="undoLastSale()" title="Undo Sale">⏪</button>
+                        <button class="btn-undo" style="padding:8px 0; border-radius:6px; font-size:16px; border: 1px solid #0dcaf0; color: #0dcaf0; display:flex; align-items:center; justify-content:center;" onclick="undoLastBid()" title="Undo Last Bid">↩️</button>
+                        <button id="btnPause" class="btn-pause" style="padding:8px 0; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center;" onclick="togglePause()" title="Pause / Resume">⏸</button>
+                        <button class="btn-push" style="padding:8px 0; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center;" onclick="bypassCooldown()" title="Force Start">⏩</button>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; align-items: center; height: 35px;">
-                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(15,'bidding')">15s</button>
-                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(30,'bidding')">30s</button>
-                        <button class="btn-clock master-clock circle-btn" onclick="startTimer(60,'bidding')">60s</button>
-                        <div style="width: 1px; height: 80%; background: #333; margin: 0 2px;"></div>
-                        <button class="btn-outline-danger" style="flex:1; padding:0; height:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px;" onclick="confirmResetAuction()">
-                            <span style="font-size:16px;">☢️</span> RESET
-                        </button>
+                    <!-- Timers and Reset evenly spaced -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px; height: 32px;">
+                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:11px; padding:0;" onclick="startTimer(15,'bidding')">15s</button>
+                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:11px; padding:0;" onclick="startTimer(30,'bidding')">30s</button>
+                        <button class="btn-clock master-clock" style="flex:1; border-radius:6px; font-size:11px; padding:0;" onclick="startTimer(60,'bidding')">60s</button>
+                        <button class="btn-outline-danger" style="flex:2; border-radius:6px; font-size:11px; padding:0; display:flex; align-items:center; justify-content:center; gap:4px;" onclick="confirmResetAuction()">☢️ RESET</button>
                     </div>
 
-                    <div class="broadcast-row">
+                    <div class="broadcast-row" style="margin-top:0; padding-top:0; border-top:none;">
                         <span id="broadcastActiveDot" class="broadcast-active-dot" style="display:none;"></span>
                         <input type="text" id="broadcastInput" class="broadcast-input"
                                placeholder="📢  Broadcast to all screens…" maxlength="80"
@@ -262,6 +261,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- MOVED BID HISTORY: Out of the left column and into the right to free up vertical space -->
+            <div class="bid-history-container" id="adminBidHistory" style="margin: 0 0 10px 0; height: 75px; background: #0a0a0f; border: 1px solid #222; border-radius: 8px; overflow-y: auto; font-size: 11px; flex-shrink: 0;"></div>
 
             <div class="panel tabs-panel">
                 <input type="text" id="auctioneerSearch" class="login-input" placeholder="🔍 Search Player…" style="padding:8px; margin-bottom:12px; font-size:13px;">
