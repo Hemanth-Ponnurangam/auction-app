@@ -147,6 +147,10 @@ function executeUIBoot() {
     
     attachFirebaseListeners();
     initWatchlistListener();
+
+    // PATCH: Initialize War Room using custom session data instead of Firebase Auth
+    let myUid = state.myRepName.replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5);
+    initializeWarRoom(state.myTeamName, myUid, state.myRepName);
 }
 
 window.logout = () => {
@@ -387,7 +391,7 @@ function updateLiveUI(data, amIWinning) {
     document.getElementById('franchiseBidHistory').innerHTML = historyHtml;
 }
 
-// --- Squad Rendering (The Safely Fixed UI Function) ---
+// --- Squad Rendering ---
 
 function updateMyTeamUI() {
     try {
@@ -635,25 +639,10 @@ document.addEventListener('keydown', e => {
 
 let isPaddleHolder = false;
 
-// Wait for Firebase to confirm the user is logged in before setting up the War Room
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        const myUid = user.uid;
-        const myName = user.displayName || "Rep";
-        
-        // Assuming your existing logic saves the team ID to a global variable or local storage 
-        // Swap 'localStorage.getItem("teamId")' if you use a specific global variable like `currentTeamId`
-        const teamId = sessionStorage.getItem("myAuctionTeam") || state.myTeamName || "UNKNOWN_TEAM";
-        
-        if(teamId !== "UNKNOWN_TEAM") {
-            initializeWarRoom(teamId, myUid, myName);
-        }
-    }
-});
-
 function initializeWarRoom(teamId, myUid, myName) {
-    const connectedRef = database.ref('.info/connected');
-    const userStatusRef = database.ref(`/franchises/${teamId}/onlineUsers/${myUid}`);
+    // PATCH: Uses db.ref instead of database.ref, and scopes it properly to the current room
+    const connectedRef = db.ref('.info/connected');
+    const userStatusRef = db.ref(`rooms/${state.roomKey}/franchises/${teamId}/onlineUsers/${myUid}`);
 
     // 1. Live Roster Dot
     connectedRef.on('value', (snap) => {
@@ -663,14 +652,23 @@ function initializeWarRoom(teamId, myUid, myName) {
         }
     });
 
-    database.ref(`/franchises/${teamId}/onlineUsers`).on('value', (snap) => {
-        const count = snap.numChildren();
+    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/onlineUsers`).on('value', (snap) => {
+        const count = snap.numChildren() || 1;
         const countElement = document.getElementById('onlineRepsCount');
         if(countElement) countElement.innerText = count;
+
+        // PATCH: Auto-assign paddle if you are the only one online and no one holds it
+        if (count === 1) {
+            db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).once('value', pSnap => {
+                if (!pSnap.exists()) {
+                    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
+                }
+            });
+        }
     });
 
     // 2. Paddle Delegation
-    database.ref(`/franchises/${teamId}/paddle`).on('value', (snap) => {
+    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).on('value', (snap) => {
         const paddleData = snap.val();
         const bidBtn = document.getElementById('bidBtn');
         const reqBtn = document.getElementById('requestPaddleBtn');
@@ -693,7 +691,7 @@ function initializeWarRoom(teamId, myUid, myName) {
     });
 
     // 3. Visual Pings
-    database.ref(`/franchises/${teamId}/suggestedBid`).on('value', (snap) => {
+    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/suggestedBid`).on('value', (snap) => {
         if (isPaddleHolder && snap.exists()) {
             const bidBtn = document.getElementById('bidBtn');
             if(bidBtn) {
@@ -708,7 +706,7 @@ function initializeWarRoom(teamId, myUid, myName) {
     if(sugBtn) {
         sugBtn.replaceWith(sugBtn.cloneNode(true));
         document.getElementById('suggestBidBtn').addEventListener('click', () => {
-            database.ref(`/franchises/${teamId}/suggestedBid`).set(Date.now());
+            db.ref(`rooms/${state.roomKey}/franchises/${teamId}/suggestedBid`).set(Date.now());
         });
     }
 
@@ -716,7 +714,7 @@ function initializeWarRoom(teamId, myUid, myName) {
     if(reqBtn) {
         reqBtn.replaceWith(reqBtn.cloneNode(true));
         document.getElementById('requestPaddleBtn').addEventListener('click', () => {
-            database.ref(`/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
+            db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
         });
     }
 }
