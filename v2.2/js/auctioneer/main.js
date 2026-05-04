@@ -3,12 +3,15 @@
  * The main controller for the Auctioneer portal.
  */
 
-import { db } from '../shared/firebase.js';
+import { db, getCurrentServerTime } from '../shared/firebase.js';
 import { state, setRoomState, recalculateBudgets } from '../shared/state.js';
 import { esc, showAlert, showPrompt, showConfirm, closeModal } from '../shared/dom.js';
 import { playSound } from '../shared/audio.js';
 import { renderDeckList, renderUnsoldList, renderSquadList } from '../shared/render.js';
-import { persistEvent, pushPlayerToBlock } from './controls.js';
+import { 
+    persistEvent, pushPlayerToBlock, pullRandomFromSet, 
+    sellPlayer, passPlayer, undoLastSale, undoLastBid, confirmResetAuction 
+} from './controls.js';
 
 const CRORE = 10_000_000;
 const ARC_CIRCUMFERENCE = 289.03;
@@ -21,6 +24,8 @@ let localBidTracker = 0;
 let _lastTimerWarnSecond = -1;
 
 window.onload = function() {
+    setupEventListeners();
+    
     let savedKey = sessionStorage.getItem('roomKey');
     if (savedKey) {
         setRoomState(savedKey, db.ref('rooms/' + savedKey));
@@ -30,7 +35,99 @@ window.onload = function() {
     }
 };
 
-window.showCreateRoom = () => {
+// --- Centralized Event Listeners ---
+function setupEventListeners() {
+    // Gateway Screens
+    document.querySelector('.btn-massive[onclick="showCreateRoom()"]')?.addEventListener('click', showCreateRoom);
+    document.querySelector('.btn-auctioneer[onclick="showJoinAdminRoom()"]')?.addEventListener('click', showJoinAdminRoom);
+    document.querySelector('#createRoomScreen .submit-btn')?.addEventListener('click', createNewRoom);
+    document.querySelector('#joinAdminRoomScreen .submit-btn')?.addEventListener('click', joinAdminRoom);
+    document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', backToAdminGateway));
+    document.getElementById('dbSelection')?.addEventListener('change', toggleCustomUpload);
+    
+    // Header & Settings
+    document.querySelector('.gear-btn')?.addEventListener('click', openSettings);
+    document.querySelector('#settingsOverlay .btn-massive.btn-auctioneer')?.addEventListener('click', saveSettings);
+    document.querySelector('#settingsOverlay .btn-outline-danger')?.addEventListener('click', confirmResetAuction);
+    
+    // Broadcast & Chat
+    document.querySelector('.btn-broadcast-send')?.addEventListener('click', sendBroadcast);
+    document.getElementById('broadcastInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendBroadcast(); });
+    document.getElementById('broadcastClearBtn')?.addEventListener('click', clearBroadcast);
+    document.querySelector('.chat-btn')?.addEventListener('click', sendChatMessage);
+    document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+
+    // Action Controls
+    document.getElementById('dynamicSellBtn')?.addEventListener('click', function() {
+        if (this.classList.contains('btn-green')) sellPlayer();
+        else if (this.classList.contains('btn-red')) passPlayer();
+    });
+    document.getElementById('randomDiceBtn')?.addEventListener('click', pullRandomFromSet);
+    document.querySelector('button[title="Undo Sale"]')?.addEventListener('click', undoLastSale);
+    document.querySelector('button[title="Undo Last Bid"]')?.addEventListener('click', undoLastBid);
+    document.getElementById('btnPause')?.addEventListener('click', togglePause);
+    document.querySelector('button[title="Force Start"]')?.addEventListener('click', bypassCooldown);
+    
+    // Clocks
+    document.querySelectorAll('.master-clock').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            let secs = parseInt(e.target.innerText);
+            if (!isNaN(secs)) startTimer(secs, 'bidding');
+        });
+    });
+
+    // Right Panel Tabs & Filters
+    document.getElementById('auctioneerSearch')?.addEventListener('input', () => {
+        clearTimeout(_renderTimer);
+        _renderTimer = setTimeout(refreshLists, 200);
+    });
+    document.getElementById('setSelector')?.addEventListener('change', refreshLists);
+    document.getElementById('teamSelector')?.addEventListener('change', refreshLists);
+    
+    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            let name = e.target.innerText.includes('DECK') ? 'deck' :
+                       e.target.innerText.includes('UNSOLD') ? 'unsold' :
+                       e.target.innerText.includes('SQUADS') ? 'squads' : 'logs';
+            switchTab(name, e.target);
+        });
+    });
+
+    document.querySelectorAll('.role-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => setRoleFilter(e.target.dataset.role, e.target));
+    });
+
+    // Delegation for dynamic lists (Budgets, Deck, Unsold)
+    document.getElementById('budgetCards')?.addEventListener('click', e => {
+        if (e.target.classList.contains('delete-team-btn')) confirmDeleteTeam(e.target.dataset.team);
+        if (e.target.classList.contains('pin-eye')) togglePin(e.target.dataset.pinEye);
+    });
+
+    // Attach to dynamic list buttons rendered by shared/render.js
+    document.addEventListener('click', e => {
+        if (e.target.classList.contains('action-btn') && e.target.dataset.pushIndex) {
+            pushPlayerToBlock(e.target.dataset.pushIndex);
+        }
+    });
+}
+
+// --- Keyboard Shortcuts ---
+document.addEventListener('keydown', e => {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    if (document.getElementById('adminDashboardWrapper')?.style.display === 'none') return;
+    
+    let dynBtn = document.getElementById('dynamicSellBtn');
+    let pauseBtn = document.getElementById('btnPause');
+    
+    if (e.key.toLowerCase() === 's' && dynBtn && !dynBtn.disabled && dynBtn.classList.contains('btn-green')) sellPlayer();
+    if (e.key.toLowerCase() === 'x' && dynBtn && !dynBtn.disabled && dynBtn.classList.contains('btn-red')) passPlayer();
+    if (e.key.toLowerCase() === 'p' && pauseBtn && !pauseBtn.disabled) togglePause();
+    if (e.code === 'Space') { e.preventDefault(); pullRandomFromSet(); }
+});
+
+// --- Gateway & UI Setup ---
+
+function showCreateRoom() {
     document.getElementById('adminGatewayScreen').style.display = 'none';
     document.getElementById('createRoomScreen').style.display = 'flex';
     let sel = document.getElementById('dbSelection');
@@ -48,25 +145,26 @@ window.showCreateRoom = () => {
             let co = document.createElement('option'); co.value = 'custom'; co.text = 'Upload Custom CSV'; sel.appendChild(co);
             sel.value = 'preset_' + keys[0];
         } else { sel.value = 'custom'; }
-        window.toggleCustomUpload();
+        toggleCustomUpload();
     });
-};
+}
 
-window.showJoinAdminRoom = () => {
+function showJoinAdminRoom() {
     document.getElementById('adminGatewayScreen').style.display = 'none';
     document.getElementById('joinAdminRoomScreen').style.display = 'flex';
-};
+}
 
-window.backToAdminGateway = () => {
+function backToAdminGateway() {
     document.getElementById('createRoomScreen').style.display = 'none';
     document.getElementById('joinAdminRoomScreen').style.display = 'none';
     document.getElementById('adminGatewayScreen').style.display = 'flex';
-};
+}
 
-window.toggleCustomUpload = () => {
+function toggleCustomUpload() {
     document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value === 'custom' ? 'block' : 'none';
-};
+}
 
+// FIX: CSV Apostrophe Parsing
 function parseCSV(text) {
     let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
     let raw = lines[0].split(',');
@@ -77,7 +175,8 @@ function parseCSV(text) {
         let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
         let obj = { status: 'available' };
         for (let j = 0; j < hdrs.length; j++) {
-            let v = (cols[j]||'').replace(/['"]+/g,'').trim();
+            // Replaced /['"]+/g with /^"|"$/g to preserve internal single quotes
+            let v = (cols[j]||'').replace(/^"|"$/g, '').trim(); 
             let h = hdrs[j];
             if (h === 'baseprice') {
                 let num = Number(v) || 0;
@@ -98,7 +197,7 @@ function parseCSV(text) {
     return result;
 }
 
-window.createNewRoom = () => {
+function createNewRoom() {
     let name = document.getElementById('newRoomName').value.trim();
     let key = document.getElementById('newRoomKey').value.trim();
     let dbType = document.getElementById('dbSelection').value;
@@ -140,9 +239,9 @@ window.createNewRoom = () => {
             reader.readAsText(fi.files[0]);
         }
     });
-};
+}
 
-window.joinAdminRoom = () => {
+function joinAdminRoom() {
     let key = document.getElementById('joinAdminKey').value.trim();
     db.ref('rooms/'+key).once('value', snap => {
         if (snap.exists()) { 
@@ -151,7 +250,7 @@ window.joinAdminRoom = () => {
             executeAdminBoot(); 
         } else { showAlert('Not Found','Invalid Room Key!'); }
     });
-};
+}
 
 function executeAdminBoot() {
     document.getElementById('adminGatewayScreen').style.display = 'none';
@@ -161,6 +260,7 @@ function executeAdminBoot() {
     attachFirebaseListeners();
 }
 
+// --- Firebase Listeners ---
 function attachFirebaseListeners() {
     db.ref('.info/connected').on('value', snap => {
         let connVisible = !snap.val();
@@ -246,10 +346,7 @@ function attachFirebaseListeners() {
     state.roomRef.child('logged_in_teams/ADMIN').onDisconnect().remove();
 }
 
-function scheduleRender() { 
-    clearTimeout(_renderTimer); 
-    _renderTimer = setTimeout(() => { window.refreshLists(); }, 60); 
-}
+// --- UI Updaters ---
 
 function logLocal(msg, date) {
     let time = (date || new Date()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
@@ -259,26 +356,39 @@ function logLocal(msg, date) {
     if (logDiv) { logDiv.appendChild(entry); logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight; }
 }
 
+function scheduleRender() { 
+    clearTimeout(_renderTimer); 
+    _renderTimer = setTimeout(refreshLists, 60); 
+}
+
+// FIX: Refactored Live UI into manageable helpers
 function updateLiveUI(data) {
     let isIdle = data.auction_state === 'idle';
     let isPaused = data.auction_state === 'paused';
-    let currentIndex = data.current_player_index !== undefined ? data.current_player_index : -1;
     let currentBid = data.current_bid || 0;
     let currentLeader = data.highest_bidder || '-';
 
-    if (data.auction_state === 'bidding' && currentBid > localBidTracker && currentLeader !== '-' && currentLeader !== 'Base Price') playSound('bid');
+    if (data.auction_state === 'bidding' && currentBid > localBidTracker && currentLeader !== '-' && currentLeader !== 'Base Price') {
+        playSound('bid');
+    }
     localBidTracker = (data.auction_state === 'cooldown' || isIdle) ? 0 : currentBid;
 
-    if (data.timer_end && data.timer_end !== _prevTimerEnd && !isPaused) {
-        _arcTimerTotal = Math.max(1000, data.timer_end - Date.now());
-        _prevTimerEnd = data.timer_end;
-    }
+    updatePlayerCard(data, isIdle);
+    updateBidDisplay(data, currentBid, currentLeader);
+    updateTimerUI(data, isIdle, isPaused);
+    updateControlButtons(data, isIdle, isPaused, currentLeader);
+    updateBudgetTracker();
+}
 
+function updatePlayerCard(data, isIdle) {
+    let currentIndex = data.current_player_index !== undefined ? data.current_player_index : -1;
+    
     if (currentIndex >= 0 && state.playerPool.length > 0 && !isIdle) {
         let p = state.playerPool[currentIndex];
         if (p) {
             let isOv = !['india','indian','ind'].includes((p.nationality || 'Indian').trim().toLowerCase());
             document.getElementById('adminPlayer').innerHTML = esc(p.name) + (isOv ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '');
+            
             let tags = document.getElementById('adminPlayerTags'), rl = document.getElementById('adminPlayerRole');
             if (p.franchise) { tags.textContent = p.franchise; tags.style.display = 'inline-block'; } else tags.style.display = 'none';
             if (p.role) { rl.textContent = p.role; rl.style.display = 'inline-block'; } else rl.style.display = 'none';
@@ -305,8 +415,11 @@ function updateLiveUI(data) {
         document.getElementById('playerPhoto').innerHTML = 'PHOTO';
         ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => { document.getElementById(id).textContent = '-'; });
     }
+}
 
+function updateBidDisplay(data, currentBid, currentLeader) {
     document.getElementById('adminBid').textContent = `₹${(currentBid/CRORE).toFixed(2)} Cr`;
+    
     let leaderEl = document.getElementById('adminLeader');
     leaderEl.textContent = currentLeader;
     leaderEl.style.color = state.allRegisteredTeams[currentLeader]?.color || '#007bff';
@@ -317,9 +430,17 @@ function updateLiveUI(data) {
         return `<div class="bid-history-item" style="display:flex; justify-content:space-between; padding:2px; border-bottom:1px solid #333;"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
     }).join('');
     document.getElementById('adminBidHistory').innerHTML = historyHtml || '<div style="text-align:center; color:#666; padding-top:25px;">No bids yet</div>';
+}
 
+function updateTimerUI(data, isIdle, isPaused) {
     if (window.uiTimer) clearInterval(window.uiTimer);
     if (window._cooldownAdvance) clearTimeout(window._cooldownAdvance);
+
+    // FIX: Using server time
+    if (data.timer_end && data.timer_end !== _prevTimerEnd && !isPaused) {
+        _arcTimerTotal = Math.max(1000, data.timer_end - getCurrentServerTime());
+        _prevTimerEnd = data.timer_end;
+    }
 
     window.uiTimer = setInterval(() => {
         let timerEl = document.getElementById('adminTimer');
@@ -344,17 +465,20 @@ function updateLiveUI(data) {
             return;
         }
 
-        let remainMs = data.timer_end ? Math.max(0, data.timer_end - Date.now()) : 0;
+        // FIX: Using server time
+        let remainMs = data.timer_end ? Math.max(0, data.timer_end - getCurrentServerTime()) : 0;
         let t = Math.ceil(remainMs / 1000);
 
-        // --- NEW FEATURE: AUTO PAUSE ---
-        // If the timer reaches exactly 0s, force a pause state in Firebase immediately.
+        // FIX: Wrap Auto-pause in transaction to prevent multiple clients colliding
         if (data.auction_state === 'bidding' && remainMs <= 0) {
             clearInterval(window.uiTimer);
-            state.roomRef.child('live_state').update({
-                auction_state: 'paused',
-                timer_end: 0,
-                paused_remaining: 0
+            state.roomRef.child('live_state').transaction(ld => {
+                if (ld && ld.auction_state === 'bidding') {
+                    ld.auction_state = 'paused';
+                    ld.timer_end = 0;
+                    ld.paused_remaining = 0;
+                }
+                return ld;
             });
             return;
         }
@@ -377,24 +501,28 @@ function updateLiveUI(data) {
         }
     }, 200);
 
+    // Cooldown Advance logic
     if (data.auction_state === 'cooldown' && data.timer_end) {
-        let delay = Math.max(0, data.timer_end - Date.now());
+        let delay = Math.max(0, data.timer_end - getCurrentServerTime());
         let biddingSecs = state.settings.bid_timer_secs || 15;
         window._cooldownAdvance = setTimeout(() => {
             state.roomRef.child('live_state').transaction(ld => {
                 if (ld && ld.auction_state === 'cooldown') {
                     ld.auction_state = 'bidding';
-                    ld.timer_end = Date.now() + (biddingSecs * 1000);
+                    ld.timer_end = getCurrentServerTime() + (biddingSecs * 1000);
                 }
                 return ld;
             });
         }, delay + 200);
     }
+}
 
+function updateControlButtons(data, isIdle, isPaused, currentLeader) {
     let dynBtn = document.getElementById('dynamicSellBtn');
     let diceBtn = document.getElementById('randomDiceBtn');
     let clocks = document.querySelectorAll('.master-clock');
     let pauseBtn = document.getElementById('btnPause');
+    
     let hasBids = (currentLeader !== '-' && currentLeader !== 'Base Price');
     let active = (data.auction_state === 'bidding' || data.auction_state === 'cooldown');
 
@@ -408,6 +536,7 @@ function updateLiveUI(data) {
     if (isIdle || data.auction_state === 'sold' || data.auction_state === 'unsold') {
         if (dynBtn) {
             dynBtn.disabled = true;
+            dynBtn.className = 'btn-unsold'; // reset class
             dynBtn.style.background = '#444';
             dynBtn.style.color = '#888';
             dynBtn.textContent = 'WAITING...';
@@ -421,9 +550,10 @@ function updateLiveUI(data) {
             dynBtn.disabled = false;
             dynBtn.style.cursor = 'pointer';
             dynBtn.textContent = hasBids ? 'SOLD (S)' : 'UNSOLD (X)';
-            dynBtn.style.background = hasBids ? '#28a745' : '#dc3545';
+            // FIX: Assinging classes for keyboard shortcuts to target correctly
+            dynBtn.className = hasBids ? 'btn-green' : 'btn-red';
+            dynBtn.style.background = ''; // clear inline style to let CSS take over
             dynBtn.style.color = '#fff';
-            dynBtn.onclick = hasBids ? window.sellPlayer : window.passPlayer;
         }
         clocks.forEach(b => setBtn(b, true));
         setBtn(pauseBtn, active || isPaused);
@@ -443,8 +573,6 @@ function updateLiveUI(data) {
             pauseBtn.style.color = '#fd7e14';
         }
     }
-
-    updateBudgetTracker();
 }
 
 function updateBudgetTracker() {
@@ -469,8 +597,9 @@ function updateBudgetTracker() {
                 else if (state.liveState.auction_state === 'bidding' || state.liveState.auction_state === 'cooldown') leaderClass = ' leader-card-glow-silver';
             }
 
+            // FIX: Replaced inline onclick with data attributes
             html += `<div class="budget-card${leaderClass}" style="display:flex; flex-direction:column;">
-                <button class="delete-team-btn" onclick="confirmDeleteTeam('${esc(team)}')" title="Delete Team">&times;</button>
+                <button class="delete-team-btn" data-team="${esc(team)}" title="Delete Team">&times;</button>
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <div style="font-weight:bold; color:${tColor}; font-size:15px; margin-bottom:4px; display:flex; align-items:center; justify-content:center;">${esc(team)} ${dot}</div>
                     <div style="color:${remaining > 0 ? '#28a745' : '#dc3545'}; font-size:20px; font-weight:bold; margin-bottom:4px;">₹${(remaining/CRORE).toFixed(2)} Cr</div>
@@ -479,7 +608,7 @@ function updateBudgetTracker() {
                 <div style="margin-top:auto; padding-top:6px; border-top:1px solid #222; font-size:10px; color:#888; display:flex; justify-content:space-between; align-items:center;">
                     <span id="rep-name-${esc(team)}" style="display:inline-block; text-transform:uppercase; letter-spacing:.5px; max-width: 75px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tData.repName || 'Unclaimed')}</span>
                     <span id="rep-pin-${esc(team)}" style="display:none; color:#ffc107; font-weight:bold; letter-spacing:1px;">${esc(tData.pin || 'None')}</span>
-                    <span class="pin-eye" onclick="togglePin('${esc(team)}')">👁️</span>
+                    <span class="pin-eye" data-pin-eye="${esc(team)}">👁️</span>
                 </div>
             </div>`;
         } else {
@@ -489,17 +618,20 @@ function updateBudgetTracker() {
     document.getElementById('budgetCards').innerHTML = html;
 }
 
-window.setRoleFilter = function(role, el) {
+// --- Tabs & List Rendering ---
+
+function setRoleFilter(role, el) {
     document.querySelectorAll('.role-filter-btn').forEach(b => {
         let active = b.dataset.role === role;
         b.style.background = active ? '#22222d' : '#111';
         b.style.color      = active ? '#ffc107' : '#888';
         b.style.borderColor= active ? '#ffc107' : '#333';
+        if (active) b.classList.add('active'); else b.classList.remove('active');
     });
-    window.refreshLists();
-};
+    refreshLists();
+}
 
-window.refreshLists = function() {
+function refreshLists() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('auctioneerSearch')?.value.toLowerCase() || '';
     let roleFilter = document.querySelector('.role-filter-btn.active')?.dataset.role || '';
@@ -507,46 +639,52 @@ window.refreshLists = function() {
     renderUnsoldList('unsoldList', deckSearch, true); 
     let team = document.getElementById('teamSelector')?.value || '';
     renderSquadList('squadList', team, deckSearch);
-};
+}
 
-window.switchTab = function(name, el) {
+function switchTab(name, el) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${name}`).classList.add('active');
     if (el) el.classList.add('active');
-    window.refreshLists();
-};
+    refreshLists();
+}
 
 function populateDropdowns() {
     let sets = new Set(); 
-    state.playerPool.forEach(p => { if (p.set) sets.add(p.set); });
-    let setSel = document.getElementById('setSelector'), prev = setSel.value;
-    setSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT SET</option>';
-    sets.forEach(s => { 
-        let o = document.createElement('option'); 
-        o.value = s; o.text = s; 
-        o.style.background = '#161620'; 
-        o.style.color = '#fff'; 
-        setSel.appendChild(o); 
-    });
-    if (prev && sets.has(prev)) setSel.value = prev; else if (sets.size > 0) setSel.value = Array.from(sets)[0];
+    state.playerPool.forEach(p => { if (p && p.set) sets.add(p.set); });
+    let setSel = document.getElementById('setSelector');
+    if (setSel) {
+        let prev = setSel.value;
+        setSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT SET</option>';
+        sets.forEach(s => { 
+            let o = document.createElement('option'); 
+            o.value = s; o.text = s; 
+            o.style.background = '#161620'; 
+            o.style.color = '#fff'; 
+            setSel.appendChild(o); 
+        });
+        if (prev && sets.has(prev)) setSel.value = prev; else if (sets.size > 0) setSel.value = Array.from(sets)[0];
+    }
 
-    let tSel = document.getElementById('teamSelector'), prevT = tSel.value;
-    tSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT TEAM</option>';
-    let keys = Object.keys(state.allRegisteredTeams);
-    keys.forEach(t => { 
-        let o = document.createElement('option'); 
-        o.value = t; o.text = t; 
-        o.style.background = '#161620'; 
-        o.style.color = state.allRegisteredTeams[t]?.color || '#fff'; 
-        tSel.appendChild(o); 
-    });
-    if (prevT && keys.includes(prevT)) tSel.value = prevT; else if (keys.length > 0) tSel.value = keys[0];
+    let tSel = document.getElementById('teamSelector');
+    if (tSel) {
+        let prevT = tSel.value;
+        tSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT TEAM</option>';
+        let keys = Object.keys(state.allRegisteredTeams);
+        keys.forEach(t => { 
+            let o = document.createElement('option'); 
+            o.value = t; o.text = t; 
+            o.style.background = '#161620'; 
+            o.style.color = state.allRegisteredTeams[t]?.color || '#fff'; 
+            tSel.appendChild(o); 
+        });
+        if (prevT && keys.includes(prevT)) tSel.value = prevT; else if (keys.length > 0) tSel.value = keys[0];
+    }
 }
 
-document.getElementById('auctioneerSearch')?.addEventListener('input', () => window.refreshLists());
+// --- Specific Actions ---
 
-window.confirmDeleteTeam = (teamCode) => {
+function confirmDeleteTeam(teamCode) {
     showPrompt('Delete Franchise', `Enter the PIN for '${teamCode}' to confirm deletion:`, '4-digit PIN', val => {
         if (state.allRegisteredTeams[teamCode] && state.allRegisteredTeams[teamCode].pin === val) {
             state.roomRef.child('teams_auth/' + teamCode).remove();
@@ -554,29 +692,30 @@ window.confirmDeleteTeam = (teamCode) => {
             persistEvent(`🗑️ Franchise <strong>${esc(teamCode)}</strong> deleted by auctioneer.`);
         } else { showAlert('Wrong PIN','Incorrect PIN. Deletion cancelled.'); }
     });
-};
+}
 
-window.togglePin = (teamCode) => {
+function togglePin(teamCode) {
     let n = document.getElementById(`rep-name-${teamCode}`), p = document.getElementById(`rep-pin-${teamCode}`);
     if (n && p) { let show = n.style.display !== 'none'; n.style.display = show ? 'none' : 'block'; p.style.display = show ? 'block' : 'none'; }
-};
+}
 
-window.sendBroadcast = () => {
+function sendBroadcast() {
     let inp = document.getElementById('broadcastInput'), msg = inp.value.trim();
     if (!msg) { inp.focus(); return; }
-    if (state.roomRef) state.roomRef.child('broadcast').set({ message: msg, active: true, ts: Date.now() });
+    if (state.roomRef) state.roomRef.child('broadcast').set({ message: msg, active: true, ts: getCurrentServerTime() });
     inp.value = ''; persistEvent(`📢 Auctioneer broadcast: <em>${esc(msg)}</em>`);
-};
+}
 
-window.clearBroadcast = () => { if (state.roomRef) state.roomRef.child('broadcast').set({ message: '', active: false, ts: Date.now() }); };
+function clearBroadcast() { 
+    if (state.roomRef) state.roomRef.child('broadcast').set({ message: '', active: false, ts: getCurrentServerTime() }); 
+}
 
-window.sendChatMessage = () => {
+function sendChatMessage() {
     let inp = document.getElementById('chatInput'), msg = inp.value.trim();
-    if (msg && state.roomRef) { state.roomRef.child('chat_events').push({ team: 'ADMIN', text: msg, time: Date.now() }); inp.value = ''; }
-};
+    if (msg && state.roomRef) { state.roomRef.child('chat_events').push({ team: 'ADMIN', text: msg, time: getCurrentServerTime() }); inp.value = ''; }
+}
 
-// --- RESTORED SETTINGS FUNCTIONS ---
-window.openSettings = () => {
+function openSettings() {
     document.getElementById('settingsOverlay').style.display = 'flex';
     document.getElementById('set-room-key').value = state.roomKey || '';
     let s = state.settings;
@@ -595,9 +734,9 @@ window.openSettings = () => {
     document.getElementById('set-max-squad').value = s.max_squad || 25;
     document.getElementById('set-bid-timer').value = s.bid_timer_secs || 15;
     document.getElementById('set-cooldown').value = s.cooldown_secs || 10;
-};
+}
 
-window.saveSettings = () => {
+function saveSettings() {
     let rName = document.getElementById('set-room-name').value.trim();
     if (state.roomRef && rName) {
         state.roomRef.child('settings').update({
@@ -618,63 +757,27 @@ window.saveSettings = () => {
         document.getElementById('settingsOverlay').style.display = 'none';
         persistEvent('⚙️ Auction settings updated.');
     }
-};
+}
 
-document.addEventListener('keydown', e => {
-    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-    if (document.getElementById('adminDashboardWrapper').style.display === 'none') return;
-    if (e.key.toLowerCase() === 's' && !document.getElementById('dynamicSellBtn').disabled && document.getElementById('dynamicSellBtn').className === 'btn-green') window.sellPlayer();
-    if (e.key.toLowerCase() === 'x' && !document.getElementById('dynamicSellBtn').disabled && document.getElementById('dynamicSellBtn').className === 'btn-red') window.passPlayer();
-    if (e.key.toLowerCase() === 'p' && !document.getElementById('btnPause').disabled) window.togglePause();
-    if (e.code === 'Space') { e.preventDefault(); window.pullRandomFromSet(); }
-});
-
-window.togglePause = () => {
+function togglePause() {
     if (!state.roomRef) return;
     let currentState = state.liveState.auction_state;
     if (currentState === 'paused') {
-        // FIXED: Give a fresh clock if resuming from 0
         let remaining = state.liveState.paused_remaining || (state.settings.bid_timer_secs || 15) * 1000;
         if (remaining <= 0) remaining = (state.settings.bid_timer_secs || 15) * 1000;
         
-        state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: Date.now() + remaining, paused_remaining: null });
+        state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: getCurrentServerTime() + remaining, paused_remaining: null });
     } else if (currentState === 'bidding') {
-        let remaining = state.liveState.timer_end ? Math.max(0, state.liveState.timer_end - Date.now()) : 0;
+        let remaining = state.liveState.timer_end ? Math.max(0, state.liveState.timer_end - getCurrentServerTime()) : 0;
         state.roomRef.child('live_state').update({ auction_state: 'paused', timer_end: 0, paused_remaining: remaining });
     }
-};
+}
 
-window.bypassCooldown = () => {
+function bypassCooldown() {
     if (!state.roomRef || state.liveState.auction_state !== 'cooldown') return;
-    state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: Date.now() + ((state.settings.bid_timer_secs || 15) * 1000) });
-};
+    state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: getCurrentServerTime() + ((state.settings.bid_timer_secs || 15) * 1000) });
+}
 
-window.startTimer = (secs, auctionState) => {
-    if (state.roomRef) state.roomRef.child('live_state').update({ auction_state: auctionState || 'bidding', timer_end: Date.now() + (secs * 1000) });
-};
-
-window.showCreateRoom = typeof showCreateRoom !== 'undefined' ? showCreateRoom : null;
-window.showJoinAdminRoom = typeof showJoinAdminRoom !== 'undefined' ? showJoinAdminRoom : null;
-window.createNewRoom = typeof createNewRoom !== 'undefined' ? createNewRoom : null;
-window.joinAdminRoom = typeof joinAdminRoom !== 'undefined' ? joinAdminRoom : null;
-window.backToAdminGateway = typeof backToAdminGateway !== 'undefined' ? backToAdminGateway : null;
-window.toggleCustomUpload = typeof toggleCustomUpload !== 'undefined' ? toggleCustomUpload : null;
-window.openSettings = typeof openSettings !== 'undefined' ? openSettings : null;
-window.saveSettings = typeof saveSettings !== 'undefined' ? saveSettings : null;
-window.exportSquadCSV = typeof exportSquadCSV !== 'undefined' ? exportSquadCSV : null;
-window.exportSquadPDF = typeof exportSquadPDF !== 'undefined' ? exportSquadPDF : null;
-window.clearBroadcast = typeof clearBroadcast !== 'undefined' ? clearBroadcast : null;
-window.sellPlayer = typeof sellPlayer !== 'undefined' ? sellPlayer : null;
-window.passPlayer = typeof passPlayer !== 'undefined' ? passPlayer : null;
-window.undoLastSale = typeof undoLastSale !== 'undefined' ? undoLastSale : null;
-window.undoLastBid = typeof undoLastBid !== 'undefined' ? undoLastBid : null;
-window.togglePause = typeof togglePause !== 'undefined' ? togglePause : null;
-window.bypassCooldown = typeof bypassCooldown !== 'undefined' ? bypassCooldown : null;
-window.startTimer = typeof startTimer !== 'undefined' ? startTimer : null;
-window.confirmResetAuction = typeof confirmResetAuction !== 'undefined' ? confirmResetAuction : null;
-window.sendBroadcast = typeof sendBroadcast !== 'undefined' ? sendBroadcast : null;
-window.pullRandomFromSet = typeof pullRandomFromSet !== 'undefined' ? pullRandomFromSet : null;
-window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
-window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
-window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
-window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
+function startTimer(secs, auctionState) {
+    if (state.roomRef) state.roomRef.child('live_state').update({ auction_state: auctionState || 'bidding', timer_end: getCurrentServerTime() + (secs * 1000) });
+}
