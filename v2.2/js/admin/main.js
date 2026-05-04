@@ -7,9 +7,6 @@ import { db } from '../shared/firebase.js';
 import { verifySuperAdmin } from '../shared/auth.js';
 import { esc, showAlert, showConfirm } from '../shared/dom.js';
 
-// MUST BE COMMENTED OUT OR DELETED FOR NOW:
-// import { uploadPresetDB } from './csv.js'; 
-
 let isSuperAdmin = false;
 
 window.onload = function() {
@@ -31,67 +28,59 @@ window.onload = function() {
 };
 
 // --- Centralized Event Listeners ---
-// Replaces all inline HTML onclick="" attributes
 function setupEventListeners() {
     // Login Screen
-    document.querySelector('#adminLoginScreen .submit-btn').addEventListener('click', handleAdminLogin);
-    document.getElementById('adminPinInput').addEventListener('keypress', e => {
+    document.getElementById('btnAdminLogin')?.addEventListener('click', handleAdminLogin);
+    document.getElementById('adminPinInput')?.addEventListener('keypress', e => {
         if(e.key === 'Enter') handleAdminLogin();
+    });
+    document.getElementById('btnAdminBack')?.addEventListener('click', () => {
+        window.location.href = 'index.html';
     });
     
     // Header
-    document.querySelector('.header .action-btn').addEventListener('click', logoutAdmin);
+    document.getElementById('btnLogoutAdmin')?.addEventListener('click', logoutAdmin);
     
     // Modals - Global Teams
-    const addTeamBtn = document.querySelector('#tab-franchises .action-btn');
-    if (addTeamBtn) addTeamBtn.addEventListener('click', openAddTeamModal);
-    
-    document.querySelector('#addTeamModal .action-btn').addEventListener('click', saveNewTeam);
-    document.querySelector('#addTeamModal .action-btn.outline').addEventListener('click', closeAddTeamModal);
+    document.getElementById('btnOpenAddTeamModal')?.addEventListener('click', openAddTeamModal);
+    document.getElementById('btnSubmitAddTeam')?.addEventListener('click', saveNewTeam);
+    document.getElementById('btnCloseAddTeam')?.addEventListener('click', closeAddTeamModal);
     
     // Modals - Database Upload
-    const uploadBtn = document.querySelector('#tab-databases .action-btn');
-    if (uploadBtn) uploadBtn.addEventListener('click', () => {
+    document.getElementById('btnOpenUploadModal')?.addEventListener('click', () => {
         document.getElementById('uploadModal').style.display = 'flex';
     });
-    
-    document.querySelector('#uploadModal .action-btn').addEventListener('click', submitPresetUpload);
-    document.querySelector('#uploadModal .action-btn.outline').addEventListener('click', () => {
+    document.getElementById('btnSubmitDbUpload')?.addEventListener('click', submitPresetUpload);
+    document.getElementById('btnCloseDbUpload')?.addEventListener('click', () => {
         document.getElementById('uploadModal').style.display = 'none';
     });
 
     // Modals - Image Upload
-    const uploadImgBtn = document.querySelector('#tab-images .action-btn');
-    if (uploadImgBtn) uploadImgBtn.addEventListener('click', () => {
+    document.getElementById('btnOpenImgModal')?.addEventListener('click', () => {
         document.getElementById('uploadImageCsvModal').style.display = 'flex';
     });
-    document.querySelector('#uploadImageCsvModal .action-btn.outline').addEventListener('click', () => {
+    document.getElementById('btnCloseImgModal')?.addEventListener('click', () => {
         document.getElementById('uploadImageCsvModal').style.display = 'none';
     });
     
-    // Tab Switching
+    // Tab Switching (Bulletproof Data-Attribute Method)
     document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            let text = e.target.innerText;
-            let tabId = text.includes('Database') ? 'databases' :
-                        text.includes('Image') ? 'images' :
-                        text.includes('Live') ? 'rooms' : 'franchises';
-            switchAdminTab(tabId, e.target);
+            let tabId = e.currentTarget.dataset.tab;
+            switchAdminTab(tabId, e.currentTarget);
         });
     });
 
     // Event Delegation for dynamic "Delete" buttons (Fixes XSS Vulnerability)
-    document.getElementById('globalTeamsList').addEventListener('click', e => {
+    document.getElementById('globalTeamsList')?.addEventListener('click', e => {
         if (e.target.classList.contains('delete-team-btn')) {
-            let code = e.target.dataset.team;
-            confirmDeleteTeam(code);
+            confirmDeleteTeam(e.target.dataset.team);
         }
     });
 
-    document.getElementById('presetDbList').addEventListener('click', e => {
+    document.getElementById('presetDbList')?.addEventListener('click', e => {
         if (e.target.classList.contains('delete-db-btn')) {
-            let key = e.target.dataset.key;
-            deletePresetDB(key);
+            deletePresetDB(e.target.dataset.key);
         }
     });
 }
@@ -191,7 +180,6 @@ function renderGlobalTeams(teams) {
     let html = '';
     keys.forEach(code => {
         let t = teams[code];
-        // Note: Using data-team attribute instead of inline onclick for security
         html += `
         <div class="team-card" style="border-top:4px solid ${t.color};">
             <div class="t-code" style="color:${t.color}">${esc(code)}</div>
@@ -207,7 +195,13 @@ function renderGlobalTeams(teams) {
 function submitPresetUpload() {
     let dbName = document.getElementById('dbNameInput').value.trim();
     let fileInput = document.getElementById('csvFileInput');
-    uploadPresetDB(dbName, fileInput.files.length ? fileInput.files[0] : null);
+    
+    // NOTE: Requires uploadPresetDB to be correctly exported from csv.js in the future.
+    if (typeof uploadPresetDB === 'function') {
+        uploadPresetDB(dbName, fileInput.files.length ? fileInput.files[0] : null);
+    } else {
+        showAlert('Coming Soon', 'CSV Upload module is not fully implemented yet.');
+    }
 }
 
 function deletePresetDB(dbKey) {
@@ -229,7 +223,6 @@ function renderPresetDBs(dbs) {
     let html = '';
     keys.forEach(key => {
         let count = dbs[key].length || 0;
-        // Note: Using data-key attribute instead of inline onclick
         html += `
         <div style="background:#111; border:1px solid #333; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -242,17 +235,13 @@ function renderPresetDBs(dbs) {
     el.innerHTML = html;
 }
 
+// --- Tab Switching ---
 
-// Tab Switching (Bulletproof Version)
-    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            // We use currentTarget to ignore emoji clicks, and toLowerCase to bypass CSS caps
-            let text = e.currentTarget.textContent.toLowerCase();
-            
-            let tabId = text.includes('database') ? 'databases' :
-                        text.includes('image') ? 'images' :
-                        text.includes('live') ? 'rooms' : 'franchises';
-                        
-            switchAdminTab(tabId, e.currentTarget);
-        });
-    });
+function switchAdminTab(tabName, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    
+    let target = document.getElementById(`tab-${tabName}`);
+    if (target) target.classList.add('active');
+    if (el) el.classList.add('active');
+}
