@@ -130,7 +130,6 @@ function executeUIBoot() {
     presenceRef.set(true);
     presenceRef.onDisconnect().remove();
     
-    // Explicitly passing log string WITHOUT adding time later
     logAction(`✅ <strong>${esc(state.myRepName)}</strong> connected as ${esc(state.myTeamName)}.`);
     
     attachFirebaseListeners();
@@ -344,8 +343,6 @@ function updateLiveUI(data, amIWinning) {
     }
 
     let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
-    
-    // FIXED: Added width:100%, box-sizing:border-box, and align-items:center to perfectly space out the history rows
     let historyHtml = stackArr.slice().reverse().map(b => {
         let tColor = state.allRegisteredTeams[b.bidder]?.color || '#fff';
         return `<div style="display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box; padding:4px 6px; background:#111; border-radius:4px; font-size:10px;"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
@@ -471,12 +468,22 @@ window.addEventListener('watchlistUpdated', () => window.refreshLists());
 window.addEventListener('rosterOrderUpdated', updateMyTeamUI);
 
 let _deckRoleFilter = '';
-window.setRoleFilter = function(role, el) {
-    _deckRoleFilter = role;
-    document.querySelectorAll('.role-filter-btn').forEach(b => {
-        let active = b.dataset.role === role;
-        b.classList.toggle('active', active);
-    });
+
+// CHANGED: Replaced setRoleFilter completely with this toggleStarFilter logic
+window.toggleStarFilter = function(el) {
+    if (_deckRoleFilter === 'STAR') {
+        _deckRoleFilter = '';
+        el.style.background = '#111';
+        el.style.borderColor = '#333';
+        el.style.boxShadow = 'none';
+        el.style.color = '#888';
+    } else {
+        _deckRoleFilter = 'STAR';
+        el.style.background = '#22222d';
+        el.style.borderColor = '#ffc107';
+        el.style.boxShadow = '0 0 10px rgba(255,193,7,0.2)';
+        el.style.color = '#fff';
+    }
     window.refreshLists();
 };
 
@@ -544,7 +551,6 @@ function updateAllPopups() {
     });
 }
 
-// FIXED: Entirely removed the time formatting and prepending
 function logAction(msg) {
     let entry = document.createElement('div'); 
     entry.className = 'log-entry';
@@ -577,7 +583,6 @@ document.addEventListener('keydown', e => {
         if (!document.getElementById('mainActionButton').disabled && typeof window.placeBid === 'function') window.placeBid(); 
     }
 });
-
 
 let isPaddleHolder = false;
 
@@ -672,6 +677,9 @@ window.exportAllSquadsCSV = typeof exportAllSquadsCSV !== 'undefined' ? exportAl
 window.exportAllSquadsPDF = typeof exportAllSquadsPDF !== 'undefined' ? exportAllSquadsPDF : null;
 window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
 window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
-window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
+
+// EXPORTED: New Star Filter
+window.toggleStarFilter = typeof toggleStarFilter !== 'undefined' ? toggleStarFilter : null;
+
 window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
 window.dismissBroadcast = typeof dismissBroadcast !== 'undefined' ? dismissBroadcast : null;
