@@ -6,6 +6,7 @@
 import { state } from '../shared/state.js';
 import { showAlert, showConfirm, showPrompt, esc } from '../shared/dom.js';
 import { playSound } from '../shared/audio.js';
+import { getCurrentServerTime } from '../shared/firebase.js';
 
 const CRORE = 10_000_000;
 
@@ -14,7 +15,8 @@ const CRORE = 10_000_000;
  */
 export function persistEvent(msg) {
     if (state.roomRef) {
-        state.roomRef.child('auction_log').push({ msg, t: Date.now() });
+        // FIX: Use synchronized server time instead of local Date.now()
+        state.roomRef.child('auction_log').push({ msg, t: getCurrentServerTime() });
     }
 }
 
@@ -34,7 +36,8 @@ export function pushPlayerToBlock(index) {
         current_bid: p.base_price,
         highest_bidder: 'Base Price',
         auction_state: 'cooldown',
-        timer_end: Date.now() + (cooldownSecs * 1000),
+        // FIX: Use synchronized server time
+        timer_end: getCurrentServerTime() + (cooldownSecs * 1000),
         bid_stack: []
     });
     persistEvent(msg);
@@ -49,7 +52,7 @@ export function pullRandomFromSet() {
     
     let available = state.playerPool
         .map((p, i) => ({ p, i }))
-        .filter(item => item.p.set === activeSet && item.p.status !== 'sold' && item.p.status !== 'unsold');
+        .filter(item => item.p && item.p.set === activeSet && item.p.status !== 'sold' && item.p.status !== 'unsold');
         
     if (!available.length) { 
         showAlert('Empty Set', 'No available players left in this set!'); 
@@ -168,7 +171,8 @@ export function undoLastBid() {
                 liveData.bid_stack = arr.length ? arr : null;
                 liveData.current_bid = prev ? prev.amount : (p.base_price || 0);
                 liveData.highest_bidder = prev ? prev.bidder : 'Base Price';
-                liveData.timer_end = Date.now() + ((state.settings.bid_timer_secs || 15) * 1000);
+                // FIX: Use synchronized server time
+                liveData.timer_end = getCurrentServerTime() + ((state.settings.bid_timer_secs || 15) * 1000);
                 liveData.auction_state = 'bidding';
                 
                 return liveData;
@@ -188,9 +192,13 @@ export function confirmResetAuction() {
         'This erases ALL squads, budgets, and bids. Every player returns to Available.\n\nTeam PINs are preserved — franchises can log back in without re-registering.\n\nThis cannot be undone.',
         () => showPrompt('Final Confirmation', 'Type RESET to wipe the entire auction:', 'RESET', val => {
             if (val === 'RESET') {
-                let resetPool = state.playerPool.map(p => { 
-                    p.status = 'available'; p.team = null; p.sold_price = null; return p; 
-                });
+                // FIX: Use shallow copies to prevent corrupting the local memory state
+                let resetPool = state.playerPool.map(p => ({ 
+                    ...p, 
+                    status: 'available', 
+                    team: null, 
+                    sold_price: null 
+                }));
                 
                 state.roomRef.update({ player_pool: resetPool, logged_in_teams: null });
                 
@@ -218,11 +226,4 @@ export function confirmResetAuction() {
     );
 }
 
-// Global attachments for HTML
-window.pushPlayerToBlock = pushPlayerToBlock;
-window.pullRandomFromSet = pullRandomFromSet;
-window.sellPlayer = sellPlayer;
-window.passPlayer = passPlayer;
-window.undoLastSale = undoLastSale;
-window.undoLastBid = undoLastBid;
-window.confirmResetAuction = confirmResetAuction;
+// NOTE: All window.* assignments have been permanently removed.
