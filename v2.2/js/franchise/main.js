@@ -130,6 +130,7 @@ function executeUIBoot() {
     presenceRef.set(true);
     presenceRef.onDisconnect().remove();
     
+    // Explicitly passing log string WITHOUT adding time later
     logAction(`✅ <strong>${esc(state.myRepName)}</strong> connected as ${esc(state.myTeamName)}.`);
     
     attachFirebaseListeners();
@@ -220,12 +221,12 @@ function attachFirebaseListeners() {
     let isLogLoaded = false;
     state.roomRef.child('auction_log').limitToLast(100).once('value', snap => {
         let entries = snap.val() || {};
-        Object.values(entries).sort((a,b) => a.t - b.t).forEach(e => logAction(e.msg, new Date(e.t)));
+        Object.values(entries).sort((a,b) => a.t - b.t).forEach(e => logAction(e.msg));
         isLogLoaded = true;
     });
     state.roomRef.child('auction_log').limitToLast(100).on('child_added', snap => {
         if (!isLogLoaded) return;
-        let e = snap.val(); logAction(e.msg, new Date(e.t));
+        let e = snap.val(); logAction(e.msg);
     });
 
     state.roomRef.child('broadcast').on('value', snap => {
@@ -285,7 +286,8 @@ function updateLiveUI(data, amIWinning) {
         }
 
         if (data.auction_state === 'bidding' && t <= 5 && t > 0 && t !== _lastTimerWarnSecond) {
-            _lastTimerWarnSecond = t; playSound('timer_warn');
+            _lastTimerWarnSecond = t; 
+            playSound('timer_warn');
         }
     }, 200);
 
@@ -342,9 +344,11 @@ function updateLiveUI(data, amIWinning) {
     }
 
     let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
+    
+    // FIXED: Added width:100%, box-sizing:border-box, and align-items:center to perfectly space out the history rows
     let historyHtml = stackArr.slice().reverse().map(b => {
         let tColor = state.allRegisteredTeams[b.bidder]?.color || '#fff';
-        return `<div class="hist-row"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
+        return `<div style="display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box; padding:4px 6px; background:#111; border-radius:4px; font-size:10px;"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
     }).join('');
     document.getElementById('franchiseBidHistory').innerHTML = historyHtml;
 }
@@ -540,11 +544,11 @@ function updateAllPopups() {
     });
 }
 
+// FIXED: Entirely removed the time formatting and prepending
 function logAction(msg) {
-    let time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
     let entry = document.createElement('div'); 
     entry.className = 'log-entry';
-    entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+    entry.innerHTML = msg; 
     const logContainer = document.getElementById('logContainer');
     if (logContainer) {
         logContainer.appendChild(entry);
@@ -575,22 +579,19 @@ document.addEventListener('keydown', e => {
 });
 
 
-// --- REBUILT V2.2 WAR ROOM MULTI-USER LOGIC ---
 let isPaddleHolder = false;
 
 function initializeWarRoom(teamId, myUid, myName) {
     const connectedRef = db.ref('.info/connected');
     const userStatusRef = db.ref(`rooms/${state.roomKey}/franchises/${teamId}/onlineUsers/${myUid}`);
 
-    // 1. Manage User Online Status
     connectedRef.on('value', (snap) => {
         if (snap.val() === true) {
             userStatusRef.set(true);
-            userStatusRef.onDisconnect().remove(); // Remove me when I disconnect
+            userStatusRef.onDisconnect().remove();
         }
     });
 
-    // 2. Auto-Transfer & Online Rep Tracking
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/onlineUsers`).on('value', (snap) => {
         const users = snap.val() || {};
         const userIds = Object.keys(users);
@@ -599,13 +600,9 @@ function initializeWarRoom(teamId, myUid, myName) {
         const countElement = document.getElementById('onlineRepsCount');
         if(countElement) countElement.innerText = count;
 
-        // If I am the FIRST user in the currently online list, I check if the paddle needs rescuing.
-        // This prevents race conditions where 3 users try to claim it at the exact same time.
         if (userIds.length > 0 && userIds[0] === myUid) {
             db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).once('value', pSnap => {
                 const paddle = pSnap.val();
-                
-                // If there is no paddle owner OR the paddle owner's UID is no longer in the online list
                 if (!paddle || !users[paddle.uid]) {
                     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
                 }
@@ -613,10 +610,8 @@ function initializeWarRoom(teamId, myUid, myName) {
         }
     });
 
-    // 3. UI Delegation (Based on who has the paddle)
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).on('value', (snap) => {
         const paddleData = snap.val();
-        
         const bidBtn = document.getElementById('mainActionButton'); 
         const reqBtn = document.getElementById('requestPaddleBtn');
         const sugBtn = document.getElementById('suggestBidBtn');
@@ -637,7 +632,6 @@ function initializeWarRoom(teamId, myUid, myName) {
         if(nameTag) nameTag.innerText = paddleData ? paddleData.name : "Available";
     });
 
-    // 4. Visual Pings for the Paddle Holder
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/suggestedBid`).on('value', (snap) => {
         if (isPaddleHolder && snap.exists()) {
             const bidBtn = document.getElementById('mainActionButton');
@@ -648,7 +642,6 @@ function initializeWarRoom(teamId, myUid, myName) {
         }
     });
 
-    // 5. Button Listeners
     const sugBtn = document.getElementById('suggestBidBtn');
     if(sugBtn) {
         sugBtn.replaceWith(sugBtn.cloneNode(true));
@@ -666,8 +659,6 @@ function initializeWarRoom(teamId, myUid, myName) {
     }
 }
 
-
-// --- V2.2 GLOBAL SCOPE BRIDGE (FRANCHISE PORTAL) ---
 window.backToGateway = typeof backToGateway !== 'undefined' ? backToGateway : null;
 window.handleVerifyRoomKey = typeof handleVerifyRoomKey !== 'undefined' ? handleVerifyRoomKey : null;
 window.prepareCustomLogin = typeof prepareCustomLogin !== 'undefined' ? prepareCustomLogin : null;
