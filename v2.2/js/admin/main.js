@@ -235,13 +235,21 @@ function renderPresetDBs(dbs) {
     el.innerHTML = html;
 }
 
-// --- Tab Switching ---
-
-function switchAdminTab(tabName, el) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
-    let target = document.getElementById(`tab-${tabName}`);
-    if (target) target.classList.add('active');
-    if (el) el.classList.add('active');
-}
+// Tab Switching (Bulletproof Inline Version)
+    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            let tabId = e.currentTarget.dataset.tab;
+            
+            // 1. Hide all tab content panels
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            // 2. Remove the yellow highlight from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            // 3. Show the targeted content panel
+            let target = document.getElementById(`tab-${tabId}`);
+            if (target) target.classList.add('active');
+            
+            // 4. Add the yellow highlight to the clicked button
+            e.currentTarget.classList.add('active');
+        });
+    });
