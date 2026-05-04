@@ -670,7 +670,10 @@ function initializeWarRoom(teamId, myUid, myName) {
     // 2. Paddle Delegation
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).on('value', (snap) => {
         const paddleData = snap.val();
-        const bidBtn = document.getElementById('bidBtn');
+        
+        // FIXED: Now properly targets the renamed mainActionButton
+        const bidBtn = document.getElementById('mainActionButton'); 
+        
         const reqBtn = document.getElementById('requestPaddleBtn');
         const sugBtn = document.getElementById('suggestBidBtn');
         const nameTag = document.getElementById('paddleHolderName');
@@ -693,7 +696,10 @@ function initializeWarRoom(teamId, myUid, myName) {
     // 3. Visual Pings
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/suggestedBid`).on('value', (snap) => {
         if (isPaddleHolder && snap.exists()) {
-            const bidBtn = document.getElementById('bidBtn');
+            
+            // FIXED: Now properly targets the renamed mainActionButton
+            const bidBtn = document.getElementById('mainActionButton');
+            
             if(bidBtn) {
                 bidBtn.classList.add('pulse-green');
                 setTimeout(() => bidBtn.classList.remove('pulse-green'), 2000);
