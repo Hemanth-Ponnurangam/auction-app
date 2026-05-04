@@ -17,27 +17,25 @@
 
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
 
-<!-- Replace your current Super Admin login wrapper with this -->
 <div id="adminLoginScreen" class="gateway-container">
     <div class="gateway-card" style="max-width: 400px;">
         <div style="font-size: 32px; margin-bottom: 10px;">🛡️</div>
         <h1 style="color:#fff; font-size:24px; margin-bottom:5px; letter-spacing:2px;">SUPER ADMIN</h1>
         <p style="color:#888; margin-bottom:25px; font-size:12px; text-transform: uppercase; letter-spacing: 1px;">System Access Only</p>
         
-        <!-- NO inline onkeypress here -->
         <input type="password" id="adminPinInput" class="login-input" placeholder="Enter PIN" maxlength="6" style="text-align:center; font-size:22px; letter-spacing:8px;">
         
-        <!-- NO inline onclick here -->
-        <button class="submit-btn" style="margin-top: 10px;">AUTHENTICATE</button>
-        <button class="back-btn" style="margin-top: 15px;" onclick="window.location.href='index.html'">← Back to Home</button>
+        <button id="btnAdminLogin" class="submit-btn" style="margin-top: 10px;">AUTHENTICATE</button>
+        <button id="btnAdminBack" class="back-btn" style="margin-top: 15px;">← Back to Home</button>
     </div>
 </div>
 
 <div id="masterDashboard">
     <div class="header">
         <h1 class="main-title">🛡️ <span>PLATFORM CONSOLE</span> <span class="badge">SUPER ADMIN</span></h1>
-        <button class="action-btn outline" onclick="logoutAdmin()">🔒 LOCK CONSOLE</button>
+        <button class="action-btn outline" id="btnLogoutAdmin">🔒 LOCK CONSOLE</button>
     </div>
+    
     <div class="tabs">
         <button class="tab-btn active" data-tab="databases">🗄️ Database Manager</button>
         <button class="tab-btn" data-tab="images">📸 Image Directory</button>
@@ -54,7 +52,7 @@
                     <input type="text" id="adminDbSearch" class="admin-search" placeholder="🔍 Search players…">
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="action-btn" onclick="document.getElementById('uploadModal').style.display = 'flex'">+ Upload CSV</button>
+                    <button id="btnOpenUploadModal" class="action-btn">+ Upload CSV</button>
                 </div>
             </div>
             <div style="max-height:600px; overflow-y:auto; border:1px solid #222; border-radius:8px;">
@@ -71,7 +69,7 @@
                     <input type="text" id="adminImgSearch" class="admin-search" placeholder="🔍 Search mapping…">
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="action-btn" onclick="document.getElementById('uploadImageCsvModal').style.display='flex'">📥 Bulk Upload CSV</button>
+                    <button id="btnOpenImgModal" class="action-btn">📥 Bulk Upload CSV</button>
                     <button class="action-btn outline">+ Add Single Image</button>
                 </div>
             </div>
@@ -99,7 +97,7 @@
         <div class="panel">
             <div class="panel-header">
                 <h2 class="panel-title">Global Franchise Registry</h2>
-                <button class="action-btn" onclick="openAddTeamModal()">+ Add New Team</button>
+                <button id="btnOpenAddTeamModal" class="action-btn">+ Add New Team</button>
             </div>
             <p style="color:#888; font-size:12px; margin-top:0;">These teams are available globally across all rooms.</p>
             <div id="globalTeamsList" class="team-grid"></div>
@@ -107,6 +105,7 @@
     </div>
 </div>
 
+<!-- Modals -->
 <div id="uploadModal" class="modal-overlay">
     <div class="modal-card">
         <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Upload Database</h2>
@@ -115,12 +114,11 @@
         <label class="modal-label">CSV File</label>
         <input type="file" id="csvFileInput" accept=".csv" style="color:#aaa; margin-bottom:15px; width:100%;">
         <div style="font-size:11px; color:#aaa; background:#0a0a0f; padding:10px; border-radius:6px; border:1px dashed #444; margin-bottom:15px; line-height:1.7;">
-            <strong style="color:#ffc107;">STRICT 12 COLUMNS REQUIRED:</strong><br>
-            Name, Base Price, Set, Role, Franchise, Nationality, Runs, Average, SR, Wickets, Economy, Bowling SR
+            <strong style="color:#ffc107;">STRICT COLUMNS REQUIRED</strong>
         </div>
         <div style="display:flex; gap:10px;">
-            <button class="action-btn" style="flex:1;" onclick="submitPresetUpload()">UPLOAD &amp; SAVE</button>
-            <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('uploadModal').style.display='none'">CANCEL</button>
+            <button class="action-btn" style="flex:1;" id="btnSubmitDbUpload">UPLOAD &amp; SAVE</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseDbUpload">CANCEL</button>
         </div>
     </div>
 </div>
@@ -130,13 +128,9 @@
         <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Bulk Upload Images</h2>
         <label class="modal-label">CSV File</label>
         <input type="file" id="uploadImageFile" accept=".csv" style="color:#aaa; margin-bottom:15px; width:100%;">
-        <div style="font-size:11px; color:#aaa; background:#0a0a0f; padding:10px; border-radius:6px; border:1px dashed #444; margin-bottom:15px; line-height:1.7;">
-            <strong style="color:#ffc107;">REQUIRED COLUMNS (2):</strong> Name, URL<br>
-            <em>Names must match the auction database perfectly to link automatically.</em>
-        </div>
         <div style="display:flex; gap:10px;">
             <button class="action-btn" style="flex:1;">IMPORT MAPPINGS</button>
-            <button class="action-btn outline" style="flex:1;" onclick="document.getElementById('uploadImageCsvModal').style.display='none'">CANCEL</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseImgModal">CANCEL</button>
         </div>
     </div>
 </div>
@@ -151,8 +145,8 @@
         <label class="modal-label">Theme Color</label>
         <input type="color" id="ntColor" value="#007bff" style="width:100%; height:42px; border-radius:6px; border:1px solid #333; background:#000; cursor:pointer; margin-bottom:20px; padding:2px;">
         <div style="display:flex; gap:10px;">
-            <button class="action-btn" style="flex:1;" onclick="saveNewTeam()">ADD TEAM</button>
-            <button class="action-btn outline" style="flex:1;" onclick="closeAddTeamModal()">CANCEL</button>
+            <button class="action-btn" style="flex:1;" id="btnSubmitAddTeam">ADD TEAM</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseAddTeam">CANCEL</button>
         </div>
     </div>
 </div>
