@@ -15,23 +15,17 @@
     <link rel="stylesheet" href="css/franchise.css">
     
     <style>
-        /* Fixes for Timer Repositioning & Anti-Cropping */
-        #bidZoneBox .timer-arc-wrapper {
-            position: relative !important;
-            top: 0 !important;
-            right: 0 !important;
-            margin: 0;
-        }
-        
+        /* Forces the center panel to never crop the bottom buttons */
         #centerPanel {
             overflow-y: auto !important;
-            padding-bottom: 25px !important; /* Prevents the button from hugging the bottom edge */
+            padding-bottom: 20px !important; 
         }
         
         #mainActionButton {
             padding: 16px !important;
-            font-size: 20px !important;
+            font-size: 18px !important;
             letter-spacing: 1px;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -124,9 +118,9 @@
         </div>
 
         <div class="col-center">
-            <div class="panel" id="centerPanel">
+            <div class="panel" id="centerPanel" style="display:flex; flex-direction:column;">
                 
-                <div class="player-top-section" id="playerTopSection">
+                <div class="player-top-section" id="playerTopSection" style="position:relative;">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
                     <div class="player-header">
                         <span class="label-text">On The Block</span>
@@ -149,8 +143,8 @@
 
                 <div class="bidding-zone" id="bidZoneBox" style="padding: 15px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
                     
-                    <!-- NEW FLEX ROW FOR BID AND MOVED TIMER -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <!-- NEW FLEX ROW: Current Bid + Timer -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #111; padding: 10px 15px; border-radius: 10px; border: 1px solid #222;">
                         <div>
                             <span class="label-text" style="font-size:12px;">Current Bid</span>
                             <div class="current-bid-display status-neutral" id="currentBidContainer" style="margin: 5px 0 0 0; justify-content: flex-start;">
@@ -159,8 +153,8 @@
                             </div>
                         </div>
                         
-                        <!-- TIMER MOVED INSIDE THE BID CARD -->
-                        <div class="timer-arc-wrapper" id="timerArcWrapper">
+                        <!-- TIMER (Forced to Relative Positioning via Inline Style) -->
+                        <div class="timer-arc-wrapper" id="timerArcWrapper" style="position:relative !important; top:0 !important; right:0 !important; margin:0; width:72px; height:72px;">
                             <svg class="timer-arc-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
                                 <circle class="arc-bg"   cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="4"/>
                                 <circle class="arc-fill" id="timerArcFill" cx="36" cy="36" r="30" fill="none"
@@ -171,20 +165,20 @@
                         </div>
                     </div>
                     
-                    <!-- V2.2 War Room UI -->
-                    <div class="team-status" style="margin-bottom: 12px; text-align: center;">
+                    <!-- V2.2 War Room Status -->
+                    <div class="team-status" style="margin-bottom: 15px; text-align: center;">
                         <div class="status-dot green" style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:#00ff00; box-shadow: 0 0 8px #00ff00;"></div>
                         <span id="onlineRepsCount" style="color: #aaa; font-size: 13px; font-weight: bold;">1</span> <span style="color: #aaa; font-size: 13px;">Online</span>
-                        <div id="activePaddleNametag" style="margin-top: 5px; color: #00ff00; font-size: 13px; text-shadow: 0 0 5px #00ff00;">Paddle: <span id="paddleHolderName">None</span></div>
+                        <div id="activePaddleNametag" style="margin-top: 5px; color: #0dcaf0; font-size: 13px; text-shadow: 0 0 5px #0dcaf0; font-weight:bold;">Paddle: <span id="paddleHolderName" style="color:#fff;">None</span></div>
                     </div>
 
-                    <div class="action-board" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
+                    <!-- Clean Action Board -->
+                    <div class="action-board" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
                         
-                        <!-- FIXED: ID renamed to mainActionButton so javascript attaches properly -->
                         <button id="mainActionButton" class="action-btn-bid massive-bid-btn" style="display: none; width: 100%;">PLACE BID</button>
                         
-                        <button id="requestPaddleBtn" style="flex: 1; padding: 12px; background: #1a1a24; border: 1px solid #444; color: #fff; border-radius: 6px; font-weight: bold; cursor: pointer;">REQUEST PADDLE</button>
-                        <button id="suggestBidBtn" style="display: none; flex: 1; padding: 12px; background: #1a1a24; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius: 6px; font-weight: bold; cursor: pointer;">SUGGEST BID</button>
+                        <button id="requestPaddleBtn" style="flex: 1; padding: 15px; background: #28a745; border: 1px solid #1e7e34; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Request Paddle</button>
+                        <button id="suggestBidBtn" style="display: none; flex: 1; padding: 15px; background: #1a1a24; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Suggest Bid</button>
                     </div>
                     
                     <div id="franchiseBidHistory" class="franchise-bid-history" style="flex: 1; overflow-y: auto; max-height: 80px; border-top: 1px solid #222; padding-top: 10px;"></div>
@@ -236,7 +230,6 @@
     <div class="bottom-row mobile-overlay-panel" id="otherTeamsList"></div>
 </div>
 
-<!-- INJECTED THE MISSING JUMP BID POPUP HTML -->
 <div id="jumpBidPopup" style="position: fixed; display: none; background: #161620; border: 1px solid #444; border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.9); z-index: 9999; flex-direction: column; gap: 8px; width: 140px; transform: translate(-50%, -110%);">
     <button class="jb-5" onclick="typeof window.placeExactBid === 'function' ? window.placeExactBid((window.state?.liveState?.current_bid || 0) + 5000000) : null">+5 Lakhs</button>
     <button class="jb-10" onclick="typeof window.placeExactBid === 'function' ? window.placeExactBid((window.state?.liveState?.current_bid || 0) + 10000000) : null">+10 Lakhs</button>
