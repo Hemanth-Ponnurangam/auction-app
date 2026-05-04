@@ -29,19 +29,34 @@ export function showConfirm(title, msg, onConfirm) {
     document.getElementById('btnConfOk').onclick = () => { closeModal(); onConfirm(); };
 }
 
+// ... (keep esc, closeModal, showConfirm as they are) ...
+
 export function showPrompt(title, msg, placeholder, onConfirm) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalMessage').textContent = msg;
     let inp = document.getElementById('modalInput');
-    inp.style.display = 'block'; inp.value = ''; inp.placeholder = placeholder || '';
+    inp.style.display = 'block'; 
+    inp.value = ''; 
+    inp.placeholder = placeholder || '';
+    
     let btnDiv = document.getElementById('modalButtons');
-    btnDiv.innerHTML = `<button class="action-btn" style="flex:1;" id="btnPromptOk">SUBMIT</button><button class="action-btn outline" style="flex:1;" onclick="closeModal()">CANCEL</button>`;
+    btnDiv.innerHTML = `<button class="action-btn" style="flex:1;" id="btnPromptOk">SUBMIT</button><button class="action-btn outline" style="flex:1;" id="btnPromptCancel">CANCEL</button>`;
+    
     document.getElementById('appModal').style.display = 'flex';
     inp.focus();
-    document.getElementById('btnPromptOk').onclick = () => {
-        let val = inp.value.trim(); closeModal(); if(val) onConfirm(val);
+    
+    // FIX: Use event listeners, always call onConfirm
+    document.getElementById('btnPromptOk').addEventListener('click', () => {
+        let val = inp.value.trim(); 
+        closeModal(); 
+        onConfirm(val); 
+    });
+    
+    document.getElementById('btnPromptCancel').addEventListener('click', closeModal);
+    
+    inp.onkeypress = (e) => { 
+        if (e.key === 'Enter') document.getElementById('btnPromptOk').click(); 
     };
-    inp.onkeypress = (e) => { if (e.key === 'Enter') document.getElementById('btnPromptOk').click(); };
 }
 
 window.closeModal = closeModal;
