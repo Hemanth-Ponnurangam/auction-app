@@ -17,13 +17,18 @@
 
 <div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
 
+<!-- Replace your current Super Admin login wrapper with this -->
 <div id="adminLoginScreen" class="gateway-container">
-    <div class="gateway-card">
-        <h1 style="color:#fff; font-size:24px; margin-bottom:10px; letter-spacing:2px;">🛡️ SUPER ADMIN</h1>
-        <p style="color:#aaa; margin-bottom:25px; font-size:12px;">Super Admin Access Only</p>
-        <input type="password" id="superPin" class="pin-input" placeholder="PIN" maxlength="8"
-               onkeypress="if(event.key==='Enter') handleAdminLogin()">
-        <button class="submit-btn" onclick="handleAdminLogin()">AUTHENTICATE</button>
+    <div class="gateway-card" style="max-width: 400px;">
+        <div style="font-size: 32px; margin-bottom: 10px;">🛡️</div>
+        <h1 style="color:#fff; font-size:24px; margin-bottom:5px; letter-spacing:2px;">SUPER ADMIN</h1>
+        <p style="color:#888; margin-bottom:25px; font-size:12px; text-transform: uppercase; letter-spacing: 1px;">System Access Only</p>
+        
+        <!-- Styled Input with centered text, letter spacing for PINs, and Enter-key support -->
+        <input type="password" id="adminPinInput" class="login-input" placeholder="Enter PIN" maxlength="6" style="text-align:center; font-size:22px; letter-spacing:8px;" onkeypress="if(event.key==='Enter') handleAdminLogin()">
+        
+        <button class="submit-btn" onclick="handleAdminLogin()" style="margin-top: 10px;">AUTHENTICATE</button>
+        <button class="back-btn" style="margin-top: 15px;" onclick="window.location.href='index.html'">← Back to Home</button>
     </div>
 </div>
 
