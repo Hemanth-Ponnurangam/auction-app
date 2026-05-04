@@ -26,18 +26,28 @@ window.onload = function() {
     }
 };
 
+// Expose the function to the global window object
 window.handleAdminLogin = () => {
-    let pin = document.getElementById('superPin').value.trim();
-    verifySuperAdmin(pin).then(valid => {
-        if (valid) {
-            sessionStorage.setItem('superAdminPin', pin);
-            isSuperAdmin = true;
-            document.getElementById('adminLoginScreen').style.display = 'none';
-            executeAdminBoot();
-        }
-    });
-};
+    const pin = document.getElementById('adminPinInput').value.trim();
+    
+    if (!pin) {
+        alert("Please enter a PIN.");
+        return;
+    }
 
+    // Replace this condition with your actual Firebase check or hardcoded PIN
+    if (pin === "1234") { // Example hardcoded fallback PIN
+        // Hide login, show dashboard
+        document.getElementById('adminLoginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block'; // Or whatever your main dashboard ID is
+        
+        // Execute your boot logic here
+        // loadAdminData();
+    } else {
+        alert("Incorrect Super Admin PIN.");
+        document.getElementById('adminPinInput').value = '';
+    }
+};
 window.logoutAdmin = () => {
     sessionStorage.removeItem('superAdminPin');
     window.location.reload();
