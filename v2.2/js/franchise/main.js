@@ -20,8 +20,6 @@ let activePopups = {};
 let isUserScrollingLog = false;
 let pendingCode = '', pendingColor = '', isCustomFlow = false;
 
-// --- Boot Sequence ---
-
 window.onload = function() {
     let savedKey = sessionStorage.getItem('roomKey');
     if (savedKey) {
@@ -54,15 +52,8 @@ window.onload = function() {
     setInterval(updateAllPopups, 500);
 };
 
-// --- Login & Gateway Wrappers ---
-
-window.showRoomKeyScreen = () => {
-    document.getElementById('roomKeyScreen').style.display = 'flex';
-};
-
-window.backToGateway = () => {
-    window.location.href = 'index.html';
-};
+window.showRoomKeyScreen = () => { document.getElementById('roomKeyScreen').style.display = 'flex'; };
+window.backToGateway = () => { window.location.href = 'index.html'; };
 
 window.handleVerifyRoomKey = () => {
     let key = document.getElementById('joinRoomKey').value.trim();
@@ -78,10 +69,7 @@ window.handleVerifyRoomKey = () => {
 function loadGlobalFranchises() {
     db.ref('global_teams').once('value', snap => {
         let teams = snap.val(), grid = document.getElementById('globalTeamsGrid');
-        if (!teams) { 
-            grid.innerHTML = '<p style="grid-column:span 2; color:#dc3545; font-size:11px;">No global franchises found. Contact your Admin.</p>'; 
-            return; 
-        }
+        if (!teams) { grid.innerHTML = '<p style="grid-column:span 2; color:#dc3545; font-size:11px;">No global franchises found. Contact your Admin.</p>'; return; }
         let html = '';
         for (let code in teams) {
             let t = teams[code];
@@ -117,7 +105,6 @@ window.backToSelection = () => {
 window.handleSubmitAuth = () => {
     let repName = document.getElementById('repNameInput').value.trim();
     let pin     = document.getElementById('pinInput').value.trim();
-    
     let finalCode  = pendingCode;
     let finalColor = pendingColor;
     
@@ -148,45 +135,34 @@ function executeUIBoot() {
     attachFirebaseListeners();
     initWatchlistListener();
 
-    // PATCH: Initialize War Room using custom session data instead of Firebase Auth
     let myUid = state.myRepName.replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5);
     initializeWarRoom(state.myTeamName, myUid, state.myRepName);
 }
 
 window.logout = () => {
-    if (state.roomRef && state.myTeamName) {
-        state.roomRef.child('logged_in_teams/' + state.myTeamName).remove();
-    }
+    if (state.roomRef && state.myTeamName) state.roomRef.child('logged_in_teams/' + state.myTeamName).remove();
     sessionStorage.clear();
     window.location.reload();
 };
 
-// --- Firebase Listeners ---
-
 function attachFirebaseListeners() {
-    // Connection Monitor
     db.ref('.info/connected').on('value', snap => {
         document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block';
     });
 
-    // Settings
     state.roomRef.child('settings').on('value', snap => {
         let s = snap.val() || {};
         state.settings = { ...state.settings, ...s };
     });
 
-    // Teams & Presence
     state.roomRef.child('teams_auth').on('value', snap => {
         state.allRegisteredTeams = snap.val() || {};
-        updateTeamDropdown();
-        recalculateBudgets();
-        updateMyTeamUI();
+        updateTeamDropdown(); recalculateBudgets(); updateMyTeamUI();
     });
 
     state.roomRef.child('logged_in_teams').on('value', snap => {
         state.activePresence = snap.val() || {};
         updateMyTeamUI();
-        
         let aucStatus = document.getElementById('auctioneerStatus');
         if (aucStatus) {
             let isAucOnline = state.activePresence['ADMIN'] || false;
@@ -195,24 +171,17 @@ function attachFirebaseListeners() {
         }
     });
 
-    // Player Pool
     state.roomRef.child('player_pool').once('value', snap => {
         let raw = snap.val() || [];
         state.playerPool = Array.isArray(raw) ? raw : Object.values(raw);
-        populateSetDropdown();
-        recalculateBudgets();
-        window.refreshLists();
-        updateMyTeamUI();
+        populateSetDropdown(); recalculateBudgets(); window.refreshLists(); updateMyTeamUI();
     });
 
     state.roomRef.child('player_pool').on('child_changed', snap => {
         let idx = parseInt(snap.key);
         if (!isNaN(idx)) {
             state.playerPool[idx] = snap.val();
-            recalculateBudgets();
-            window.refreshLists();
-            updateMyTeamUI();
-            
+            recalculateBudgets(); window.refreshLists(); updateMyTeamUI();
             if (state.liveState.auction_state === 'sold' && _latestLiveData) {
                 let soldP = state.playerPool[_latestLiveData.current_player_index];
                 let amIWinning = soldP?.team === state.myTeamName;
@@ -221,7 +190,6 @@ function attachFirebaseListeners() {
         }
     });
     
-    // Global Images
     db.ref('global_player_images').on('value', snap => {
         state.globalImageMap = snap.val() || {};
         if (state.liveState.current_player_index >= 0 && state.playerPool.length > 0) {
@@ -229,19 +197,16 @@ function attachFirebaseListeners() {
         }
     });
 
-    // Live State
     state.roomRef.child('live_state').on('value', snap => {
         let data = snap.val(); 
         if (!data) return;
         _latestLiveData = data;
         state.liveState = data;
-        
         let amIWinning = (data.highest_bidder === state.myTeamName);
         updateLiveUI(data, amIWinning);
-        updateMyTeamUI(); // Trigger glow updates on team cards
+        updateMyTeamUI(); 
     });
 
-    // Chat & Logs
     let isChatLoaded = false;
     state.roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
         if (!isChatLoaded) return;
@@ -263,14 +228,13 @@ function attachFirebaseListeners() {
         let e = snap.val(); logAction(e.msg, new Date(e.t));
     });
 
-    // Broadcast
     state.roomRef.child('broadcast').on('value', snap => {
         let d = snap.val();
         let banner = document.getElementById('broadcastBanner');
         if (d && d.active && d.message) {
             document.getElementById('broadcastText').textContent = d.message;
             banner.classList.remove('show');
-            void banner.offsetWidth; // trigger reflow
+            void banner.offsetWidth; 
             banner.classList.add('show');
             let connVisible = document.getElementById('connBanner').style.display !== 'none';
             banner.style.top = connVisible ? '36px' : '0';
@@ -280,12 +244,9 @@ function attachFirebaseListeners() {
     });
 }
 
-// --- Live UI Updates ---
-
 function updateLiveUI(data, amIWinning) {
     document.getElementById('actualBidAmount').textContent = `₹${((data.current_bid || 0) / CRORE).toFixed(2)} Cr`;
     
-    // Timer Loop
     if (window.uiTimer) clearInterval(window.uiTimer);
     window.uiTimer = setInterval(() => {
         let el  = document.getElementById('playerTimer');
@@ -324,14 +285,12 @@ function updateLiveUI(data, amIWinning) {
         }
 
         if (data.auction_state === 'bidding' && t <= 5 && t > 0 && t !== _lastTimerWarnSecond) {
-            _lastTimerWarnSecond = t; 
-            playSound('timer_warn');
+            _lastTimerWarnSecond = t; playSound('timer_warn');
         }
     }, 200);
 
     evaluateBidButtonStatus(amIWinning);
     
-    // Update Central Player Stats & Images
     let pIdx = data.current_player_index !== undefined ? data.current_player_index : -1;
     if (pIdx >= 0 && state.playerPool.length > 0 && data.auction_state !== 'idle') {
         let p = state.playerPool[pIdx];
@@ -373,7 +332,6 @@ function updateLiveUI(data, amIWinning) {
         ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => { document.getElementById(id).textContent = '-'; });
     }
 
-    // Bid History rendering
     let leaderEl = document.getElementById('leaderBadge');
     if (data.highest_bidder !== '-' && data.highest_bidder !== 'Base Price' && data.highest_bidder !== '') {
         leaderEl.textContent = data.highest_bidder;
@@ -390,8 +348,6 @@ function updateLiveUI(data, amIWinning) {
     }).join('');
     document.getElementById('franchiseBidHistory').innerHTML = historyHtml;
 }
-
-// --- Squad Rendering ---
 
 function updateMyTeamUI() {
     try {
@@ -412,7 +368,6 @@ function updateMyTeamUI() {
 
         let myRoster = state.playerPool.filter(p => p && p.status === 'sold' && p.team === state.myTeamName);
         
-        // SAFE ARRAY CONVERSION
         let rawXI = state.allRegisteredTeams[state.myTeamName]?.playingXI || [];
         let myXIOrder = Array.isArray(rawXI) ? rawXI : Object.values(rawXI);
         
@@ -508,8 +463,6 @@ function updateMyTeamUI() {
     }
 }
 
-// --- List Render Management ---
-
 window.addEventListener('watchlistUpdated', () => window.refreshLists());
 window.addEventListener('rosterOrderUpdated', updateMyTeamUI);
 
@@ -566,8 +519,6 @@ function updateTeamDropdown() {
     else sel.value = "";
 }
 
-// --- Utilities & Chat ---
-
 window.sendChatMessage = () => {
     let inp = document.getElementById('chatInput'), msg = inp.value.trim();
     if (msg && state.myTeamName && state.roomRef) {
@@ -576,9 +527,7 @@ window.sendChatMessage = () => {
     }
 };
 
-function triggerChatPopup(team, text) { 
-    activePopups[team] = { text, expiry: Date.now() + 5000 }; 
-}
+function triggerChatPopup(team, text) { activePopups[team] = { text, expiry: Date.now() + 5000 }; }
 
 function updateAllPopups() {
     let now = Date.now();
@@ -587,9 +536,7 @@ function updateAllPopups() {
         if (!pop) return;
         if (activePopups[t] && activePopups[t].expiry > now) {
             pop.textContent = activePopups[t].text; pop.classList.add('show');
-        } else { 
-            pop.classList.remove('show'); 
-        }
+        } else { pop.classList.remove('show'); }
     });
 }
 
@@ -605,13 +552,9 @@ function logAction(msg) {
     }
 }
 
-// Settings Overlay Handlers
-window.openFranchiseSettings = () => {
-    document.getElementById('franchiseSettingsOverlay').style.display = 'flex';
-};
+window.openFranchiseSettings = () => { document.getElementById('franchiseSettingsOverlay').style.display = 'flex'; };
 
 window.exportMySquadCSV = () => {
-    // Basic CSV export for franchise
     let sold = state.playerPool.filter(p => p.status === 'sold' && p.team === state.myTeamName);
     let csv = `"Player","Role","Bought For (Cr)"\n` + sold.map(p => {
         let role = (state.allRegisteredTeams[state.myTeamName]?.playerRoles && state.allRegisteredTeams[state.myTeamName].playerRoles[p.name]) || '-';
@@ -622,58 +565,59 @@ window.exportMySquadCSV = () => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 };
 
-// Hotkey listener
 document.addEventListener('keydown', e => {
     if (document.getElementById('mainDashboard').style.display === 'none') return;
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (e.code === 'Space') { 
         e.preventDefault(); 
-        if (!document.getElementById('mainActionButton').disabled && typeof window.placeBid === 'function') {
-            window.placeBid(); 
-        }
+        if (!document.getElementById('mainActionButton').disabled && typeof window.placeBid === 'function') window.placeBid(); 
     }
 });
 
 
-// --- V2.2 MULTIPLAYER WAR ROOM LOGIC ---
-
+// --- REBUILT V2.2 WAR ROOM MULTI-USER LOGIC ---
 let isPaddleHolder = false;
 
 function initializeWarRoom(teamId, myUid, myName) {
-    // PATCH: Uses db.ref instead of database.ref, and scopes it properly to the current room
     const connectedRef = db.ref('.info/connected');
     const userStatusRef = db.ref(`rooms/${state.roomKey}/franchises/${teamId}/onlineUsers/${myUid}`);
 
-    // 1. Live Roster Dot
+    // 1. Manage User Online Status
     connectedRef.on('value', (snap) => {
         if (snap.val() === true) {
             userStatusRef.set(true);
-            userStatusRef.onDisconnect().remove();
+            userStatusRef.onDisconnect().remove(); // Remove me when I disconnect
         }
     });
 
+    // 2. Auto-Transfer & Online Rep Tracking
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/onlineUsers`).on('value', (snap) => {
-        const count = snap.numChildren() || 1;
+        const users = snap.val() || {};
+        const userIds = Object.keys(users);
+        const count = userIds.length;
+        
         const countElement = document.getElementById('onlineRepsCount');
         if(countElement) countElement.innerText = count;
 
-        // PATCH: Auto-assign paddle if you are the only one online and no one holds it
-        if (count === 1) {
+        // If I am the FIRST user in the currently online list, I check if the paddle needs rescuing.
+        // This prevents race conditions where 3 users try to claim it at the exact same time.
+        if (userIds.length > 0 && userIds[0] === myUid) {
             db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).once('value', pSnap => {
-                if (!pSnap.exists()) {
+                const paddle = pSnap.val();
+                
+                // If there is no paddle owner OR the paddle owner's UID is no longer in the online list
+                if (!paddle || !users[paddle.uid]) {
                     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
                 }
             });
         }
     });
 
-    // 2. Paddle Delegation
+    // 3. UI Delegation (Based on who has the paddle)
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).on('value', (snap) => {
         const paddleData = snap.val();
         
-        // FIXED: Now properly targets the renamed mainActionButton
         const bidBtn = document.getElementById('mainActionButton'); 
-        
         const reqBtn = document.getElementById('requestPaddleBtn');
         const sugBtn = document.getElementById('suggestBidBtn');
         const nameTag = document.getElementById('paddleHolderName');
@@ -693,13 +637,10 @@ function initializeWarRoom(teamId, myUid, myName) {
         if(nameTag) nameTag.innerText = paddleData ? paddleData.name : "Available";
     });
 
-    // 3. Visual Pings
+    // 4. Visual Pings for the Paddle Holder
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/suggestedBid`).on('value', (snap) => {
         if (isPaddleHolder && snap.exists()) {
-            
-            // FIXED: Now properly targets the renamed mainActionButton
             const bidBtn = document.getElementById('mainActionButton');
-            
             if(bidBtn) {
                 bidBtn.classList.add('pulse-green');
                 setTimeout(() => bidBtn.classList.remove('pulse-green'), 2000);
@@ -707,7 +648,7 @@ function initializeWarRoom(teamId, myUid, myName) {
         }
     });
 
-    // 4. Button Click Listeners (Using cloning to prevent duplicate listeners if re-initialized)
+    // 5. Button Listeners
     const sugBtn = document.getElementById('suggestBidBtn');
     if(sugBtn) {
         sugBtn.replaceWith(sugBtn.cloneNode(true));
@@ -727,24 +668,17 @@ function initializeWarRoom(teamId, myUid, myName) {
 
 
 // --- V2.2 GLOBAL SCOPE BRIDGE (FRANCHISE PORTAL) ---
-// This exposes module functions to the HTML inline onclick attributes
-
-// Gateway & Login Controls
 window.backToGateway = typeof backToGateway !== 'undefined' ? backToGateway : null;
 window.handleVerifyRoomKey = typeof handleVerifyRoomKey !== 'undefined' ? handleVerifyRoomKey : null;
 window.prepareCustomLogin = typeof prepareCustomLogin !== 'undefined' ? prepareCustomLogin : null;
 window.handleSubmitAuth = typeof handleSubmitAuth !== 'undefined' ? handleSubmitAuth : null;
 window.backToSelection = typeof backToSelection !== 'undefined' ? backToSelection : null;
-
-// Dashboard & Settings Controls
 window.logout = typeof logout !== 'undefined' ? logout : null;
 window.openFranchiseSettings = typeof openFranchiseSettings !== 'undefined' ? openFranchiseSettings : null;
 window.exportMySquadCSV = typeof exportMySquadCSV !== 'undefined' ? exportMySquadCSV : null;
 window.exportMySquadPDF = typeof exportMySquadPDF !== 'undefined' ? exportMySquadPDF : null;
 window.exportAllSquadsCSV = typeof exportAllSquadsCSV !== 'undefined' ? exportAllSquadsCSV : null;
 window.exportAllSquadsPDF = typeof exportAllSquadsPDF !== 'undefined' ? exportAllSquadsPDF : null;
-
-// Tab & UI Controls
 window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
 window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
 window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
