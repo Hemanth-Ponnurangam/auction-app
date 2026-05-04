@@ -24,7 +24,7 @@
         }
         
         #centerPanel {
-            overflow: hidden !important; /* No scrolling needed anymore! */
+            overflow: hidden !important; 
             padding-bottom: 20px !important; 
         }
         
@@ -34,6 +34,9 @@
             letter-spacing: 1px;
             border-radius: 8px;
         }
+        
+        /* Force dark mode dropdowns in the tabs */
+        select.tab-btn option { background-color: #161620; color: #fff; }
     </style>
 </head>
 <body>
@@ -116,7 +119,6 @@
                 <button class="logout-btn" onclick="logout()">LEAVE</button>
                 <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
                 
-                <!-- MOVED: Online & Paddle Status integrated into the Team Name header -->
                 <div class="my-team-name" style="display:flex; align-items:center; justify-content:center; gap:8px;">
                     <span id="myTeamDisplay" style="font-size:18px;">---</span>
                     <span class="live-dot" style="margin:0;"></span>
@@ -176,13 +178,11 @@
                         </div>
                     </div>
 
-                    <!-- Clean Action Board (No extra text, no scrolling required) -->
                     <div class="action-board" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                         <button id="mainActionButton" class="action-btn-bid massive-bid-btn" style="display: none; width: 100%;">PLACE BID</button>
                         <button id="requestPaddleBtn" style="flex: 1; padding: 15px; background: #28a745; border: 1px solid #1e7e34; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Request Paddle</button>
                         <button id="suggestBidBtn" style="display: none; flex: 1; padding: 15px; background: #1a1a24; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Suggest Bid</button>
                     </div>
-                    
                 </div>
             </div>
         </div>
@@ -197,47 +197,50 @@
                     </div>
                 </div>
                 
-                <!-- MOVED: Horizontal Space Split (Bid History | Logs) -->
                 <div style="display:flex; flex:1; gap:12px; min-height:0; overflow:hidden; margin-top:5px;">
-                    <!-- Bid History Column -->
                     <div style="flex: 0 0 130px; display:flex; flex-direction:column;">
                         <span style="font-size:9px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Bid History</span>
                         <div id="franchiseBidHistory" style="flex:1; overflow-y:auto; padding-right:6px; border-right:1px dashed #333; display:flex; flex-direction:column; gap:4px;"></div>
                     </div>
-                    <!-- Logs Column -->
                     <div style="flex: 1; display:flex; flex-direction:column;">
                         <span style="font-size:9px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Auction Log</span>
                         <div class="log-container" id="logContainer" style="flex:1; background:transparent; border:none; padding:0; overflow-y:auto;"></div>
                     </div>
                 </div>
-                
             </div>
             
-            <div class="panel tabs-panel mobile-overlay-panel" id="tabsPanelMobile">
-                <div class="tabs">
-                    <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); refreshLists()">
+            <!-- FIXED TABS PANEL: No padding on the main panel, ceiling-mounted tabs -->
+            <div class="panel tabs-panel mobile-overlay-panel" id="tabsPanelMobile" style="padding:0; display:flex; flex-direction:column; overflow:hidden;">
+                
+                <!-- Seamless Tab Header -->
+                <div class="tabs" style="margin:0; padding:8px 8px 0 8px; background:rgba(0,0,0,0.4); border-bottom:1px solid #2d2d3f; border-radius:12px 12px 0 0; flex-shrink:0; gap:8px;">
+                    <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); refreshLists()" style="background:transparent; border:none; outline:none; text-align:center;">
                         <option value="" disabled selected hidden>ON DECK</option>
                     </select>
-                    <button id="unsoldTabBtn" class="tab-btn" onclick="switchTab('unsold',this)">UNSOLD</button>
-                    <select id="teamSelector" class="tab-btn" onchange="switchTab('squads',this); refreshLists()">
+                    <button id="unsoldTabBtn" class="tab-btn" onclick="switchTab('unsold',this)" style="padding-bottom:12px;">UNSOLD</button>
+                    <select id="teamSelector" class="tab-btn" onchange="switchTab('squads',this); refreshLists()" style="background:transparent; border:none; outline:none; text-align:center;">
                         <option value="" disabled selected hidden>SQUADS</option>
                     </select>
                 </div>
                 
-                <div id="tab-deck" class="tab-content active">
-                    <input type="text" id="deckSearch" class="login-input" placeholder="🔍 Search Deck..." style="padding:8px; font-size:12px; margin-bottom:8px;" oninput="refreshLists()">
-                    <div style="display:flex; gap:4px; margin-bottom:8px; flex-shrink:0;">
-                        <button class="role-filter-btn active" data-role="" onclick="setRoleFilter('',this)">ALL</button>
-                        <button class="role-filter-btn" data-role="BAT" onclick="setRoleFilter('BAT',this)">BAT</button>
-                        <button class="role-filter-btn" data-role="BWL" onclick="setRoleFilter('BWL',this)">BWL</button>
-                        <button class="role-filter-btn" data-role="ALL" onclick="setRoleFilter('ALL',this)">ALL-R</button>
-                        <button class="role-filter-btn" data-role="WK" onclick="setRoleFilter('WK',this)">WK</button>
-                        <button class="role-filter-btn" data-role="STAR" onclick="setRoleFilter('STAR',this)" style="font-size:12px;">⭐</button>
+                <div id="tab-deck" class="tab-content active" style="flex:1; display:flex; flex-direction:column; padding:12px; overflow:hidden;">
+                    
+                    <!-- Search & Star Bar Merged into one row -->
+                    <div style="display:flex; gap:8px; margin-bottom:12px; flex-shrink:0; align-items:center;">
+                        <input type="text" id="deckSearch" class="login-input" placeholder="🔍 Search Deck..." style="margin:0; padding:8px 12px; font-size:12px; flex:1;" oninput="refreshLists()">
+                        <button id="starFilterBtn" onclick="toggleStarFilter(this)" style="background:#111; color:#888; border:1px solid #333; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:14px; transition:0.2s;" title="Toggle Watchlist Filter">⭐</button>
                     </div>
+                    
                     <div id="deckList" style="flex:1; overflow-y:auto; padding-right:4px;"></div>
                 </div>
-                <div id="tab-unsold" class="tab-content">       <div id="unsoldList" style="flex:1; overflow-y:auto; padding-right:4px;"></div></div>
-                <div id="tab-squads" class="tab-content">       <div id="squadList"  style="flex:1; overflow-y:auto; padding-right:4px;"></div></div>
+
+                <div id="tab-unsold" class="tab-content" style="flex:1; padding:12px; overflow-y:auto;">
+                    <div id="unsoldList" style="flex:1; overflow-y:auto; padding-right:4px;"></div>
+                </div>
+
+                <div id="tab-squads" class="tab-content" style="flex:1; padding:12px; overflow-y:auto;">
+                    <div id="squadList"  style="flex:1; overflow-y:auto; padding-right:4px;"></div>
+                </div>
             </div>
         </div>
     </div>
