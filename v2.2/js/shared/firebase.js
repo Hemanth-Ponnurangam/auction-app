@@ -1,12 +1,17 @@
-/**
- * js/shared/firebase.js
- * Core Firebase initialization and database export.
- */
-
 // Initialize Firebase only if it hasn't been initialized yet
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig); 
 }
 
-// Export the database reference for use in other modules
 export const db = firebase.database();
+
+// --- NEW: Centralized Server Time ---
+let serverOffset = 0;
+db.ref('.info/serverTimeOffset').on('value', snap => {
+    serverOffset = snap.val() || 0;
+});
+
+// Use this instead of Date.now() across the app
+export function getCurrentServerTime() {
+    return Date.now() + serverOffset;
+}
