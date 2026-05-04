@@ -15,7 +15,14 @@
     <link rel="stylesheet" href="css/franchise.css">
     
     <style>
-        /* Forces the center panel to never crop the bottom buttons */
+        /* Fixes for Timer Repositioning & Anti-Cropping */
+        #bidZoneBox .timer-arc-wrapper {
+            position: relative !important;
+            top: 0 !important;
+            right: 0 !important;
+            margin: 0;
+        }
+        
         #centerPanel {
             overflow-y: auto !important;
             padding-bottom: 20px !important; 
@@ -120,7 +127,7 @@
         <div class="col-center">
             <div class="panel" id="centerPanel" style="display:flex; flex-direction:column;">
                 
-                <div class="player-top-section" id="playerTopSection" style="position:relative;">
+                <div class="player-top-section" id="playerTopSection">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
                     <div class="player-header">
                         <span class="label-text">On The Block</span>
@@ -141,9 +148,9 @@
                     <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                 </div>
 
-                <div class="bidding-zone" id="bidZoneBox" style="padding: 15px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <!-- FIXED: Removed flex: 1 and added margin-top: auto so it sizes perfectly and sits at the bottom -->
+                <div class="bidding-zone" id="bidZoneBox" style="padding: 15px; display: flex; flex-direction: column; margin-top: auto; flex-shrink: 0;">
                     
-                    <!-- NEW FLEX ROW: Current Bid + Timer -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #111; padding: 10px 15px; border-radius: 10px; border: 1px solid #222;">
                         <div>
                             <span class="label-text" style="font-size:12px;">Current Bid</span>
@@ -153,7 +160,6 @@
                             </div>
                         </div>
                         
-                        <!-- TIMER (Forced to Relative Positioning via Inline Style) -->
                         <div class="timer-arc-wrapper" id="timerArcWrapper" style="position:relative !important; top:0 !important; right:0 !important; margin:0; width:72px; height:72px;">
                             <svg class="timer-arc-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
                                 <circle class="arc-bg"   cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="4"/>
@@ -165,23 +171,21 @@
                         </div>
                     </div>
                     
-                    <!-- V2.2 War Room Status -->
                     <div class="team-status" style="margin-bottom: 15px; text-align: center;">
                         <div class="status-dot green" style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:#00ff00; box-shadow: 0 0 8px #00ff00;"></div>
                         <span id="onlineRepsCount" style="color: #aaa; font-size: 13px; font-weight: bold;">1</span> <span style="color: #aaa; font-size: 13px;">Online</span>
                         <div id="activePaddleNametag" style="margin-top: 5px; color: #0dcaf0; font-size: 13px; text-shadow: 0 0 5px #0dcaf0; font-weight:bold;">Paddle: <span id="paddleHolderName" style="color:#fff;">None</span></div>
                     </div>
 
-                    <!-- Clean Action Board -->
-                    <div class="action-board" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
-                        
+                    <!-- FIXED: Added explicit bottom margin to action board -->
+                    <div class="action-board" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
                         <button id="mainActionButton" class="action-btn-bid massive-bid-btn" style="display: none; width: 100%;">PLACE BID</button>
-                        
                         <button id="requestPaddleBtn" style="flex: 1; padding: 15px; background: #28a745; border: 1px solid #1e7e34; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Request Paddle</button>
                         <button id="suggestBidBtn" style="display: none; flex: 1; padding: 15px; background: #1a1a24; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Suggest Bid</button>
                     </div>
                     
-                    <div id="franchiseBidHistory" class="franchise-bid-history" style="flex: 1; overflow-y: auto; max-height: 80px; border-top: 1px solid #222; padding-top: 10px;"></div>
+                    <!-- FIXED: Removed flex:1 from history so it doesn't forcibly stretch -->
+                    <div id="franchiseBidHistory" class="franchise-bid-history" style="overflow-y: auto; max-height: 80px; border-top: 1px solid #222; padding-top: 10px;"></div>
                 </div>
             </div>
         </div>
