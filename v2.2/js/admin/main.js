@@ -240,13 +240,17 @@ function renderPresetDBs(dbs) {
     el.innerHTML = html;
 }
 
-// --- Tab Switching ---
 
-function switchAdminTab(tabName, el) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
-    let target = document.getElementById(`tab-${tabName}`);
-    if (target) target.classList.add('active');
-    if (el) el.classList.add('active');
-}
+// Tab Switching
+    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // e.currentTarget ensures we grab the button even if you click the emoji
+            let text = e.currentTarget.textContent.toLowerCase();
+            
+            let tabId = text.includes('database') ? 'databases' :
+                        text.includes('image') ? 'images' :
+                        text.includes('live') ? 'rooms' : 'franchises';
+                        
+            switchAdminTab(tabId, e.currentTarget);
+        });
+    });
