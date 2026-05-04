@@ -130,6 +130,11 @@ function attachFirebaseListeners() {
     db.ref('preset_databases').on('value', snap => {
         renderPresetDBs(snap.val() || {});
     });
+
+    // Add this inside attachFirebaseListeners()
+    db.ref('global_player_images').on('value', snap => {
+        renderGlobalImages(snap.val() || {});
+    });
 }
 
 // --- Global Teams Management ---
