@@ -241,11 +241,16 @@ function renderPresetDBs(dbs) {
 }
 
 
-// Tab Switching (Robust Data Attribute Method)
+// Tab Switching (Bulletproof Version)
     document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Read the exact target ID directly from the HTML data-tab attribute
-            let tabId = e.currentTarget.dataset.tab;
+            // We use currentTarget to ignore emoji clicks, and toLowerCase to bypass CSS caps
+            let text = e.currentTarget.textContent.toLowerCase();
+            
+            let tabId = text.includes('database') ? 'databases' :
+                        text.includes('image') ? 'images' :
+                        text.includes('live') ? 'rooms' : 'franchises';
+                        
             switchAdminTab(tabId, e.currentTarget);
         });
     });
