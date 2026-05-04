@@ -304,13 +304,6 @@ function updateLiveUI(data, amIWinning) {
             if (p.franchise) { tags.textContent = p.franchise; tags.style.display = 'inline-block'; } else tags.style.display = 'none';
             if (p.role) { rl.textContent = p.role; rl.style.display = 'inline-block'; } else rl.style.display = 'none';
             
-            document.getElementById('statRuns').textContent = p.runs || '-';
-            document.getElementById('statAvg').textContent = p.average || '-';
-            document.getElementById('statBatSR').textContent = p.bat_sr || '-';
-            document.getElementById('statWkts').textContent = p.wickets || '-';
-            document.getElementById('statEcon').textContent = p.economy || '-';
-            document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
-            
             let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
             let imgObj = state.globalImageMap[safeNameKey] || state.globalImageMap[p.name]; 
             let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
@@ -330,7 +323,6 @@ function updateLiveUI(data, amIWinning) {
         document.getElementById('playerRole').style.display = 'none';
         document.getElementById('playerPhoto').innerHTML = 'PHOTO';
         document.getElementById('playerPhoto').classList.remove('has-photo');
-        ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => { document.getElementById(id).textContent = '-'; });
     }
 
     let leaderEl = document.getElementById('leaderBadge');
@@ -469,7 +461,6 @@ window.addEventListener('rosterOrderUpdated', updateMyTeamUI);
 
 let _deckRoleFilter = '';
 
-// CHANGED: Replaced setRoleFilter completely with this toggleStarFilter logic
 window.toggleStarFilter = function(el) {
     if (_deckRoleFilter === 'STAR') {
         _deckRoleFilter = '';
@@ -584,6 +575,7 @@ document.addEventListener('keydown', e => {
     }
 });
 
+
 let isPaddleHolder = false;
 
 function initializeWarRoom(teamId, myUid, myName) {
@@ -677,9 +669,6 @@ window.exportAllSquadsCSV = typeof exportAllSquadsCSV !== 'undefined' ? exportAl
 window.exportAllSquadsPDF = typeof exportAllSquadsPDF !== 'undefined' ? exportAllSquadsPDF : null;
 window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
 window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
-
-// EXPORTED: New Star Filter
 window.toggleStarFilter = typeof toggleStarFilter !== 'undefined' ? toggleStarFilter : null;
-
 window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
 window.dismissBroadcast = typeof dismissBroadcast !== 'undefined' ? dismissBroadcast : null;
