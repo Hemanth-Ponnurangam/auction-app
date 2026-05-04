@@ -38,10 +38,10 @@
         <button class="action-btn outline" onclick="logoutAdmin()">🔒 LOCK CONSOLE</button>
     </div>
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchAdminTab('databases',this)">🗄️ Database Manager</button>
-        <button class="tab-btn" onclick="switchAdminTab('images',this)">📸 Image Directory</button>
-        <button class="tab-btn" onclick="switchAdminTab('rooms',this)">📡 Live Servers</button>
-        <button class="tab-btn" onclick="switchAdminTab('franchises',this)">🌐 Global Franchises</button>
+        <button class="tab-btn active" data-tab="databases">🗄️ Database Manager</button>
+        <button class="tab-btn" data-tab="images">📸 Image Directory</button>
+        <button class="tab-btn" data-tab="rooms">📡 Live Servers</button>
+        <button class="tab-btn" data-tab="franchises">🌐 Global Franchises</button>
     </div>
 
     <div id="tab-databases" class="tab-content active">
