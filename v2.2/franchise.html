@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="css/franchise.css">
     
     <style>
-        /* Anti-Cropping & Layout Locks */
         #bidZoneBox .timer-arc-wrapper {
             position: relative !important;
             top: 0 !important;
@@ -35,7 +34,6 @@
             border-radius: 8px;
         }
         
-        /* Force dark mode dropdowns in the tabs */
         select.tab-btn option { background-color: #161620; color: #fff; }
     </style>
 </head>
@@ -137,29 +135,20 @@
         <div class="col-center">
             <div class="panel" id="centerPanel" style="display:flex; flex-direction:column;">
                 
-                <div class="player-top-section" id="playerTopSection" style="position:relative;">
-                    <div class="player-photo-box" id="playerPhoto">PHOTO</div>
-                    <div class="player-header">
-                        <span class="label-text">On The Block</span>
-                        <div class="player-name" id="playerName">Waiting…</div>
-                        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                            <div class="past-teams" id="playerFranchise" style="display:none;"></div>
-                            <div class="player-role-pill" id="playerRole" style="display:none; margin-left:0;"></div>
+                <!-- REDESIGNED HERO SECTION -->
+                <div class="player-top-section" id="playerTopSection" style="position:relative; flex:1; display:flex; align-items:center; gap:30px; margin-bottom: 20px;">
+                    <div class="player-photo-box" id="playerPhoto" style="width:250px; height:250px; flex-shrink:0; border-radius:12px;">PHOTO</div>
+                    <div class="player-header" style="display:flex; flex-direction:column; justify-content:center;">
+                        <span class="label-text" style="margin-bottom:10px; font-size:14px;">On The Block</span>
+                        <div class="player-name" id="playerName" style="font-size:42px; margin-bottom:15px; line-height:1.1;">Waiting…</div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <div class="past-teams" id="playerFranchise" style="display:none; font-size:12px; padding:6px 14px;"></div>
+                            <div class="player-role-pill" id="playerRole" style="display:none; font-size:12px; padding:6px 14px; margin-left:0;"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="stats-bar" id="statsBar">
-                    <div class="stat-box"><div class="stat-label">RUNS</div><div class="stat-val" id="statRuns">-</div></div>
-                    <div class="stat-box"><div class="stat-label">AVG</div><div class="stat-val" id="statAvg">-</div></div>
-                    <div class="stat-box"><div class="stat-label">SR</div><div class="stat-val" id="statBatSR">-</div></div>
-                    <div class="stat-box"><div class="stat-label">WKTS</div><div class="stat-val" id="statWkts">-</div></div>
-                    <div class="stat-box"><div class="stat-label">ECON</div><div class="stat-val" id="statEcon">-</div></div>
-                    <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
-                </div>
-
                 <div class="bidding-zone" id="bidZoneBox" style="padding: 15px; display: flex; flex-direction: column; margin-top: auto; flex-shrink: 0;">
-                    
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #111; padding: 10px 15px; border-radius: 10px; border: 1px solid #222;">
                         <div>
                             <span class="label-text" style="font-size:12px;">Current Bid</span>
@@ -209,10 +198,8 @@
                 </div>
             </div>
             
-            <!-- FIXED TABS PANEL: No padding on the main panel, ceiling-mounted tabs -->
             <div class="panel tabs-panel mobile-overlay-panel" id="tabsPanelMobile" style="padding:0; display:flex; flex-direction:column; overflow:hidden;">
                 
-                <!-- Seamless Tab Header -->
                 <div class="tabs" style="margin:0; padding:8px 8px 0 8px; background:rgba(0,0,0,0.4); border-bottom:1px solid #2d2d3f; border-radius:12px 12px 0 0; flex-shrink:0; gap:8px;">
                     <select id="setSelector" class="tab-btn active" onchange="switchTab('deck',this); refreshLists()" style="background:transparent; border:none; outline:none; text-align:center;">
                         <option value="" disabled selected hidden>ON DECK</option>
@@ -225,7 +212,6 @@
                 
                 <div id="tab-deck" class="tab-content active" style="flex:1; display:flex; flex-direction:column; padding:12px; overflow:hidden;">
                     
-                    <!-- Search & Star Bar Merged into one row -->
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-shrink:0; align-items:center;">
                         <input type="text" id="deckSearch" class="login-input" placeholder="🔍 Search Deck..." style="margin:0; padding:8px 12px; font-size:12px; flex:1;" oninput="refreshLists()">
                         <button id="starFilterBtn" onclick="toggleStarFilter(this)" style="background:#111; color:#888; border:1px solid #333; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:14px; transition:0.2s;" title="Toggle Watchlist Filter">⭐</button>
@@ -268,7 +254,6 @@
             if(el) { el.classList.remove('show'); el.style.top = ''; el.style.bottom = ''; }
         });
         document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-        let statsBar = document.getElementById('statsBar');
         if (isOpening) {
             let topRowRect = document.getElementById('mainTopRow').getBoundingClientRect();
             let headerRect = document.getElementById('playerTopSection').getBoundingClientRect();
@@ -279,9 +264,6 @@
             targetPanel.style.bottom = bottomOffset + 'px';
             targetPanel.classList.add('show');
             if (btnEl) btnEl.classList.add('active');
-            if (statsBar) statsBar.style.display = 'none';
-        } else {
-            if (statsBar) statsBar.style.display = 'grid';
         }
     };
 
@@ -293,8 +275,6 @@
                 if (el) { el.classList.remove('show'); el.style.top = ''; el.style.bottom = ''; }
             });
             document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-            let statsBar = document.getElementById('statsBar');
-            if (statsBar) statsBar.style.display = 'grid';
         }
     });
 
