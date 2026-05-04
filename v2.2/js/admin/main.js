@@ -11,6 +11,8 @@ import { uploadPresetDB } from './csv.js';
 let isSuperAdmin = false;
 
 window.onload = function() {
+    setupEventListeners();
+    
     let savedPin = sessionStorage.getItem('superAdminPin');
     if (savedPin) {
         verifySuperAdmin(savedPin).then(valid => {
@@ -26,32 +28,97 @@ window.onload = function() {
     }
 };
 
-// Expose the function to the global window object
-window.handleAdminLogin = () => {
-    const pin = document.getElementById('adminPinInput').value.trim();
+// --- Centralized Event Listeners ---
+// Replaces all inline HTML onclick="" attributes
+function setupEventListeners() {
+    // Login Screen
+    document.querySelector('#adminLoginScreen .submit-btn').addEventListener('click', handleAdminLogin);
+    document.getElementById('adminPinInput').addEventListener('keypress', e => {
+        if(e.key === 'Enter') handleAdminLogin();
+    });
     
+    // Header
+    document.querySelector('.header .action-btn').addEventListener('click', logoutAdmin);
+    
+    // Modals - Global Teams
+    const addTeamBtn = document.querySelector('#tab-franchises .action-btn');
+    if (addTeamBtn) addTeamBtn.addEventListener('click', openAddTeamModal);
+    
+    document.querySelector('#addTeamModal .action-btn').addEventListener('click', saveNewTeam);
+    document.querySelector('#addTeamModal .action-btn.outline').addEventListener('click', closeAddTeamModal);
+    
+    // Modals - Database Upload
+    const uploadBtn = document.querySelector('#tab-databases .action-btn');
+    if (uploadBtn) uploadBtn.addEventListener('click', () => {
+        document.getElementById('uploadModal').style.display = 'flex';
+    });
+    
+    document.querySelector('#uploadModal .action-btn').addEventListener('click', submitPresetUpload);
+    document.querySelector('#uploadModal .action-btn.outline').addEventListener('click', () => {
+        document.getElementById('uploadModal').style.display = 'none';
+    });
+
+    // Modals - Image Upload
+    const uploadImgBtn = document.querySelector('#tab-images .action-btn');
+    if (uploadImgBtn) uploadImgBtn.addEventListener('click', () => {
+        document.getElementById('uploadImageCsvModal').style.display = 'flex';
+    });
+    document.querySelector('#uploadImageCsvModal .action-btn.outline').addEventListener('click', () => {
+        document.getElementById('uploadImageCsvModal').style.display = 'none';
+    });
+    
+    // Tab Switching
+    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            let text = e.target.innerText;
+            let tabId = text.includes('Database') ? 'databases' :
+                        text.includes('Image') ? 'images' :
+                        text.includes('Live') ? 'rooms' : 'franchises';
+            switchAdminTab(tabId, e.target);
+        });
+    });
+
+    // Event Delegation for dynamic "Delete" buttons (Fixes XSS Vulnerability)
+    document.getElementById('globalTeamsList').addEventListener('click', e => {
+        if (e.target.classList.contains('delete-team-btn')) {
+            let code = e.target.dataset.team;
+            confirmDeleteTeam(code);
+        }
+    });
+
+    document.getElementById('presetDbList').addEventListener('click', e => {
+        if (e.target.classList.contains('delete-db-btn')) {
+            let key = e.target.dataset.key;
+            deletePresetDB(key);
+        }
+    });
+}
+
+// --- Auth & Boot ---
+
+function handleAdminLogin() {
+    const pin = document.getElementById('adminPinInput').value.trim();
     if (!pin) {
-        alert("Please enter a PIN.");
+        showAlert("Error", "Please enter a PIN.");
         return;
     }
 
-    // Replace this condition with your actual Firebase check or hardcoded PIN
-    if (pin === "1234") { // Example hardcoded fallback PIN
-        // Hide login, show dashboard
-        document.getElementById('adminLoginScreen').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block'; // Or whatever your main dashboard ID is
-        
-        // Execute your boot logic here
-        // loadAdminData();
-    } else {
-        alert("Incorrect Super Admin PIN.");
-        document.getElementById('adminPinInput').value = '';
-    }
-};
-window.logoutAdmin = () => {
+    verifySuperAdmin(pin).then(isValid => {
+        if (isValid) {
+            sessionStorage.setItem('superAdminPin', pin);
+            isSuperAdmin = true;
+            document.getElementById('adminLoginScreen').style.display = 'none';
+            executeAdminBoot();
+        } else {
+            document.getElementById('adminPinInput').value = '';
+        }
+    });
+}
+
+function logoutAdmin() {
     sessionStorage.removeItem('superAdminPin');
     window.location.reload();
-};
+}
 
 function executeAdminBoot() {
     document.getElementById('masterDashboard').style.display = 'flex';
@@ -61,17 +128,14 @@ function executeAdminBoot() {
 // --- Firebase Listeners ---
 
 function attachFirebaseListeners() {
-    // Connection state
     db.ref('.info/connected').on('value', snap => {
         document.getElementById('connBanner').style.display = !snap.val() ? 'block' : 'none';
     });
 
-    // Global Teams
     db.ref('global_teams').on('value', snap => {
         renderGlobalTeams(snap.val() || {});
     });
 
-    // Preset Databases
     db.ref('preset_databases').on('value', snap => {
         renderPresetDBs(snap.val() || {});
     });
@@ -79,17 +143,17 @@ function attachFirebaseListeners() {
 
 // --- Global Teams Management ---
 
-window.openAddTeamModal = () => {
+function openAddTeamModal() {
     document.getElementById('addTeamModal').style.display = 'flex';
-};
+}
 
-window.closeAddTeamModal = () => {
+function closeAddTeamModal() {
     document.getElementById('addTeamModal').style.display = 'none';
     document.getElementById('ntCode').value = '';
     document.getElementById('ntName').value = '';
-};
+}
 
-window.saveNewTeam = () => {
+function saveNewTeam() {
     let code = document.getElementById('ntCode').value.trim().toUpperCase();
     let name = document.getElementById('ntName').value.trim();
     let color = document.getElementById('ntColor').value;
@@ -102,15 +166,15 @@ window.saveNewTeam = () => {
     db.ref('global_teams/' + code).set({ name, color }).then(() => {
         closeAddTeamModal();
     });
-};
+}
 
-window.confirmDeleteTeam = (code) => {
+function confirmDeleteTeam(code) {
     showConfirm('Remove Franchise', `Are you sure you want to completely remove ${code} from the global platform?`, 
         () => {
             db.ref('global_teams/' + code).remove();
         }
     );
-};
+}
 
 function renderGlobalTeams(teams) {
     let el = document.getElementById('globalTeamsList');
@@ -125,12 +189,12 @@ function renderGlobalTeams(teams) {
     let html = '';
     keys.forEach(code => {
         let t = teams[code];
+        // Note: Using data-team attribute instead of inline onclick for security
         html += `
         <div class="team-card" style="border-top:4px solid ${t.color};">
             <div class="t-code" style="color:${t.color}">${esc(code)}</div>
             <div class="t-name">${esc(t.name)}</div>
-            <button class="action-btn outline" style="padding:4px 8px; font-size:10px; margin-top:5px;"
-                    onclick="confirmDeleteTeam('${esc(code)}')">Remove</button>
+            <button class="action-btn outline delete-team-btn" style="padding:4px 8px; font-size:10px; margin-top:5px;" data-team="${esc(code)}">Remove</button>
         </div>`;
     });
     el.innerHTML = html;
@@ -138,17 +202,17 @@ function renderGlobalTeams(teams) {
 
 // --- Preset Database UI ---
 
-window.submitPresetUpload = () => {
+function submitPresetUpload() {
     let dbName = document.getElementById('dbNameInput').value.trim();
     let fileInput = document.getElementById('csvFileInput');
     uploadPresetDB(dbName, fileInput.files.length ? fileInput.files[0] : null);
-};
+}
 
-window.deletePresetDB = (dbKey) => {
+function deletePresetDB(dbKey) {
     showConfirm('Delete Database', `Permanently delete the preset '${dbKey}'?`, () => {
         db.ref('preset_databases/' + dbKey).remove();
     });
-};
+}
 
 function renderPresetDBs(dbs) {
     let el = document.getElementById('presetDbList');
@@ -163,13 +227,14 @@ function renderPresetDBs(dbs) {
     let html = '';
     keys.forEach(key => {
         let count = dbs[key].length || 0;
+        // Note: Using data-key attribute instead of inline onclick
         html += `
         <div style="background:#111; border:1px solid #333; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <div style="color:#ffc107; font-weight:bold; font-size:14px; text-transform:uppercase;">${esc(key)}</div>
                 <div style="color:#888; font-size:10px;">${count} Players</div>
             </div>
-            <button class="action-btn danger" style="padding:4px 8px; font-size:10px;" onclick="deletePresetDB('${esc(key)}')">Delete</button>
+            <button class="action-btn danger delete-db-btn" style="padding:4px 8px; font-size:10px;" data-key="${esc(key)}">Delete</button>
         </div>`;
     });
     el.innerHTML = html;
@@ -177,48 +242,11 @@ function renderPresetDBs(dbs) {
 
 // --- Tab Switching ---
 
-window.switchAdminTab = (tabName, el) => {
+function switchAdminTab(tabName, el) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     
     let target = document.getElementById(`tab-${tabName}`);
     if (target) target.classList.add('active');
     if (el) el.classList.add('active');
-};
-
-
-// --- V2.2 GLOBAL SCOPE BRIDGE ---
-// This exposes module functions to the HTML inline onclick attributes
-
-// Gateway Screen Controls
-window.showCreateRoom = typeof showCreateRoom !== 'undefined' ? showCreateRoom : null;
-window.showJoinAdminRoom = typeof showJoinAdminRoom !== 'undefined' ? showJoinAdminRoom : null;
-window.createNewRoom = typeof createNewRoom !== 'undefined' ? createNewRoom : null;
-window.joinAdminRoom = typeof joinAdminRoom !== 'undefined' ? joinAdminRoom : null;
-window.backToAdminGateway = typeof backToAdminGateway !== 'undefined' ? backToAdminGateway : null;
-window.toggleCustomUpload = typeof toggleCustomUpload !== 'undefined' ? toggleCustomUpload : null;
-
-// Dashboard Controls
-window.openSettings = typeof openSettings !== 'undefined' ? openSettings : null;
-window.saveSettings = typeof saveSettings !== 'undefined' ? saveSettings : null;
-window.exportSquadCSV = typeof exportSquadCSV !== 'undefined' ? exportSquadCSV : null;
-window.exportSquadPDF = typeof exportSquadPDF !== 'undefined' ? exportSquadPDF : null;
-window.clearBroadcast = typeof clearBroadcast !== 'undefined' ? clearBroadcast : null;
-
-// Auction Mechanics
-window.sellPlayer = typeof sellPlayer !== 'undefined' ? sellPlayer : null;
-window.passPlayer = typeof passPlayer !== 'undefined' ? passPlayer : null;
-window.undoLastSale = typeof undoLastSale !== 'undefined' ? undoLastSale : null;
-window.undoLastBid = typeof undoLastBid !== 'undefined' ? undoLastBid : null;
-window.togglePause = typeof togglePause !== 'undefined' ? togglePause : null;
-window.bypassCooldown = typeof bypassCooldown !== 'undefined' ? bypassCooldown : null;
-window.startTimer = typeof startTimer !== 'undefined' ? startTimer : null;
-window.confirmResetAuction = typeof confirmResetAuction !== 'undefined' ? confirmResetAuction : null;
-window.sendBroadcast = typeof sendBroadcast !== 'undefined' ? sendBroadcast : null;
-window.pullRandomFromSet = typeof pullRandomFromSet !== 'undefined' ? pullRandomFromSet : null;
-
-// Tab & UI Controls
-window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
-window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
-window.setRoleFilter = typeof setRoleFilter !== 'undefined' ? setRoleFilter : null;
-window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
+}
