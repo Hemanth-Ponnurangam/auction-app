@@ -346,6 +346,19 @@ function updateLiveUI(data) {
 
         let remainMs = data.timer_end ? Math.max(0, data.timer_end - Date.now()) : 0;
         let t = Math.ceil(remainMs / 1000);
+
+        // --- NEW FEATURE: AUTO PAUSE ---
+        // If the timer reaches exactly 0s, force a pause state in Firebase immediately.
+        if (data.auction_state === 'bidding' && remainMs <= 0) {
+            clearInterval(window.uiTimer);
+            state.roomRef.child('live_state').update({
+                auction_state: 'paused',
+                timer_end: 0,
+                paused_remaining: 0
+            });
+            return;
+        }
+
         timerEl.textContent = t + 's';
 
         let arcColor;
@@ -378,7 +391,6 @@ function updateLiveUI(data) {
         }, delay + 200);
     }
 
-    // Direct Inline Dynamic Styling for the controls (safely avoids CSS conflicts)
     let dynBtn = document.getElementById('dynamicSellBtn');
     let diceBtn = document.getElementById('randomDiceBtn');
     let clocks = document.querySelectorAll('.master-clock');
@@ -418,7 +430,6 @@ function updateLiveUI(data) {
         if (diceBtn) diceBtn.style.opacity = '0.3';
     }
     
-    // SVG Pause Toggle Update
     if (isPaused) { 
         if (pauseBtn) {
             pauseBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; 
@@ -460,14 +471,11 @@ function updateBudgetTracker() {
 
             html += `<div class="budget-card${leaderClass}" style="display:flex; flex-direction:column;">
                 <button class="delete-team-btn" onclick="confirmDeleteTeam('${esc(team)}')" title="Delete Team">&times;</button>
-                
-                <!-- Added Flex Centering & Increased Font Sizes -->
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <div style="font-weight:bold; color:${tColor}; font-size:15px; margin-bottom:4px; display:flex; align-items:center; justify-content:center;">${esc(team)} ${dot}</div>
                     <div style="color:${remaining > 0 ? '#28a745' : '#dc3545'}; font-size:20px; font-weight:bold; margin-bottom:4px;">₹${(remaining/CRORE).toFixed(2)} Cr</div>
                     <div style="color:#888; font-size:10px; font-weight:bold; text-transform:uppercase;">${count} Players</div>
                 </div>
-                
                 <div style="margin-top:auto; padding-top:6px; border-top:1px solid #222; font-size:10px; color:#888; display:flex; justify-content:space-between; align-items:center;">
                     <span id="rep-name-${esc(team)}" style="display:inline-block; text-transform:uppercase; letter-spacing:.5px; max-width: 75px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tData.repName || 'Unclaimed')}</span>
                     <span id="rep-pin-${esc(team)}" style="display:none; color:#ffc107; font-weight:bold; letter-spacing:1px;">${esc(tData.pin || 'None')}</span>
@@ -517,7 +525,7 @@ function populateDropdowns() {
     sets.forEach(s => { 
         let o = document.createElement('option'); 
         o.value = s; o.text = s; 
-        o.style.background = '#161620'; // Forces Dark Mode on Options
+        o.style.background = '#161620'; 
         o.style.color = '#fff'; 
         setSel.appendChild(o); 
     });
@@ -529,7 +537,7 @@ function populateDropdowns() {
     keys.forEach(t => { 
         let o = document.createElement('option'); 
         o.value = t; o.text = t; 
-        o.style.background = '#161620'; // Forces Dark Mode on Options
+        o.style.background = '#161620'; 
         o.style.color = state.allRegisteredTeams[t]?.color || '#fff'; 
         tSel.appendChild(o); 
     });
@@ -567,6 +575,7 @@ window.sendChatMessage = () => {
     if (msg && state.roomRef) { state.roomRef.child('chat_events').push({ team: 'ADMIN', text: msg, time: Date.now() }); inp.value = ''; }
 };
 
+// --- RESTORED SETTINGS FUNCTIONS ---
 window.openSettings = () => {
     document.getElementById('settingsOverlay').style.display = 'flex';
     document.getElementById('set-room-key').value = state.roomKey || '';
@@ -611,33 +620,6 @@ window.saveSettings = () => {
     }
 };
 
-window.exportSquadCSV = () => {
-    let team = document.getElementById('exportTeamSelector').value;
-    let sold = state.playerPool.filter(p => p.status === 'sold' && (team === 'ALL' || p.team === team));
-    let csv = `"Player","Team","Role","Bought For (Cr)"\n` + sold.map(p => {
-        let role = (state.allRegisteredTeams[p.team]?.playerRoles && state.allRegisteredTeams[p.team].playerRoles[p.name]) || '-';
-        return `"${p.name}","${p.team}","${role}","${(p.sold_price/CRORE).toFixed(2)}"`;
-    }).join('\n');
-    let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-    let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `IPL_${team}_Export.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-};
-
-window.exportSquadPDF = () => {
-    let team = document.getElementById('exportTeamSelector').value;
-    let sold = state.playerPool.filter(p => p.status === 'sold' && (team === 'ALL' || p.team === team));
-    if (!sold.length) { showAlert('No Data','No sold players for this selection.'); return; }
-    let div = document.createElement('div');
-    div.style.cssText = 'padding:20px; font-family:sans-serif; color:#000; background:#fff;';
-    div.innerHTML = `<h2 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">IPL Auction Result — ${team}</h2>
-    <table style="width:100%; border-collapse:collapse; font-size:14px;"><tr style="background:#eee;"><th style="padding:10px; border:1px solid #ccc;">Player</th><th style="padding:10px; border:1px solid #ccc;">Nat</th><th style="padding:10px; border:1px solid #ccc;">Team</th><th style="padding:10px; border:1px solid #ccc;">Role</th><th style="padding:10px; border:1px solid #ccc;">Price (Cr)</th></tr>
-        ${sold.map(p => {
-            let role = (state.allRegisteredTeams[p.team]?.playerRoles?.[p.name]) || '-';
-            return `<tr><td style="padding:10px; border:1px solid #ccc;">${p.name}</td><td style="padding:10px; border:1px solid #ccc;">${p.nationality||'-'}</td><td style="padding:10px; border:1px solid #ccc;">${p.team}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">${role}</td><td style="padding:10px; border:1px solid #ccc; font-weight:bold;">₹${(p.sold_price/CRORE).toFixed(2)}</td></tr>`;
-        }).join('')}</table>`;
-    html2pdf().set({ margin:10, filename:`IPL_${team}_Export.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'} }).from(div).save();
-};
-
 document.addEventListener('keydown', e => {
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (document.getElementById('adminDashboardWrapper').style.display === 'none') return;
@@ -651,7 +633,10 @@ window.togglePause = () => {
     if (!state.roomRef) return;
     let currentState = state.liveState.auction_state;
     if (currentState === 'paused') {
+        // FIXED: Give a fresh clock if resuming from 0
         let remaining = state.liveState.paused_remaining || (state.settings.bid_timer_secs || 15) * 1000;
+        if (remaining <= 0) remaining = (state.settings.bid_timer_secs || 15) * 1000;
+        
         state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: Date.now() + remaining, paused_remaining: null });
     } else if (currentState === 'bidding') {
         let remaining = state.liveState.timer_end ? Math.max(0, state.liveState.timer_end - Date.now()) : 0;
