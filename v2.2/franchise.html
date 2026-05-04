@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="css/franchise.css">
     
     <style>
-        /* Fixes for Timer Repositioning & Anti-Cropping */
+        /* Anti-Cropping & Layout Locks */
         #bidZoneBox .timer-arc-wrapper {
             position: relative !important;
             top: 0 !important;
@@ -24,7 +24,7 @@
         }
         
         #centerPanel {
-            overflow-y: auto !important;
+            overflow: hidden !important; /* No scrolling needed anymore! */
             padding-bottom: 20px !important; 
         }
         
@@ -115,8 +115,16 @@
                 <div class="team-msg-popup" id="msg-popup-myteam"></div>
                 <button class="logout-btn" onclick="logout()">LEAVE</button>
                 <button class="settings-btn" onclick="openFranchiseSettings()" title="Settings">⚙️</button>
-                <div class="my-team-name"><span id="myTeamDisplay">---</span><span class="live-dot"></span></div>
-                <div class="my-team-purse" id="myTeamPurse">₹0.00 Cr</div>
+                
+                <!-- MOVED: Online & Paddle Status integrated into the Team Name header -->
+                <div class="my-team-name" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <span id="myTeamDisplay" style="font-size:18px;">---</span>
+                    <span class="live-dot" style="margin:0;"></span>
+                    <span style="font-size:10px; color:#888; border-left:1px solid #444; padding-left:8px;"><span id="onlineRepsCount">1</span> Online</span>
+                    <span style="font-size:10px; color:#0dcaf0; border-left:1px solid #444; padding-left:8px;">Paddle: <span id="paddleHolderName" style="color:#fff; font-weight:bold;">None</span></span>
+                </div>
+                
+                <div class="my-team-purse" id="myTeamPurse" style="margin-top:4px;">₹0.00 Cr</div>
                 <div class="roster-header">PLAYING XI <span id="xiCount">(0/11)</span></div>
                 <div class="roster-list drop-zone" id="playingXIList"></div>
                 <div class="roster-header" style="margin-top:6px;">BENCH</div>
@@ -127,7 +135,7 @@
         <div class="col-center">
             <div class="panel" id="centerPanel" style="display:flex; flex-direction:column;">
                 
-                <div class="player-top-section" id="playerTopSection">
+                <div class="player-top-section" id="playerTopSection" style="position:relative;">
                     <div class="player-photo-box" id="playerPhoto">PHOTO</div>
                     <div class="player-header">
                         <span class="label-text">On The Block</span>
@@ -148,7 +156,6 @@
                     <div class="stat-box"><div class="stat-label">B.SR</div><div class="stat-val" id="statBowlSR">-</div></div>
                 </div>
 
-                <!-- FIXED: Removed flex: 1 and added margin-top: auto so it sizes perfectly and sits at the bottom -->
                 <div class="bidding-zone" id="bidZoneBox" style="padding: 15px; display: flex; flex-direction: column; margin-top: auto; flex-shrink: 0;">
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #111; padding: 10px 15px; border-radius: 10px; border: 1px solid #222;">
@@ -163,35 +170,25 @@
                         <div class="timer-arc-wrapper" id="timerArcWrapper" style="position:relative !important; top:0 !important; right:0 !important; margin:0; width:72px; height:72px;">
                             <svg class="timer-arc-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
                                 <circle class="arc-bg"   cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="4"/>
-                                <circle class="arc-fill" id="timerArcFill" cx="36" cy="36" r="30" fill="none"
-                                    stroke="#28a745" stroke-width="4" stroke-linecap="round"
-                                    stroke-dasharray="188.5" stroke-dashoffset="0"/>
+                                <circle class="arc-fill" id="timerArcFill" cx="36" cy="36" r="30" fill="none" stroke="#28a745" stroke-width="4" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="0"/>
                             </svg>
                             <span class="timer-arc-text timer-green" id="playerTimer">--</span>
                         </div>
                     </div>
-                    
-                    <div class="team-status" style="margin-bottom: 15px; text-align: center;">
-                        <div class="status-dot green" style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:#00ff00; box-shadow: 0 0 8px #00ff00;"></div>
-                        <span id="onlineRepsCount" style="color: #aaa; font-size: 13px; font-weight: bold;">1</span> <span style="color: #aaa; font-size: 13px;">Online</span>
-                        <div id="activePaddleNametag" style="margin-top: 5px; color: #0dcaf0; font-size: 13px; text-shadow: 0 0 5px #0dcaf0; font-weight:bold;">Paddle: <span id="paddleHolderName" style="color:#fff;">None</span></div>
-                    </div>
 
-                    <!-- FIXED: Added explicit bottom margin to action board -->
-                    <div class="action-board" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <!-- Clean Action Board (No extra text, no scrolling required) -->
+                    <div class="action-board" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                         <button id="mainActionButton" class="action-btn-bid massive-bid-btn" style="display: none; width: 100%;">PLACE BID</button>
                         <button id="requestPaddleBtn" style="flex: 1; padding: 15px; background: #28a745; border: 1px solid #1e7e34; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Request Paddle</button>
                         <button id="suggestBidBtn" style="display: none; flex: 1; padding: 15px; background: #1a1a24; border: 1px solid #0dcaf0; color: #0dcaf0; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size:14px; transition:0.2s;">Suggest Bid</button>
                     </div>
                     
-                    <!-- FIXED: Removed flex:1 from history so it doesn't forcibly stretch -->
-                    <div id="franchiseBidHistory" class="franchise-bid-history" style="overflow-y: auto; max-height: 80px; border-top: 1px solid #222; padding-top: 10px;"></div>
                 </div>
             </div>
         </div>
 
         <div class="col-right" id="rightColumnWrapper">
-            <div class="panel log-panel mobile-overlay-panel" id="logPanelMobile">
+            <div class="panel log-panel mobile-overlay-panel" id="logPanelMobile" style="display:flex; flex-direction:column; min-height:150px;">
                 <div class="log-header">
                     <span>📜 Live Activity <span id="auctioneerStatus" class="offline-dot" title="Auctioneer Offline"></span></span>
                     <div class="chat-input-area">
@@ -199,7 +196,21 @@
                         <button class="chat-btn" onclick="sendChatMessage()">✉️ SEND</button>
                     </div>
                 </div>
-                <div class="log-container" id="logContainer"></div>
+                
+                <!-- MOVED: Horizontal Space Split (Bid History | Logs) -->
+                <div style="display:flex; flex:1; gap:12px; min-height:0; overflow:hidden; margin-top:5px;">
+                    <!-- Bid History Column -->
+                    <div style="flex: 0 0 130px; display:flex; flex-direction:column;">
+                        <span style="font-size:9px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Bid History</span>
+                        <div id="franchiseBidHistory" style="flex:1; overflow-y:auto; padding-right:6px; border-right:1px dashed #333; display:flex; flex-direction:column; gap:4px;"></div>
+                    </div>
+                    <!-- Logs Column -->
+                    <div style="flex: 1; display:flex; flex-direction:column;">
+                        <span style="font-size:9px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Auction Log</span>
+                        <div class="log-container" id="logContainer" style="flex:1; background:transparent; border:none; padding:0; overflow-y:auto;"></div>
+                    </div>
+                </div>
+                
             </div>
             
             <div class="panel tabs-panel mobile-overlay-panel" id="tabsPanelMobile">
