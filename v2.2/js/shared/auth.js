@@ -45,9 +45,16 @@ export function submitTeamAuth(code, pin, color, repName) {
 
 export function verifySuperAdmin(pin) {
     return db.ref('super_admin_pin').once('value').then(snap => {
-        let correct = snap.val() || '4545';
+        let correct = snap.val();
+        
+        // FIX: No fallback. Fail if not configured.
+        if (!correct) {
+            showAlert('Configuration Error', 'Admin PIN is not set in the database.');
+            return false;
+        }
         if (pin === correct) return true;
-        showAlert('Access Denied', 'Incorrect God Mode PIN.');
+        
+        showAlert('Access Denied', 'Incorrect Super Admin PIN.');
         return false;
     });
 }
