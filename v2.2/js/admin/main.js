@@ -158,6 +158,12 @@ function attachFirebaseListeners() {
     db.ref('global_player_images').on('value', snap => {
         renderGlobalImages(snap.val() || {});
     });
+
+    // Add this inside attachFirebaseListeners()
+    db.ref('rooms').on('value', snap => {
+        renderActiveRooms(snap.val() || {});
+    });
+    
 }
 
 // --- Global Teams Management ---
