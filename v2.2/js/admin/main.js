@@ -375,3 +375,88 @@ function deletePlayerImage(imageKey) {
         db.ref('global_player_images/' + imageKey).remove();
     });
 }
+
+
+// ==========================================
+// LIVE SERVERS (ROOMS) LOGIC
+// ==========================================
+function renderActiveRooms(rooms) {
+    let container = document.getElementById('roomsContainer');
+    if (!container) return;
+
+    let keys = Object.keys(rooms);
+    if (!keys.length) {
+        container.innerHTML = "<p style='color:#666; font-size:12px; grid-column:1/-1;'>No active auction rooms running.</p>";
+        return;
+    }
+
+    let html = '';
+    keys.forEach(key => {
+        let room = rooms[key];
+        let settings = room.settings || {};
+        let live = room.live_state || {};
+        let status = live.auction_state || 'idle';
+        let currentBid = (live.current_bid || 0) / 10000000;
+        let leader = live.highest_bidder || '-';
+
+        // Using the CSS classes already defined in your admin.css
+        html += `
+        <div class="room-card">
+            <div class="r-title">
+                ${esc(settings.room_name || 'Unnamed Room')}
+                <span class="r-pin">${esc(key)}</span>
+            </div>
+            <div class="r-stat"><span>Status</span><span style="color:${status==='bidding'?'#28a745':'#ffc107'}">${status.toUpperCase()}</span></div>
+            <div class="r-stat"><span>Current Bid</span><span style="color:#28a745">₹${currentBid.toFixed(2)} Cr</span></div>
+            <div class="r-stat"><span>Leader</span><span>${esc(leader)}</span></div>
+            <button class="action-btn outline danger delete-room-btn" style="width:100%; margin-top:10px; font-size:11px;" data-room="${esc(key)}">Terminate Room</button>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function deleteAuctionRoom(roomKey) {
+    showConfirm('Terminate Room', `Are you sure you want to permanently delete room PIN: ${roomKey}? This will kick all users.`, () => {
+        db.ref('rooms/' + roomKey).remove();
+    });
+}
+
+// ==========================================
+// DATABASE MANAGER (UPDATED)
+// ==========================================
+// Replace your existing renderPresetDBs function with this updated one:
+function renderPresetDBs(dbs) {
+    let el = document.getElementById('presetDbList');
+    let selector = document.getElementById('dbSelector'); // Grab the dropdown
+    if (!el) return;
+    
+    let keys = Object.keys(dbs);
+    if (!keys.length) {
+        el.innerHTML = "<p style='color:#666; font-size:12px;'>No databases uploaded yet.</p>";
+        if (selector) selector.innerHTML = '<option value="">No presets available</option>';
+        return;
+    }
+
+    let html = '';
+    let selHtml = '';
+    
+    keys.forEach(key => {
+        let count = dbs[key].length || 0;
+        
+        // Build the dropdown options
+        selHtml += `<option value="${esc(key)}">${esc(key).toUpperCase()} (${count} Players)</option>`;
+        
+        // Build the list below
+        html += `
+        <div style="background:#111; border:1px solid #333; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="color:#ffc107; font-weight:bold; font-size:14px; text-transform:uppercase;">${esc(key)}</div>
+                <div style="color:#888; font-size:10px;">${count} Players</div>
+            </div>
+            <button class="action-btn danger delete-db-btn" style="padding:4px 8px; font-size:10px;" data-key="${esc(key)}">Delete</button>
+        </div>`;
+    });
+    
+    el.innerHTML = html;
+    if (selector) selector.innerHTML = selHtml; // Populate the dropdown
+}
