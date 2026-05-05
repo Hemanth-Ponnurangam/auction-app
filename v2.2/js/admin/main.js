@@ -255,17 +255,26 @@ function deletePresetDB(dbKey) {
 
 function renderPresetDBs(dbs) {
     let el = document.getElementById('presetDbList');
+    let selector = document.getElementById('dbSelector'); // The dropdown
     if (!el) return;
     
     let keys = Object.keys(dbs);
     if (!keys.length) {
         el.innerHTML = "<p style='color:#666; font-size:12px;'>No databases uploaded yet.</p>";
+        if (selector) selector.innerHTML = '<option value="">No presets available</option>';
         return;
     }
 
     let html = '';
+    let selHtml = '';
+    
     keys.forEach(key => {
         let count = dbs[key].length || 0;
+        
+        // Build the dropdown options
+        selHtml += `<option value="${esc(key)}">${esc(key).toUpperCase()} (${count} Players)</option>`;
+        
+        // Build the list below
         html += `
         <div style="background:#111; border:1px solid #333; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -275,7 +284,9 @@ function renderPresetDBs(dbs) {
             <button class="action-btn danger delete-db-btn" style="padding:4px 8px; font-size:10px;" data-key="${esc(key)}">Delete</button>
         </div>`;
     });
+    
     el.innerHTML = html;
+    if (selector) selector.innerHTML = selHtml; // Populate the dropdown
 }
 
 // Tab Switching (Bulletproof Inline Version)
