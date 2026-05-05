@@ -106,6 +106,15 @@ function setupEventListeners() {
             }
         });
     });
+
+    // Add this inside setupEventListeners()
+    // Event Delegation for "Terminate Room" buttons
+    document.getElementById('roomsContainer')?.addEventListener('click', e => {
+        if (e.target.classList.contains('delete-room-btn')) {
+            deleteAuctionRoom(e.target.dataset.room);
+        }
+    });
+    
 }
 
 // --- Auth & Boot ---
