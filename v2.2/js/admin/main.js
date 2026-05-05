@@ -83,6 +83,29 @@ function setupEventListeners() {
             deletePresetDB(e.target.dataset.key);
         }
     });
+
+    // Add these inside setupEventListeners()
+
+    // 1. Process the Image CSV Upload
+    document.querySelector('#uploadImageCsvModal .action-btn:not(.outline)').addEventListener('click', processImageCsvUpload);
+
+    // 2. Delegate the Delete Image buttons
+    document.getElementById('imgTableBody')?.addEventListener('click', e => {
+        if (e.target.classList.contains('delete-img-btn')) {
+            deletePlayerImage(e.target.dataset.name);
+        }
+    });
+
+    // 3. Image Search Bar Filtering
+    document.getElementById('adminImgSearch')?.addEventListener('input', e => {
+        let term = e.target.value.toLowerCase();
+        document.querySelectorAll('#imgTableBody tr').forEach(row => {
+            if (row.cells.length > 1) { // Ignore the "no images" placeholder row
+                let name = row.cells[1].textContent.toLowerCase();
+                row.style.display = name.includes(term) ? '' : 'none';
+            }
+        });
+    });
 }
 
 // --- Auth & Boot ---
