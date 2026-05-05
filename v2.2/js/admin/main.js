@@ -258,3 +258,91 @@ function renderPresetDBs(dbs) {
             e.currentTarget.classList.add('active');
         });
     });
+
+// ==========================================
+// IMAGE DIRECTORY LOGIC
+// ==========================================
+
+function processImageCsvUpload() {
+    let fileInput = document.getElementById('uploadImageFile');
+    if (!fileInput.files.length) {
+        showAlert('Missing File', 'Please select a CSV file first.');
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.onload = e => {
+        let text = e.target.result;
+        let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+        let updates = {};
+        let count = 0;
+        
+        // Skip header row
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            if (cols.length >= 2) {
+                let name = cols[0].replace(/^"|"$/g, '').trim();
+                let url = cols[1].replace(/^"|"$/g, '').trim();
+                if (name && url) {
+                    // Firebase keys can't contain . # $ [ ] or /, so we sanitize the name key
+                    let safeKey = name.replace(/[.#$\[\]\/]/g, '_');
+                    updates[safeKey] = { url: url, originalName: name };
+                    count++;
+                }
+            }
+        }
+        
+        if (count > 0) {
+            db.ref('global_player_images').update(updates).then(() => {
+                showAlert('Success', `Successfully imported ${count} image mappings.`);
+                document.getElementById('uploadImageCsvModal').style.display = 'none';
+                fileInput.value = ''; // Reset input
+            });
+        } else {
+            showAlert('Error', 'No valid rows found. Ensure CSV has Name and URL columns.');
+        }
+    };
+    reader.readAsText(fileInput.files[0]);
+}
+
+function renderGlobalImages(images) {
+    let tbody = document.getElementById('imgTableBody');
+    if (!tbody) return;
+
+    let keys = Object.keys(images);
+    if (!keys.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images mapped yet.</td></tr>';
+        return;
+    }
+
+    let html = '';
+    keys.forEach(key => {
+        let imgData = images[key];
+        // Handle both older string URLs and newer object formats {url: '', originalName: ''}
+        let url = typeof imgData === 'string' ? imgData : imgData.url; 
+        let displayName = imgData.originalName || key;
+        
+        let safeName = esc(displayName);
+        let safeKey = esc(key);
+        let safeUrl = esc(url);
+        
+        // Include a fallback onerror SVG just in case the link breaks
+        html += `
+        <tr>
+            <td><img src="${safeUrl}" class="img-preview" alt="preview" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='"></td>
+            <td style="font-weight:bold; color:#fff;">${safeName}</td>
+            <td style="color:#888; font-size:11px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeUrl}</td>
+            <td>
+                <button class="action-btn danger delete-img-btn" style="padding:4px 8px; font-size:10px;" data-name="${safeKey}">Remove</button>
+            </td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function deletePlayerImage(imageKey) {
+    showConfirm('Remove Image', `Are you sure you want to delete this image mapping?`, () => {
+        db.ref('global_player_images/' + imageKey).remove();
+    });
+}
