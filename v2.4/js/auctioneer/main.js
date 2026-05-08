@@ -23,6 +23,15 @@ let _prevTimerEnd = 0;
 let localBidTracker = 0;
 let _lastTimerWarnSecond = -1;
 
+// ─ EXPLICIT GLOBAL BINDINGS FOR HTML ONCLICK EVENTS ─────────────────
+window.pushPlayerToBlock = pushPlayerToBlock;
+window.pullRandomFromSet = pullRandomFromSet;
+window.sellPlayer = sellPlayer;
+window.passPlayer = passPlayer;
+window.undoLastSale = undoLastSale;
+window.undoLastBid = undoLastBid;
+window.confirmResetAuction = confirmResetAuction;
+
 window.onload = function() {
     setupEventListeners();
     
@@ -616,10 +625,3 @@ window.bypassCooldown = () => {
     if (!state.roomRef || state.liveState.auction_state !== 'cooldown') return;
     state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: getCurrentServerTime() + ((state.settings.bid_timer_secs||15)*1000) });
 };
-
-window.confirmResetAuction = confirmResetAuction;
-window.pullRandomFromSet = pullRandomFromSet;
-window.passPlayer = passPlayer;
-window.sellPlayer = sellPlayer;
-window.undoLastSale = undoLastSale;
-window.undoLastBid = undoLastBid;
