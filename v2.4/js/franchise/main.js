@@ -486,8 +486,9 @@ window.refreshLists = function() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('deckSearch')?.value.toLowerCase() || '';
     
-    // Bypass the set filter if the STAR filter is active
+    // Bypass the set filter completely if the STAR filter is toggled ON
     let effectiveSet = _deckRoleFilter === 'STAR' ? '' : set;
+    
     renderDeckList('deckList', effectiveSet, deckSearch, _deckRoleFilter, watchlist, false);
     
     renderUnsoldList('unsoldList', '', false);
