@@ -1,15 +1,25 @@
+/**
+ * main.js (Admin)
+ * The main controller for the Super Admin platform console.
+ */
+
 import { db } from '../shared/firebase.js';
-import { showAlert, showConfirm, showPrompt, esc, closeModal } from '../shared/dom.js';
+import { verifySuperAdmin } from '../shared/auth.js';
+import { esc, showAlert, showConfirm, showPrompt } from '../shared/dom.js';
 import { parseVanillaCSV } from './csv.js';
 
+let isSuperAdmin = false;
 let activeDatabases = {};
 let globalImages = {};
 let globalTeams = {};
+let activeRooms = {};
 
-window.onload = () => {
+window.onload = function() {
+    setupEventListeners();
+    
     // Dynamically inject the Logo URL input into the Add Team Modal
     const colorInput = document.getElementById('ntColor');
-    if (colorInput) {
+    if (colorInput && !document.getElementById('ntLogo')) {
         const logoHtml = `<label class="modal-label" style="margin-top:15px;">Logo URL (Transparent PNG)</label>
                           <input type="text" id="ntLogo" class="modal-input" placeholder="https://.../logo.png">`;
         colorInput.insertAdjacentHTML('afterend', logoHtml);
@@ -17,72 +27,151 @@ window.onload = () => {
 
     // Convert the Image Directory table into a Card Grid container
     const imgPanel = document.querySelector('#tab-images .panel > div:last-child');
-    if (imgPanel) {
+    if (imgPanel && !document.getElementById('imgCardGrid')) {
         imgPanel.innerHTML = '<div id="imgCardGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;"></div>';
     }
 
-    attachTabListeners();
+    let savedPin = sessionStorage.getItem('superAdminPin');
+    if (savedPin) {
+        verifySuperAdmin(savedPin).then(valid => {
+            if (valid) {
+                isSuperAdmin = true;
+                executeAdminBoot();
+            } else {
+                document.getElementById('adminLoginScreen').style.display = 'flex';
+            }
+        });
+    } else {
+        document.getElementById('adminLoginScreen').style.display = 'flex';
+    }
 };
 
-document.getElementById('btnAdminLogin').addEventListener('click', () => {
-    let pin = document.getElementById('adminPinInput').value.trim();
-    db.ref('super_admin_pin').once('value', snap => {
-        if (snap.val() === pin) {
-            document.getElementById('adminLoginScreen').style.display = 'none';
-            document.getElementById('masterDashboard').style.display = 'flex';
-            initAdminSystems();
-        } else {
-            showAlert('Access Denied', 'Invalid System PIN.');
-        }
+function setupEventListeners() {
+    // Login Screen
+    document.getElementById('btnAdminLogin')?.addEventListener('click', handleAdminLogin);
+    document.getElementById('adminPinInput')?.addEventListener('keypress', e => {
+        if(e.key === 'Enter') handleAdminLogin();
     });
-});
-
-document.getElementById('btnLogoutAdmin').addEventListener('click', () => {
-    window.location.reload();
-});
-
-function initAdminSystems() {
-    db.ref('presets').on('value', snap => {
-        activeDatabases = snap.val() || {};
-        renderDatabaseManager();
+    document.getElementById('btnAdminBack')?.addEventListener('click', () => {
+        window.location.href = 'index.html';
     });
-
-    db.ref('global_player_images').on('value', snap => {
-        globalImages = snap.val() || {};
-        renderImageCards();
-    });
-
-    db.ref('global_teams').on('value', snap => {
-        globalTeams = snap.val() || {};
-        renderGlobalTeams();
-    });
-}
-
-function attachTabListeners() {
+    
+    // Header
+    document.getElementById('btnLogoutAdmin')?.addEventListener('click', logoutAdmin);
+    
+    // Tabs
     document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', e => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
             document.getElementById('tab-' + e.target.getAttribute('data-tab')).classList.add('active');
         });
     });
+    
+    // Modals
+    document.getElementById('btnCloseDbUpload')?.addEventListener('click', () => document.getElementById('uploadModal').style.display = 'none');
+    document.getElementById('btnOpenImgModal')?.addEventListener('click', () => document.getElementById('uploadImageCsvModal').style.display = 'flex');
+    document.getElementById('btnCloseImgModal')?.addEventListener('click', () => document.getElementById('uploadImageCsvModal').style.display = 'none');
+    document.getElementById('btnOpenAddTeamModal')?.addEventListener('click', () => document.getElementById('addTeamModal').style.display = 'flex');
+    document.getElementById('btnCloseAddTeam')?.addEventListener('click', () => document.getElementById('addTeamModal').style.display = 'none');
+    
+    // Buttons
+    document.getElementById('btnSubmitDbUpload')?.addEventListener('click', handleDatabaseUpload);
+    document.getElementById('btnSubmitAddTeam')?.addEventListener('click', handleAddGlobalTeam);
+    
+    // Search Filters
+    document.getElementById('adminDbSearch')?.addEventListener('input', renderDatabaseManager);
+    document.getElementById('adminImgSearch')?.addEventListener('input', renderImageCards);
 }
 
-// ─ Database Manager (Expandable Player Lists & CSV/Manual Append) ────
+function handleAdminLogin() {
+    let pin = document.getElementById('adminPinInput').value.trim();
+    if (!pin) return showAlert('Error', 'Please enter PIN');
+    
+    verifySuperAdmin(pin).then(valid => {
+        if (valid) {
+            sessionStorage.setItem('superAdminPin', pin);
+            isSuperAdmin = true;
+            executeAdminBoot();
+        }
+    });
+}
+
+function logoutAdmin() {
+    sessionStorage.removeItem('superAdminPin');
+    window.location.reload();
+}
+
+function executeAdminBoot() {
+    document.getElementById('adminLoginScreen').style.display = 'none';
+    document.getElementById('masterDashboard').style.display = 'flex';
+    
+    // Load Presets
+    db.ref('presets').on('value', snap => {
+        activeDatabases = snap.val() || {};
+        updateDbDropdown();
+        renderDatabaseManager();
+    });
+    
+    // Load Images
+    db.ref('global_player_images').on('value', snap => {
+        globalImages = snap.val() || {};
+        renderImageCards();
+    });
+    
+    // Load Rooms
+    db.ref('rooms').on('value', snap => {
+        activeRooms = snap.val() || {};
+        renderActiveRooms();
+    });
+    
+    // Load Global Teams
+    db.ref('global_teams').on('value', snap => {
+        globalTeams = snap.val() || {};
+        renderGlobalTeams();
+    });
+}
+
+// ─ 1. Database Manager ──────────────────────────────────────────────
+function updateDbDropdown() {
+    let sel = document.getElementById('dbSelector');
+    if (!sel) return;
+    let prev = sel.value;
+    sel.innerHTML = '<option value="">-- View All Presets --</option>';
+    Object.keys(activeDatabases).forEach(k => {
+        sel.innerHTML += `<option value="${esc(k)}">${esc(k)}</option>`;
+    });
+    if (prev && activeDatabases[prev]) sel.value = prev;
+}
+
+document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 
 function renderDatabaseManager() {
     const list = document.getElementById('presetDbList');
+    if (!list) return;
     list.innerHTML = '';
+    
+    let filterDb = document.getElementById('dbSelector')?.value || '';
+    let filterText = document.getElementById('adminDbSearch')?.value.toLowerCase() || '';
 
-    if (Object.keys(activeDatabases).length === 0) {
+    let dbKeys = filterDb ? [filterDb] : Object.keys(activeDatabases);
+
+    if (dbKeys.length === 0) {
         list.innerHTML = '<p style="color:#666; text-align:center;">No databases uploaded yet.</p>';
         return;
     }
 
-    Object.keys(activeDatabases).forEach(dbName => {
+    dbKeys.forEach(dbName => {
         const players = activeDatabases[dbName] || [];
         
+        // Filter players if there is a search query
+        const filteredPlayers = filterText 
+            ? players.filter(p => (p.name || '').toLowerCase().includes(filterText))
+            : players;
+
+        if (filterText && filteredPlayers.length === 0) return; // Hide if no match
+
         const dbCard = document.createElement('div');
         dbCard.style.cssText = 'background:#111; border:1px solid #333; border-radius:8px; margin-bottom:10px; overflow:hidden;';
         
@@ -92,10 +181,11 @@ function renderDatabaseManager() {
         header.innerHTML = `
             <div>
                 <strong style="color:#0dcaf0; font-size:16px;">${esc(dbName)}</strong>
-                <span style="color:#888; font-size:11px; margin-left:10px;">${players.length} Players</span>
+                <span style="color:#888; font-size:11px; margin-left:10px;">${filteredPlayers.length} Players</span>
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="action-btn" style="background:#28a745;" onclick="appendPlayersToDB(event, '${dbName}')">+ Add Players</button>
+                <button class="action-btn danger outline" onclick="deleteDatabase(event, '${dbName}')">✕ Delete</button>
                 <button class="action-btn outline" onclick="togglePlayerList(event, 'list-${dbName}')">▼ View</button>
             </div>
         `;
@@ -105,7 +195,7 @@ function renderDatabaseManager() {
         playerContainer.id = `list-${dbName}`;
         playerContainer.style.cssText = 'display:none; padding:10px; background:#0a0a0f; border-top:1px solid #222; max-height:300px; overflow-y:auto;';
         
-        let pListHtml = players.map((p, i) => `
+        let pListHtml = filteredPlayers.map((p, i) => `
             <div style="display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #1a1a24; font-size:12px;">
                 <span style="color:#ccc;">${i+1}. ${esc(p.name)}</span>
                 <span style="color:#888;">${esc(p.role)} | ${esc(p.nationality)}</span>
@@ -131,11 +221,17 @@ window.togglePlayerList = (e, targetId) => {
     }
 };
 
+window.deleteDatabase = (e, dbName) => {
+    e.stopPropagation();
+    showConfirm('Delete Database', `Are you sure you want to permanently delete the database "${dbName}"?`, () => {
+        db.ref(`presets/${dbName}`).remove();
+    });
+};
+
 window.appendPlayersToDB = (e, dbName) => {
     e.stopPropagation();
     showConfirm(`Append to ${dbName}`, 'Do you want to upload a CSV file or add names manually?', 
     () => {
-        // Upload CSV Path
         let input = document.createElement('input');
         input.type = 'file';
         input.accept = '.csv';
@@ -168,13 +264,11 @@ window.appendPlayersToDB = (e, dbName) => {
         input.click();
     },
     () => {
-        // Manual Entry Path
         setTimeout(() => {
             showPrompt('Manual Entry', 'Enter player names separated by commas (e.g. MS Dhoni, Virat Kohli):', '', (val) => {
                 if (!val) return;
                 const newNames = val.split(',').map(n => n.trim()).filter(Boolean);
                 const existing = activeDatabases[dbName] || [];
-                
                 const newPlayers = newNames.map(name => ({
                     name: name, base_price: 20000000, role: 'BAT', nationality: 'Indian', status: 'available', set: 'Uncapped'
                 }));
@@ -187,8 +281,44 @@ window.appendPlayersToDB = (e, dbName) => {
     });
 };
 
-// ─ Image Directory (Card Layout & Multi-URL) ─────────────────────
+document.getElementById('btnOpenUploadModal')?.addEventListener('click', () => {
+    document.getElementById('uploadModal').style.display = 'flex';
+});
 
+function handleDatabaseUpload() {
+    let dbName = document.getElementById('dbNameInput').value.trim();
+    let file = document.getElementById('csvFileInput').files[0];
+    
+    if (!dbName || !file) return showAlert('Error', 'Please provide a name and select a file.');
+    
+    let reader = new FileReader();
+    reader.onload = e => {
+        let rows = parseVanillaCSV(e.target.result);
+        if (rows.length < 2) return showAlert('Error', 'Invalid CSV format.');
+        
+        let headers = rows[0].map(h => h.toLowerCase().trim());
+        let pool = rows.slice(1).map(row => {
+            let p = { status: 'available' };
+            headers.forEach((h, i) => {
+                let val = row[i] ? row[i].trim() : '';
+                if (h === 'player' || h === 'name') p.name = val;
+                else if (h === 'base_price' || h === 'price') p.base_price = parseInt(val) || 0;
+                else p[h] = val;
+            });
+            return p;
+        }).filter(p => p.name);
+        
+        db.ref('presets/' + dbName).set(pool).then(() => {
+            document.getElementById('uploadModal').style.display = 'none';
+            document.getElementById('dbNameInput').value = '';
+            document.getElementById('csvFileInput').value = '';
+            showAlert('Success', `Database '${dbName}' uploaded with ${pool.length} players.`);
+        });
+    };
+    reader.readAsText(file);
+}
+
+// ─ 2. Image Directory ───────────────────────────────────────────────
 function renderImageCards() {
     const grid = document.getElementById('imgCardGrid');
     if (!grid) return;
@@ -211,6 +341,7 @@ function renderImageCards() {
         
         card.innerHTML = `
             <div style="height:180px; background:#000; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                <button onclick="deleteImageMapping('${esc(playerName)}')" style="position:absolute; top:5px; right:5px; background:rgba(220,53,69,0.8); color:#fff; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; z-index:10;">✕</button>
                 <img src="${esc(activeUrl)}" style="width:100%; height:100%; object-fit:cover; object-position:top;" onerror="this.src=''; this.alt='No Image'">
                 <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.9)); padding:10px;">
                     <h3 style="margin:0; color:#fff; font-size:16px;">${esc(playerName)}</h3>
@@ -246,12 +377,57 @@ window.addUrlToPlayer = (playerName) => {
     });
 };
 
-document.getElementById('adminImgSearch')?.addEventListener('input', renderImageCards);
+window.deleteImageMapping = (playerName) => {
+    showConfirm('Delete Mapping', `Remove all images mapped to ${playerName}?`, () => {
+        db.ref(`global_player_images/${playerName}`).remove();
+    });
+};
 
-// ─ Global Franchises (Transparent Logos) ─────────────────────────
+// ─ 3. Active Rooms ──────────────────────────────────────────────────
+function renderActiveRooms() {
+    let container = document.getElementById('roomsContainer');
+    if (!container) return;
+    
+    let keys = Object.keys(activeRooms);
+    if (!keys.length) {
+        container.innerHTML = "<p style='color:#666; font-size:12px; grid-column:1/-1;'>No active auction rooms running.</p>";
+        return;
+    }
 
+    let html = '';
+    keys.forEach(key => {
+        let room = activeRooms[key];
+        let settings = room.settings || {};
+        let live = room.live_state || {};
+        let status = live.auction_state || 'idle';
+        let currentBid = (live.current_bid || 0) / 10000000;
+        let leader = live.highest_bidder || '-';
+
+        html += `
+        <div class="room-card">
+            <div class="r-title">
+                ${esc(settings.room_name || 'Unnamed Room')}
+                <span class="r-pin">${esc(key)}</span>
+            </div>
+            <div class="r-stat"><span>Status</span><span style="color:${status==='bidding'?'#28a745':'#ffc107'}">${status.toUpperCase()}</span></div>
+            <div class="r-stat"><span>Current Bid</span><span style="color:#28a745">₹${currentBid.toFixed(2)} Cr</span></div>
+            <div class="r-stat"><span>Leader</span><span>${esc(leader)}</span></div>
+            <button class="action-btn outline danger delete-room-btn" style="width:100%; margin-top:10px; font-size:11px;" onclick="deleteRoom('${esc(key)}')">Terminate Room</button>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+window.deleteRoom = (key) => {
+    showConfirm('Terminate Room', `Are you sure you want to permanently delete room [${key}]?`, () => {
+        db.ref('rooms/' + key).remove();
+    });
+};
+
+// ─ 4. Global Franchises ─────────────────────────────────────────────
 function renderGlobalTeams() {
     const list = document.getElementById('globalTeamsList');
+    if (!list) return;
     list.innerHTML = '';
 
     Object.keys(globalTeams).forEach(code => {
@@ -273,15 +449,7 @@ function renderGlobalTeams() {
     });
 }
 
-document.getElementById('btnOpenAddTeamModal').addEventListener('click', () => {
-    document.getElementById('addTeamModal').style.display = 'flex';
-});
-
-document.getElementById('btnCloseAddTeam').addEventListener('click', () => {
-    document.getElementById('addTeamModal').style.display = 'none';
-});
-
-document.getElementById('btnSubmitAddTeam').addEventListener('click', () => {
+function handleAddGlobalTeam() {
     const code = document.getElementById('ntCode').value.trim().toUpperCase();
     const name = document.getElementById('ntName').value.trim();
     const color = document.getElementById('ntColor').value;
@@ -299,7 +467,7 @@ document.getElementById('btnSubmitAddTeam').addEventListener('click', () => {
         document.getElementById('ntName').value = '';
         if (logoInput) logoInput.value = '';
     });
-});
+}
 
 window.deleteGlobalTeam = (code) => {
     showConfirm('Delete Franchise', `Are you sure you want to delete ${code} from global registry?`, () => {
