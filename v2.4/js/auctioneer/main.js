@@ -23,15 +23,6 @@ let _prevTimerEnd = 0;
 let localBidTracker = 0;
 let _lastTimerWarnSecond = -1;
 
-// ─ EXPLICIT GLOBAL BINDINGS FOR HTML ONCLICK EVENTS ─────────────────
-window.pushPlayerToBlock = pushPlayerToBlock;
-window.pullRandomFromSet = pullRandomFromSet;
-window.sellPlayer = sellPlayer;
-window.passPlayer = passPlayer;
-window.undoLastSale = undoLastSale;
-window.undoLastBid = undoLastBid;
-window.confirmResetAuction = confirmResetAuction;
-
 window.onload = function() {
     setupEventListeners();
     
@@ -42,572 +33,733 @@ window.onload = function() {
     } else {
         document.getElementById('adminGatewayScreen').style.display = 'flex';
     }
-
-    const logContainer = document.getElementById('logContainer');
-    if (logContainer) {
-        logContainer.addEventListener('scroll', () => {
-            isUserScrollingLog = (logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight) >= 15;
-        });
-    }
 };
 
+// --- Centralized Event Listeners ---
 function setupEventListeners() {
+    // Gateway Screens
+    document.querySelector('.btn-massive[onclick="showCreateRoom()"]')?.addEventListener('click', showCreateRoom);
+    document.querySelector('.btn-auctioneer[onclick="showJoinAdminRoom()"]')?.addEventListener('click', showJoinAdminRoom);
+    document.querySelector('#createRoomScreen .submit-btn')?.addEventListener('click', createNewRoom);
+    document.querySelector('#joinAdminRoomScreen .submit-btn')?.addEventListener('click', joinAdminRoom);
+    document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', backToAdminGateway));
     document.getElementById('dbSelection')?.addEventListener('change', toggleCustomUpload);
-    document.getElementById('set-limit-mid')?.addEventListener('input', e => document.getElementById('label-mid-start').textContent = e.target.value);
-    document.getElementById('set-limit-high')?.addEventListener('input', e => document.getElementById('label-high-start').textContent = e.target.value);
+    
+    // Header & Settings
+    document.querySelector('.gear-btn')?.addEventListener('click', openSettings);
+    document.querySelector('#settingsOverlay .btn-massive.btn-auctioneer')?.addEventListener('click', saveSettings);
+    document.querySelector('#settingsOverlay .btn-outline-danger')?.addEventListener('click', confirmResetAuction);
+    
+    // Broadcast & Chat
+    document.querySelector('.btn-broadcast-send')?.addEventListener('click', sendBroadcast);
+    document.getElementById('broadcastInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendBroadcast(); });
+    document.getElementById('broadcastClearBtn')?.addEventListener('click', clearBroadcast);
+    document.querySelector('.chat-btn')?.addEventListener('click', sendChatMessage);
+    document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+
+    // Action Controls
+    document.getElementById('dynamicSellBtn')?.addEventListener('click', function() {
+        if (this.classList.contains('btn-green')) sellPlayer();
+        else if (this.classList.contains('btn-red')) passPlayer();
+    });
+    document.getElementById('randomDiceBtn')?.addEventListener('click', pullRandomFromSet);
+    document.querySelector('button[title="Undo Sale"]')?.addEventListener('click', undoLastSale);
+    document.querySelector('button[title="Undo Last Bid"]')?.addEventListener('click', undoLastBid);
+    document.getElementById('btnPause')?.addEventListener('click', togglePause);
+    document.querySelector('button[title="Force Start"]')?.addEventListener('click', bypassCooldown);
+    
+    // Clocks
+    document.querySelectorAll('.master-clock').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            let secs = parseInt(e.target.innerText);
+            if (!isNaN(secs)) startTimer(secs, 'bidding');
+        });
+    });
+
+    // Right Panel Tabs & Filters
+    document.getElementById('auctioneerSearch')?.addEventListener('input', () => {
+        clearTimeout(_renderTimer);
+        _renderTimer = setTimeout(refreshLists, 200);
+    });
+    document.getElementById('setSelector')?.addEventListener('change', refreshLists);
+    document.getElementById('teamSelector')?.addEventListener('change', refreshLists);
+    
+    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            let name = e.target.innerText.includes('DECK') ? 'deck' :
+                       e.target.innerText.includes('UNSOLD') ? 'unsold' :
+                       e.target.innerText.includes('SQUADS') ? 'squads' : 'logs';
+            switchTab(name, e.target);
+        });
+    });
+
+    document.querySelectorAll('.role-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => setRoleFilter(e.target.dataset.role, e.target));
+    });
+
+    // Delegation for dynamic lists (Budgets, Deck, Unsold)
+    document.getElementById('budgetCards')?.addEventListener('click', e => {
+        if (e.target.classList.contains('delete-team-btn')) confirmDeleteTeam(e.target.dataset.team);
+        if (e.target.classList.contains('pin-eye')) togglePin(e.target.dataset.pinEye);
+    });
+
+    // Attach to dynamic list buttons rendered by shared/render.js
+    document.addEventListener('click', e => {
+        if (e.target.classList.contains('action-btn') && e.target.dataset.pushIndex) {
+            pushPlayerToBlock(e.target.dataset.pushIndex);
+        }
+    });
 }
 
-window.showCreateRoom = () => {
+// --- Keyboard Shortcuts ---
+document.addEventListener('keydown', e => {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    if (document.getElementById('adminDashboardWrapper')?.style.display === 'none') return;
+    
+    let dynBtn = document.getElementById('dynamicSellBtn');
+    let pauseBtn = document.getElementById('btnPause');
+    
+    if (e.key.toLowerCase() === 's' && dynBtn && !dynBtn.disabled && dynBtn.classList.contains('btn-green')) sellPlayer();
+    if (e.key.toLowerCase() === 'x' && dynBtn && !dynBtn.disabled && dynBtn.classList.contains('btn-red')) passPlayer();
+    if (e.key.toLowerCase() === 'p' && pauseBtn && !pauseBtn.disabled) togglePause();
+    if (e.code === 'Space') { e.preventDefault(); pullRandomFromSet(); }
+});
+
+// --- Gateway & UI Setup ---
+
+function showCreateRoom() {
     document.getElementById('adminGatewayScreen').style.display = 'none';
     document.getElementById('createRoomScreen').style.display = 'flex';
-    db.ref('presets').once('value', snap => {
-        let p = snap.val() || {};
-        let sel = document.getElementById('dbSelection');
-        sel.innerHTML = '<option value="">Select Database...</option>';
-        Object.keys(p).forEach(k => {
-            sel.innerHTML += `<option value="${esc(k)}">${esc(k)} (${p[k].length} players)</option>`;
-        });
-        sel.innerHTML += '<option value="custom">Upload Custom CSV...</option>';
+    let sel = document.getElementById('dbSelection');
+    sel.innerHTML = '<option value="custom">Upload Custom CSV</option>';
+    
+    db.ref('preset_databases').once('value', snap => {
+        let dbs = snap.val() || {}, keys = Object.keys(dbs);
+        if (keys.length) {
+            sel.innerHTML = '';
+            keys.forEach(k => { 
+                let o = document.createElement('option'); 
+                o.value = 'preset_' + k; o.text = `Preset: ${k.toUpperCase()} (${dbs[k].length} Players)`; 
+                sel.appendChild(o); 
+            });
+            let co = document.createElement('option'); co.value = 'custom'; co.text = 'Upload Custom CSV'; sel.appendChild(co);
+            sel.value = 'preset_' + keys[0];
+        } else { sel.value = 'custom'; }
+        toggleCustomUpload();
     });
-};
+}
 
-window.showJoinAdminRoom = () => {
+function showJoinAdminRoom() {
     document.getElementById('adminGatewayScreen').style.display = 'none';
     document.getElementById('joinAdminRoomScreen').style.display = 'flex';
-};
+}
 
-window.backToAdminGateway = () => {
+function backToAdminGateway() {
     document.getElementById('createRoomScreen').style.display = 'none';
     document.getElementById('joinAdminRoomScreen').style.display = 'none';
     document.getElementById('adminGatewayScreen').style.display = 'flex';
-};
+}
 
-window.toggleCustomUpload = () => {
-    let val = document.getElementById('dbSelection').value;
-    document.getElementById('customDbUpload').style.display = val === 'custom' ? 'block' : 'none';
-};
+function toggleCustomUpload() {
+    document.getElementById('customDbUpload').style.display = document.getElementById('dbSelection').value === 'custom' ? 'block' : 'none';
+}
 
-window.createNewRoom = () => {
+// FIX: CSV Apostrophe Parsing
+function parseCSV(text) {
+    let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    let raw = lines[0].split(',');
+    let hdrs = raw.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,''));
+    let result = [];
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        let obj = { status: 'available' };
+        for (let j = 0; j < hdrs.length; j++) {
+            // Replaced /['"]+/g with /^"|"$/g to preserve internal single quotes
+            let v = (cols[j]||'').replace(/^"|"$/g, '').trim(); 
+            let h = hdrs[j];
+            if (h === 'baseprice') {
+                let num = Number(v) || 0;
+                obj.base_price = (num > 0 && num <= 100) ? num * CRORE : num;
+            } else if (['runs','average','avg','sr','strikerate','wickets','economy','econ','bowlingsr'].includes(h)) {
+                let key = h;
+                if(h === 'avg') key = 'average';
+                if(h === 'strikerate' || h === 'sr') key = 'bat_sr';
+                if(h === 'econ') key = 'economy';
+                if(h === 'bowlingsr') key = 'bowl_sr';
+                obj[key] = v || '-';
+            } else if (['name','set','role','franchise','nationality'].includes(h)) {
+                obj[h] = v;
+            }
+        }
+        result.push(obj);
+    }
+    return result;
+}
+
+function createNewRoom() {
     let name = document.getElementById('newRoomName').value.trim();
     let key = document.getElementById('newRoomKey').value.trim();
-    let purseCr = parseFloat(document.getElementById('newRoomPurse').value);
-    let dbSel = document.getElementById('dbSelection').value;
-
-    if (!name || !key || isNaN(purseCr) || !dbSel) return showAlert('Missing Info', 'Please fill all fields.');
-
-    db.ref('rooms/' + key).once('value', snap => {
-        if (snap.exists()) return showAlert('Error', 'Room Key already in use.');
-        if (dbSel === 'custom') {
-            let file = document.getElementById('csvFileInput').files[0];
-            if (!file) return showAlert('Error', 'Please select a CSV file.');
-            let reader = new FileReader();
-            reader.onload = e => {
-                let rows = parseCSV(e.target.result);
-                if (rows.length < 2) return showAlert('Error', 'Invalid CSV format.');
-                let headers = rows[0].map(h => h.toLowerCase().trim());
-                let pool = rows.slice(1).map(row => {
-                    let p = { status: 'available' };
-                    headers.forEach((h, i) => {
-                        let val = row[i] ? row[i].trim() : '';
-                        if (h === 'player' || h === 'name') p.name = val;
-                        else if (h === 'base_price' || h === 'price') p.base_price = parseInt(val) || 0;
-                        else p[h] = val;
-                    });
-                    return p;
-                }).filter(p => p.name);
-                finalizeRoomCreation(key, name, purseCr, pool);
-            };
-            reader.readAsText(file);
-        } else {
-            db.ref('presets/' + dbSel).once('value', pSnap => {
-                let pool = pSnap.val();
-                if (!pool) return showAlert('Error', 'Selected database not found.');
-                finalizeRoomCreation(key, name, purseCr, pool);
+    let dbType = document.getElementById('dbSelection').value;
+    let purse = parseInt(document.getElementById('newRoomPurse').value) || 100;
+    
+    if (!name || key.length < 4) { showAlert('Invalid Input','Enter a Room Name and 4-digit key.'); return; }
+    
+    db.ref('rooms/'+key).once('value', snap => {
+        if (snap.exists()) { showAlert('Key Taken','Room key already exists. Pick another or Join it.'); return; }
+        
+        let init = poolData => {
+            db.ref('rooms/'+key).set({
+                settings: { room_name: name, starting_purse: purse, overseas_limit_enabled: true },
+                player_pool: poolData,
+                live_state: { auction_state: 'idle', current_bid: 0, highest_bidder: '-', timer_end: 0, current_player_index: -1, last_sold_index: -1, bid_stack: null }
+            }).then(() => {
+                sessionStorage.setItem('roomKey', key);
+                setRoomState(key, db.ref('rooms/'+key));
+                executeAdminBoot();
             });
+        };
+        
+        if (dbType.startsWith('preset_')) {
+            let pid = dbType.replace('preset_','');
+            db.ref('preset_databases/'+pid).once('value', s => {
+                let pool = (s.val() || []).map(p => { p.status = 'available'; return p; });
+                if (!pool.length) { showAlert('Empty DB','Selected preset is empty!'); return; }
+                init(pool);
+            });
+        } else {
+            let fi = document.getElementById('csvFileInput');
+            if (!fi.files.length) { showAlert('Missing File','Select a CSV file.'); return; }
+            let reader = new FileReader();
+            reader.onload = e => { 
+                let pool = parseCSV(e.target.result); 
+                if(pool.length && pool[0].name !== undefined) init(pool); 
+                else showAlert('CSV Error','Could not parse the file.'); 
+            };
+            reader.readAsText(fi.files[0]);
         }
-    });
-};
-
-function finalizeRoomCreation(key, name, purseCr, pool) {
-    let rRef = db.ref('rooms/' + key);
-    rRef.set({
-        settings: { room_name: name, starting_purse: purseCr, bid_timer_secs: 15, cooldown_secs: 10, inc_base: 20, inc_mid: 50, inc_high: 100, limit_mid: 2, limit_high: 5 },
-        player_pool: pool,
-        live_state: { auction_state: 'idle', current_bid: 0, highest_bidder: '-', timer_end: 0, current_player_index: -1, last_sold_index: -1, bid_stack: null },
-        logged_in_teams: { 'ADMIN': true }
-    }).then(() => {
-        sessionStorage.setItem('roomKey', key);
-        setRoomState(key, rRef);
-        executeAdminBoot();
     });
 }
 
-window.joinAdminRoom = () => {
+function joinAdminRoom() {
     let key = document.getElementById('joinAdminKey').value.trim();
-    db.ref('rooms/' + key).once('value', snap => {
-        if (snap.exists()) {
-            sessionStorage.setItem('roomKey', key);
-            setRoomState(key, db.ref('rooms/' + key));
-            executeAdminBoot();
-        } else {
-            showAlert('Not Found', 'Invalid Room Key.');
-        }
+    db.ref('rooms/'+key).once('value', snap => {
+        if (snap.exists()) { 
+            sessionStorage.setItem('roomKey', key); 
+            setRoomState(key, db.ref('rooms/'+key)); 
+            executeAdminBoot(); 
+        } else { showAlert('Not Found','Invalid Room Key!'); }
     });
-};
+}
 
 function executeAdminBoot() {
     document.getElementById('adminGatewayScreen').style.display = 'none';
     document.getElementById('createRoomScreen').style.display = 'none';
     document.getElementById('joinAdminRoomScreen').style.display = 'none';
     document.getElementById('adminDashboardWrapper').style.display = 'flex';
-
-    state.roomRef.child('logged_in_teams/ADMIN').set(true);
-    state.roomRef.child('logged_in_teams/ADMIN').onDisconnect().remove();
-
     attachFirebaseListeners();
-    persistEvent('🔨 <strong>Auctioneer System Online.</strong>');
 }
 
+// --- Firebase Listeners ---
 function attachFirebaseListeners() {
-    db.ref('.info/connected').on('value', snap => document.getElementById('connBanner').style.display = snap.val() ? 'none' : 'block');
-
-    state.roomRef.child('settings').on('value', snap => {
-        let s = snap.val() || {};
-        state.settings = { ...state.settings, ...s };
-        document.getElementById('headerRoomName').textContent = (s.room_name || 'IPL').toUpperCase();
-    });
-
-    state.roomRef.child('teams_auth').on('value', snap => {
-        state.allRegisteredTeams = snap.val() || {};
-        updateTeamDropdown(); recalculateBudgets(); updateBudgetsUI();
-    });
-
-    state.roomRef.child('logged_in_teams').on('value', snap => {
-        state.activePresence = snap.val() || {};
-        updateBudgetsUI();
-    });
-
-    state.roomRef.child('player_pool').once('value', snap => {
-        let raw = snap.val() || [];
-        state.playerPool = Array.isArray(raw) ? raw : Object.values(raw);
-        populateSetDropdown(); recalculateBudgets(); window.refreshLists(); updateBudgetsUI();
-    });
-
-    state.roomRef.child('player_pool').on('child_changed', snap => {
-        let idx = parseInt(snap.key);
-        if (!isNaN(idx)) {
-            state.playerPool[idx] = snap.val();
-            recalculateBudgets(); window.refreshLists(); updateBudgetsUI();
-            if (state.liveState.auction_state === 'sold' && _liveStateData) updateLiveUI(_liveStateData);
-        }
-    });
-
-    db.ref('global_player_images').on('value', snap => {
-        state.globalImageMap = snap.val() || {};
-        if (state.liveState && state.liveState.current_player_index >= 0) updateLiveUI(state.liveState);
-    });
-
-    state.roomRef.child('live_state').on('value', snap => {
-        let data = snap.val();
-        if (!data) return;
-        state.liveState = data;
-        _liveStateData = data;
-        updateLiveUI(data);
-        updateBudgetsUI();
+    db.ref('.info/connected').on('value', snap => {
+        let connVisible = !snap.val();
+        document.getElementById('connBanner').style.display = connVisible ? 'block' : 'none';
+        let bb = document.getElementById('broadcastBanner');
+        if (bb) bb.style.top = (connVisible && bb.style.display !== 'none') ? '36px' : '0';
     });
 
     let isChatLoaded = false;
     state.roomRef.child('chat_events').limitToLast(15).on('child_added', snap => {
         if (!isChatLoaded) return;
         let d = snap.val();
-        let col = state.allRegisteredTeams[d.team]?.color || (d.team === 'SYSTEM' ? '#ffc107' : '#fff');
-        logAction(`💬 <span style="color:${col}; font-weight:bold;">${esc(d.team)}</span>: ${esc(d.text)}`);
+        let color = state.allRegisteredTeams[d.team]?.color || (d.team === 'ADMIN' ? '#ffc107' : '#fff');
+        logLocal(`💬 <span style="color:${color}; font-weight:bold;">${esc(d.team)}</span>: ${esc(d.text)}`);
     });
-    state.roomRef.child('chat_events').once('value', () => isChatLoaded = true);
+    state.roomRef.child('chat_events').once('value', () => { isChatLoaded = true; });
 
     let isLogLoaded = false;
     state.roomRef.child('auction_log').limitToLast(100).once('value', snap => {
         let entries = snap.val() || {};
-        Object.values(entries).sort((a,b) => a.t - b.t).forEach(e => logAction(e.msg));
+        Object.values(entries).sort((a,b) => a.t - b.t).forEach(e => logLocal(e.msg, new Date(e.t)));
         isLogLoaded = true;
     });
     state.roomRef.child('auction_log').limitToLast(100).on('child_added', snap => {
         if (!isLogLoaded) return;
-        logAction(snap.val().msg);
+        let e = snap.val(); logLocal(e.msg, new Date(e.t));
+    });
+
+    db.ref('global_player_images').on('value', snap => {
+        state.globalImageMap = snap.val() || {};
+        if (state.liveState.current_player_index >= 0 && state.playerPool.length > 0) updateLiveUI(_liveStateData); 
+    });
+
+    state.roomRef.child('settings').on('value', snap => {
+        let d = snap.val() || {};
+        state.settings = { ...state.settings, ...d };
+        document.getElementById('headerRoomName').textContent = (d.room_name || 'IPL AUCTIONEER').toUpperCase();
+    });
+
+    state.roomRef.child('teams_auth').on('value', snap => {
+        state.allRegisteredTeams = snap.val() || {};
+        populateDropdowns(); recalculateBudgets(); updateBudgetTracker();
+    });
+
+    state.roomRef.child('logged_in_teams').on('value', snap => {
+        state.activePresence = snap.val() || {}; 
+        updateBudgetTracker();
+    });
+
+    state.roomRef.child('player_pool').once('value', snap => {
+        let raw = snap.val() || [];
+        state.playerPool = Array.isArray(raw) ? raw : Object.values(raw);
+        populateDropdowns(); recalculateBudgets(); scheduleRender();
+    });
+
+    state.roomRef.child('player_pool').on('child_changed', snap => {
+        let idx = parseInt(snap.key);
+        if (!isNaN(idx)) {
+            state.playerPool[idx] = snap.val();
+            recalculateBudgets(); scheduleRender(); updateBudgetTracker();
+        }
+    });
+
+    state.roomRef.child('live_state').on('value', snap => {
+        let data = snap.val() || {};
+        _liveStateData = data;
+        state.liveState = data;
+        updateLiveUI(data);
     });
 
     state.roomRef.child('broadcast').on('value', snap => {
         let d = snap.val();
-        let activeDot = document.getElementById('broadcastActiveDot');
-        if (d && d.active) {
-            document.getElementById('broadcastInput').value = d.message;
-            activeDot.style.display = 'block';
-            
-            // 5 Second Auto-Dismissal
-            setTimeout(() => {
-                if (typeof window.clearBroadcast === 'function') window.clearBroadcast();
-            }, 5000);
+        let banner = document.getElementById('broadcastBanner');
+        if (d && d.active && d.message) {
+            document.getElementById('broadcastText').textContent = d.message;
+            banner.style.display = 'block';
         } else {
-            document.getElementById('broadcastInput').value = '';
-            activeDot.style.display = 'none';
+            banner.style.display = 'none';
         }
     });
+    
+    state.roomRef.child('logged_in_teams/ADMIN').set(true);
+    state.roomRef.child('logged_in_teams/ADMIN').onDisconnect().remove();
 }
 
+// --- UI Updaters ---
+
+function logLocal(msg, date) {
+    let time = (date || new Date()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    let logDiv = document.getElementById('logContainer');
+    let entry = document.createElement('div'); entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+    if (logDiv) { logDiv.appendChild(entry); logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight; }
+}
+
+function scheduleRender() { 
+    clearTimeout(_renderTimer); 
+    _renderTimer = setTimeout(refreshLists, 60); 
+}
+
+// FIX: Refactored Live UI into manageable helpers
 function updateLiveUI(data) {
-    let pIdx = data.current_player_index !== undefined ? data.current_player_index : -1;
-    let p = pIdx >= 0 ? state.playerPool[pIdx] : null;
+    let isIdle = data.auction_state === 'idle';
+    let isPaused = data.auction_state === 'paused';
+    let currentBid = data.current_bid || 0;
+    let currentLeader = data.highest_bidder || '-';
 
-    let cr = (data.current_bid || 0) / CRORE;
-    document.getElementById('adminBid').textContent = `₹${cr.toFixed(2)} Cr`;
+    if (data.auction_state === 'bidding' && currentBid > localBidTracker && currentLeader !== '-' && currentLeader !== 'Base Price') {
+        playSound('bid');
+    }
+    localBidTracker = (data.auction_state === 'cooldown' || isIdle) ? 0 : currentBid;
+
+    updatePlayerCard(data, isIdle);
+    updateBidDisplay(data, currentBid, currentLeader);
+    updateTimerUI(data, isIdle, isPaused);
+    updateControlButtons(data, isIdle, isPaused, currentLeader);
+    updateBudgetTracker();
+}
+
+function updatePlayerCard(data, isIdle) {
+    let currentIndex = data.current_player_index !== undefined ? data.current_player_index : -1;
     
-    let lEl = document.getElementById('adminLeader');
-    let l = data.highest_bidder;
-    lEl.textContent = l;
-    lEl.style.color = (l !== '-' && l !== 'Base Price' && l !== '') ? (state.allRegisteredTeams[l]?.color || '#007bff') : '#888';
-
-    let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
-    if (stackArr.length > localBidTracker) playSound('bid');
-    localBidTracker = stackArr.length;
-
-    let historyHtml = stackArr.slice().reverse().map(b => {
-        let tColor = state.allRegisteredTeams[b.bidder]?.color || '#fff';
-        return `<div class="bid-history-item"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)}</span></div>`;
-    }).join('');
-    document.getElementById('adminBidHistory').innerHTML = historyHtml || '<div style="color:#444; padding:20px; text-align:center;">No bids yet</div>';
-
-    if (p) {
-        document.getElementById('adminPlayer').textContent = p.name;
-        document.getElementById('statRuns').textContent = p.runs || '-';
-        document.getElementById('statAvg').textContent = p.bat_avg || '-';
-        document.getElementById('statBatSR').textContent = p.bat_sr || '-';
-        document.getElementById('statWkts').textContent = p.wkts || '-';
-        document.getElementById('statEcon').textContent = p.econ || '-';
-        document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
-        
-        let tags = document.getElementById('adminPlayerTags');
-        let rl = document.getElementById('adminPlayerRole');
-        if (p.franchise) { tags.textContent = p.franchise; tags.style.display = 'inline-block'; } else tags.style.display = 'none';
-        if (p.role) { rl.textContent = p.role; rl.style.display = 'inline-block'; } else rl.style.display = 'none';
-
-        let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
-        let imgObj = state.globalImageMap[safeNameKey] || state.globalImageMap[p.name]; 
-        let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
-
-        let photoBox = document.getElementById('playerPhoto');
-        if (imgUrl) {
-            photoBox.innerHTML = `<img src="${esc(imgUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;" alt="Photo">`;
-        } else {
-            photoBox.innerHTML = 'PHOTO';
+    if (currentIndex >= 0 && state.playerPool.length > 0 && !isIdle) {
+        let p = state.playerPool[currentIndex];
+        if (p) {
+            let isOv = !['india','indian','ind'].includes((p.nationality || 'Indian').trim().toLowerCase());
+            document.getElementById('adminPlayer').innerHTML = esc(p.name) + (isOv ? `<span class="neon-plane" title="${esc(p.nationality)}">✈️</span>` : '');
+            
+            let tags = document.getElementById('adminPlayerTags'), rl = document.getElementById('adminPlayerRole');
+            if (p.franchise) { tags.textContent = p.franchise; tags.style.display = 'inline-block'; } else tags.style.display = 'none';
+            if (p.role) { rl.textContent = p.role; rl.style.display = 'inline-block'; } else rl.style.display = 'none';
+            
+            document.getElementById('statRuns').textContent = p.runs || '-';
+            document.getElementById('statAvg').textContent = p.average || '-';
+            document.getElementById('statBatSR').textContent = p.bat_sr || '-';
+            document.getElementById('statWkts').textContent = p.wickets || '-';
+            document.getElementById('statEcon').textContent = p.economy || '-';
+            document.getElementById('statBowlSR').textContent = p.bowl_sr || '-';
+            
+            let safeNameKey = (p.name || '').replace(/[.#$\[\]\/]/g, '_');
+            let imgObj = state.globalImageMap[safeNameKey] || state.globalImageMap[p.name]; 
+            let imgUrl = imgObj ? (imgObj.url || imgObj) : ''; 
+            
+            let photoBox = document.getElementById('playerPhoto');
+            if (imgUrl) photoBox.innerHTML = `<img src="${esc(imgUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">`;
+            else photoBox.innerHTML = 'PHOTO';
         }
     } else {
-        document.getElementById('adminPlayer').textContent = 'Waiting...';
+        document.getElementById('adminPlayer').textContent = 'Waiting…';
         document.getElementById('adminPlayerTags').style.display = 'none';
         document.getElementById('adminPlayerRole').style.display = 'none';
         document.getElementById('playerPhoto').innerHTML = 'PHOTO';
-        ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => document.getElementById(id).textContent = '-');
-    }
-
-    manageDynamicButtons(data, p);
-    manageTimerArc(data);
-}
-
-function manageDynamicButtons(data, player) {
-    let btn = document.getElementById('dynamicSellBtn');
-    let btnPause = document.getElementById('btnPause');
-    let s = data.auction_state;
-
-    if (s === 'idle') {
-        btn.className = 'btn-unsold'; btn.textContent = 'WAITING FOR PLAYER'; btn.disabled = true;
-        btnPause.className = 'action-btn btn-pause'; btnPause.disabled = true;
-    } else if (s === 'cooldown') {
-        btn.className = 'btn-green'; btn.textContent = 'AUCTION STARTING...'; btn.disabled = true;
-        btnPause.className = 'action-btn btn-pause'; btnPause.disabled = true;
-    } else if (s === 'paused') {
-        btn.className = 'btn-unsold'; btn.textContent = 'PAUSED'; btn.disabled = true;
-        btnPause.className = 'action-btn btn-pause is-paused'; btnPause.disabled = false;
-    } else if (s === 'sold') {
-        btn.className = 'btn-green'; btn.textContent = 'SOLD TO ' + esc(data.highest_bidder); btn.disabled = true;
-        btnPause.className = 'action-btn btn-pause'; btnPause.disabled = true;
-    } else if (s === 'unsold') {
-        btn.className = 'btn-unsold'; btn.textContent = 'UNSOLD'; btn.disabled = true;
-        btnPause.className = 'action-btn btn-pause'; btnPause.disabled = true;
-    } else if (s === 'bidding') {
-        btnPause.disabled = false;
-        btnPause.className = 'action-btn btn-pause';
-        let isFirst = data.highest_bidder === '-' || data.highest_bidder === 'Base Price';
-        if (isFirst) {
-            btn.className = 'btn-red';
-            btn.textContent = 'PASS (UNSOLD)';
-            btn.disabled = false;
-            btn.onclick = passPlayer;
-        } else {
-            btn.className = 'btn-green';
-            btn.textContent = 'SELL (₹' + (data.current_bid/CRORE).toFixed(2) + ' Cr)';
-            btn.disabled = false;
-            btn.onclick = sellPlayer;
-        }
+        ['statRuns','statAvg','statBatSR','statWkts','statEcon','statBowlSR'].forEach(id => { document.getElementById(id).textContent = '-'; });
     }
 }
 
-function manageTimerArc(data) {
-    if (_renderTimer) clearInterval(_renderTimer);
+function updateBidDisplay(data, currentBid, currentLeader) {
+    document.getElementById('adminBid').textContent = `₹${(currentBid/CRORE).toFixed(2)} Cr`;
     
-    let el = document.getElementById('adminTimer');
-    let arc = document.getElementById('timerArc');
-    
-    _renderTimer = setInterval(() => {
-        el.classList.remove('timer-green','timer-orange','timer-red','timer-paused');
-        
-        if (data.auction_state === 'idle') {
-            el.textContent = '--';
-            if(arc) { arc.style.stroke = '#333'; arc.style.strokeDashoffset = '0'; }
-            return;
-        }
-        if (data.auction_state === 'paused') {
-            el.textContent = '⏸'; el.classList.add('timer-paused');
-            if(arc) arc.style.stroke = '#fd7e14';
+    let leaderEl = document.getElementById('adminLeader');
+    leaderEl.textContent = currentLeader;
+    leaderEl.style.color = state.allRegisteredTeams[currentLeader]?.color || '#007bff';
+
+    let stackArr = data.bid_stack ? Object.values(data.bid_stack) : [];
+    let historyHtml = stackArr.slice().reverse().map(b => {
+        let tColor = state.allRegisteredTeams[b.bidder]?.color || '#fff';
+        return `<div class="bid-history-item" style="display:flex; justify-content:space-between; padding:2px; border-bottom:1px solid #333;"><span style="color:${tColor}; font-weight:bold;">${esc(b.bidder)}</span><span style="color:#28a745; font-weight:bold;">₹${(b.amount/CRORE).toFixed(2)} Cr</span></div>`;
+    }).join('');
+    document.getElementById('adminBidHistory').innerHTML = historyHtml || '<div style="text-align:center; color:#666; padding-top:25px;">No bids yet</div>';
+}
+
+function updateTimerUI(data, isIdle, isPaused) {
+    if (window.uiTimer) clearInterval(window.uiTimer);
+    if (window._cooldownAdvance) clearTimeout(window._cooldownAdvance);
+
+    // FIX: Using server time
+    if (data.timer_end && data.timer_end !== _prevTimerEnd && !isPaused) {
+        _arcTimerTotal = Math.max(1000, data.timer_end - getCurrentServerTime());
+        _prevTimerEnd = data.timer_end;
+    }
+
+    window.uiTimer = setInterval(() => {
+        let timerEl = document.getElementById('adminTimer');
+        let arcEl = document.getElementById('timerArc');
+        timerEl.classList.remove('timer-green','timer-orange','timer-red','timer-paused');
+
+        if (isIdle) {
+            timerEl.textContent = '--';
+            if (arcEl) { arcEl.style.stroke = '#333'; arcEl.style.strokeDashoffset = ARC_CIRCUMFERENCE; }
             return;
         }
 
-        let totalMs = data.auction_state === 'cooldown' ? (state.settings.cooldown_secs||10)*1000 : (state.settings.bid_timer_secs||15)*1000;
-        
-        if (data.timer_end !== _prevTimerEnd) {
-            _prevTimerEnd = data.timer_end;
-            _arcTimerTotal = totalMs;
+        if (isPaused) {
+            timerEl.textContent = '⏸';
+            timerEl.classList.add('timer-paused');
+            if (arcEl && _arcTimerTotal > 0) {
+                let rem = data.paused_remaining || 0;
+                let frac = Math.max(0, Math.min(1, rem / _arcTimerTotal));
+                arcEl.style.strokeDashoffset = (ARC_CIRCUMFERENCE * (1 - frac)).toFixed(2);
+                arcEl.style.stroke = '#fd7e14';
+            }
+            return;
         }
 
-        let now = getCurrentServerTime();
-        let remaining = Math.max(0, data.timer_end - now);
-        let sec = Math.ceil(remaining / 1000);
-        
-        el.textContent = sec + 's';
+        // FIX: Using server time
+        let remainMs = data.timer_end ? Math.max(0, data.timer_end - getCurrentServerTime()) : 0;
+        let t = Math.ceil(remainMs / 1000);
 
-        let progress = _arcTimerTotal > 0 ? Math.min(1, remaining / _arcTimerTotal) : 0;
-        let offset = ARC_CIRCUMFERENCE * (1 - progress);
-
-        if (sec > 10) {
-            el.classList.add('timer-green');
-            if(arc) { arc.style.stroke = '#28a745'; arc.style.strokeDashoffset = offset; }
-        } else if (sec > 5) {
-            el.classList.add('timer-orange');
-            if(arc) { arc.style.stroke = '#fd7e14'; arc.style.strokeDashoffset = offset; }
-        } else {
-            el.classList.add('timer-red');
-            if(arc) { arc.style.stroke = '#dc3545'; arc.style.strokeDashoffset = offset; }
+        // FIX: Wrap Auto-pause in transaction to prevent multiple clients colliding
+        if (data.auction_state === 'bidding' && remainMs <= 0) {
+            clearInterval(window.uiTimer);
+            state.roomRef.child('live_state').transaction(ld => {
+                if (ld && ld.auction_state === 'bidding') {
+                    ld.auction_state = 'paused';
+                    ld.timer_end = 0;
+                    ld.paused_remaining = 0;
+                }
+                return ld;
+            });
+            return;
         }
 
-        if (data.auction_state === 'bidding' && sec <= 5 && sec > 0 && sec !== _lastTimerWarnSecond) {
-            _lastTimerWarnSecond = sec; 
-            playSound('timer_warn');
+        timerEl.textContent = t + 's';
+
+        let arcColor;
+        if (t > 10) { timerEl.classList.add('timer-green'); arcColor = '#28a745'; }
+        else if (t > 5) { timerEl.classList.add('timer-orange'); arcColor = '#fd7e14'; }
+        else { timerEl.classList.add('timer-red'); arcColor = '#dc3545'; }
+
+        if (arcEl) {
+            let frac = _arcTimerTotal > 0 ? Math.max(0, Math.min(1, remainMs / _arcTimerTotal)) : 0;
+            arcEl.style.strokeDashoffset = (ARC_CIRCUMFERENCE * (1 - frac)).toFixed(2);
+            arcEl.style.stroke = arcColor;
         }
 
-    }, 100);
-}
+        if (data.auction_state === 'bidding' && t <= 5 && t > 0 && t !== _lastTimerWarnSecond) {
+            _lastTimerWarnSecond = t; playSound('timer_warn');
+        }
+    }, 200);
 
-function updateBudgetsUI() {
-    let grid = document.getElementById('budgetCards');
-    if (!grid) return;
-    
-    let html = '';
-    let startingPurseCr = state.settings.starting_purse || 100;
-    
-    let curWin = state.liveState.highest_bidder;
-    let isValidLeader = curWin !== '-' && curWin !== 'Base Price' && curWin !== '';
-    let currentAuctionState = state.liveState.auction_state;
-
-    Object.keys(state.allRegisteredTeams).forEach(t => {
-        let tData = state.allRegisteredTeams[t] || {};
-        let tColor = tData.color || '#fff';
-        let isOnline = state.activePresence[t];
-        let rCr = (state.teamBudgets[t] !== undefined ? state.teamBudgets[t] : (startingPurseCr * CRORE)) / CRORE;
-        
-        let squadCount = state.playerPool.filter(p => p && p.status === 'sold' && p.team === t).length;
-        let ovCount = state.playerPool.filter(p => p && p.status === 'sold' && p.team === t && !['india','indian','ind'].includes((p.nationality||'Indian').trim().toLowerCase())).length;
-        
-        let lgClass = (t === curWin && isValidLeader && (currentAuctionState === 'bidding' || currentAuctionState === 'cooldown')) ? ' leader-card-glow' : 
-                      (t === curWin && isValidLeader && currentAuctionState === 'sold') ? ' sold-card-glow' : '';
-
-        html += `
-        <div class="budget-card${lgClass}" style="border-top:3px solid ${tColor};">
-            <button class="delete-team-btn" onclick="removeFranchise('${esc(t)}')">✕</button>
-            <div style="font-size:14px; font-weight:900; color:${tColor}; margin-bottom:4px; display:flex; justify-content:center; align-items:center; gap:5px;">
-                ${esc(t)} ${isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>'}
-            </div>
-            <div style="font-size:18px; font-weight:bold; color:${rCr>0?'#28a745':'#dc3545'};">₹${rCr.toFixed(2)}</div>
-            <div style="font-size:9px; color:#888; text-transform:uppercase; margin-top:5px; border-top:1px solid #222; padding-top:4px;">
-                Squad: <strong style="color:#ccc;">${squadCount}</strong> | OS: <strong style="color:#ccc;">${ovCount}</strong>
-            </div>
-            <div style="font-size:8px; color:#555; text-transform:uppercase; margin-top:2px;">
-                PIN: <span class="pin-eye" onmousedown="this.textContent='${esc(tData.pin)}'" onmouseup="this.textContent='****'" onmouseleave="this.textContent='****'">****</span>
-            </div>
-        </div>`;
-    });
-
-    for(let i=Object.keys(state.allRegisteredTeams).length; i<10; i++) {
-        html += `<div class="budget-card-empty">AVAILABLE SLOT</div>`;
+    // Cooldown Advance logic
+    if (data.auction_state === 'cooldown' && data.timer_end) {
+        let delay = Math.max(0, data.timer_end - getCurrentServerTime());
+        let biddingSecs = state.settings.bid_timer_secs || 15;
+        window._cooldownAdvance = setTimeout(() => {
+            state.roomRef.child('live_state').transaction(ld => {
+                if (ld && ld.auction_state === 'cooldown') {
+                    ld.auction_state = 'bidding';
+                    ld.timer_end = getCurrentServerTime() + (biddingSecs * 1000);
+                }
+                return ld;
+            });
+        }, delay + 200);
     }
-    grid.innerHTML = html;
 }
 
-window.removeFranchise = (code) => {
-    showConfirm('Remove Franchise', `Are you sure you want to permanently delete ${code} from this room?`, () => {
-        state.roomRef.child('teams_auth/' + code).remove();
-        state.roomRef.child('logged_in_teams/' + code).remove();
-    });
-};
+function updateControlButtons(data, isIdle, isPaused, currentLeader) {
+    let dynBtn = document.getElementById('dynamicSellBtn');
+    let diceBtn = document.getElementById('randomDiceBtn');
+    let clocks = document.querySelectorAll('.master-clock');
+    let pauseBtn = document.getElementById('btnPause');
+    
+    let hasBids = (currentLeader !== '-' && currentLeader !== 'Base Price');
+    let active = (data.auction_state === 'bidding' || data.auction_state === 'cooldown');
 
-function populateSetDropdown() {
-    let sets = new Set();
-    state.playerPool.forEach(p => { if (p.set) sets.add(p.set); });
-    let sel = document.getElementById('setSelector'), prev = sel.value;
-    sel.innerHTML = '<option value="" disabled hidden>ON DECK</option>';
-    sets.forEach(s => { let o = document.createElement('option'); o.value = s; o.text = s; sel.appendChild(o); });
-    if (prev && sets.has(prev)) sel.value = prev; else if (sets.size > 0) sel.value = Array.from(sets)[0];
+    const setBtn = (btn, enabled) => {
+        if (!btn) return;
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.3';
+        btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+    };
+
+    if (isIdle || data.auction_state === 'sold' || data.auction_state === 'unsold') {
+        if (dynBtn) {
+            dynBtn.disabled = true;
+            dynBtn.className = 'btn-unsold'; // reset class
+            dynBtn.style.background = '#444';
+            dynBtn.style.color = '#888';
+            dynBtn.textContent = 'WAITING...';
+            dynBtn.style.cursor = 'not-allowed';
+        }
+        clocks.forEach(b => setBtn(b, false));
+        setBtn(pauseBtn, false);
+        if (!isIdle && diceBtn) diceBtn.style.opacity = '1';
+    } else {
+        if (dynBtn) {
+            dynBtn.disabled = false;
+            dynBtn.style.cursor = 'pointer';
+            dynBtn.textContent = hasBids ? 'SOLD (S)' : 'UNSOLD (X)';
+            // FIX: Assinging classes for keyboard shortcuts to target correctly
+            dynBtn.className = hasBids ? 'btn-green' : 'btn-red';
+            dynBtn.style.background = ''; // clear inline style to let CSS take over
+            dynBtn.style.color = '#fff';
+        }
+        clocks.forEach(b => setBtn(b, true));
+        setBtn(pauseBtn, active || isPaused);
+        if (diceBtn) diceBtn.style.opacity = '0.3';
+    }
+    
+    if (isPaused) { 
+        if (pauseBtn) {
+            pauseBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; 
+            pauseBtn.style.background = '#fd7e14';
+            pauseBtn.style.color = '#fff';
+        }
+    } else { 
+        if (pauseBtn) {
+            pauseBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; 
+            pauseBtn.style.background = '#22222d';
+            pauseBtn.style.color = '#fd7e14';
+        }
+    }
 }
 
-function updateTeamDropdown() {
+function updateBudgetTracker() {
     let keys = Object.keys(state.allRegisteredTeams);
-    let sel = document.getElementById('teamSelector'), prev = sel.value;
-    sel.innerHTML = '<option value="" disabled hidden>SQUADS</option>';
-    keys.forEach(t => { let o = document.createElement('option'); o.value = t; o.text = t; o.style.color = state.allRegisteredTeams[t]?.color || '#fff'; sel.appendChild(o); });
-    if (keys.includes(prev)) sel.value = prev; else sel.value = "";
+    let totalSlots = Math.max(10, Math.ceil(keys.length/5)*5);
+    let html = '';
+    let currentLeader = state.liveState.highest_bidder;
+    let isValidLeader = currentLeader !== '-' && currentLeader !== 'Base Price' && currentLeader !== '';
+
+    for (let i = 0; i < totalSlots; i++) {
+        if (i < keys.length) {
+            let team = keys[i], tData = state.allRegisteredTeams[team] || {};
+            let remaining = state.teamBudgets[team] !== undefined ? state.teamBudgets[team] : (state.settings.starting_purse * CRORE);
+            let count = state.playerPool.filter(p => p.status === 'sold' && p.team === team).length;
+            let isOnline = state.activePresence[team];
+            let dot = isOnline ? '<span class="live-dot"></span>' : '<span class="offline-dot"></span>';
+            let tColor = tData.color || '#fff';
+            let leaderClass = '';
+            
+            if (team === currentLeader && isValidLeader) {
+                if (state.liveState.auction_state === 'sold') leaderClass = ' sold-card-glow';
+                else if (state.liveState.auction_state === 'bidding' || state.liveState.auction_state === 'cooldown') leaderClass = ' leader-card-glow-silver';
+            }
+
+            // FIX: Replaced inline onclick with data attributes
+            html += `<div class="budget-card${leaderClass}" style="display:flex; flex-direction:column;">
+                <button class="delete-team-btn" data-team="${esc(team)}" title="Delete Team">&times;</button>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="font-weight:bold; color:${tColor}; font-size:15px; margin-bottom:4px; display:flex; align-items:center; justify-content:center;">${esc(team)} ${dot}</div>
+                    <div style="color:${remaining > 0 ? '#28a745' : '#dc3545'}; font-size:20px; font-weight:bold; margin-bottom:4px;">₹${(remaining/CRORE).toFixed(2)} Cr</div>
+                    <div style="color:#888; font-size:10px; font-weight:bold; text-transform:uppercase;">${count} Players</div>
+                </div>
+                <div style="margin-top:auto; padding-top:6px; border-top:1px solid #222; font-size:10px; color:#888; display:flex; justify-content:space-between; align-items:center;">
+                    <span id="rep-name-${esc(team)}" style="display:inline-block; text-transform:uppercase; letter-spacing:.5px; max-width: 75px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tData.repName || 'Unclaimed')}</span>
+                    <span id="rep-pin-${esc(team)}" style="display:none; color:#ffc107; font-weight:bold; letter-spacing:1px;">${esc(tData.pin || 'None')}</span>
+                    <span class="pin-eye" data-pin-eye="${esc(team)}">👁️</span>
+                </div>
+            </div>`;
+        } else {
+            html += `<div class="budget-card-empty" style="flex:1; display:flex; align-items:center; justify-content:center; color:#333;">WAITING...</div>`;
+        }
+    }
+    document.getElementById('budgetCards').innerHTML = html;
 }
 
-window.sendChatMessage = () => {
-    let inp = document.getElementById('chatInput'), msg = inp.value.trim();
-    if (msg && state.roomRef) {
-        state.roomRef.child('chat_events').push({ team: 'SYSTEM', text: msg, time: Date.now() });
-        inp.value = '';
-    }
-};
+// --- Tabs & List Rendering ---
 
-window.sendBroadcast = () => {
-    let msg = document.getElementById('broadcastInput').value.trim();
-    if (!msg) return showAlert('Empty Broadcast', 'Please enter a message.');
-    state.roomRef.child('broadcast').set({ message: msg, active: true, time: Date.now() });
-};
-
-window.clearBroadcast = () => {
-    if (state.roomRef) state.roomRef.child('broadcast').remove();
-};
-
-let _deckRoleFilter = '';
-window.setRoleFilter = (role, el) => {
-    _deckRoleFilter = role;
+function setRoleFilter(role, el) {
     document.querySelectorAll('.role-filter-btn').forEach(b => {
-        b.classList.remove('active');
-        b.style.background = '#111'; b.style.color = '#888'; b.style.borderColor = '#333';
+        let active = b.dataset.role === role;
+        b.style.background = active ? '#22222d' : '#111';
+        b.style.color      = active ? '#ffc107' : '#888';
+        b.style.borderColor= active ? '#ffc107' : '#333';
+        if (active) b.classList.add('active'); else b.classList.remove('active');
     });
-    el.classList.add('active');
-    el.style.background = '#22222d'; el.style.color = '#ffc107'; el.style.borderColor = '#ffc107';
-    window.refreshLists();
-};
+    refreshLists();
+}
 
-window.refreshLists = () => {
+function refreshLists() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('auctioneerSearch')?.value.toLowerCase() || '';
-    renderDeckList('deckList', set, deckSearch, _deckRoleFilter, null, true);
-    renderUnsoldList('unsoldList', deckSearch, true);
+    let roleFilter = document.querySelector('.role-filter-btn.active')?.dataset.role || '';
+    renderDeckList('deckList', set, deckSearch, roleFilter, null, true); 
+    renderUnsoldList('unsoldList', deckSearch, true); 
     let team = document.getElementById('teamSelector')?.value || '';
     renderSquadList('squadList', team, deckSearch);
-};
+}
 
-document.getElementById('auctioneerSearch')?.addEventListener('input', window.refreshLists);
-
-window.switchTab = (name, el) => {
+function switchTab(name, el) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${name}`).classList.add('active');
-    if(el) el.classList.add('active');
-};
+    if (el) el.classList.add('active');
+    refreshLists();
+}
 
-let isUserScrollingLog = false;
-function logAction(msg) {
-    let entry = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.innerHTML = msg;
-    const logContainer = document.getElementById('logContainer');
-    if (logContainer) {
-        logContainer.appendChild(entry);
-        if (!isUserScrollingLog) logContainer.scrollTop = logContainer.scrollHeight;
+function populateDropdowns() {
+    let sets = new Set(); 
+    state.playerPool.forEach(p => { if (p && p.set) sets.add(p.set); });
+    let setSel = document.getElementById('setSelector');
+    if (setSel) {
+        let prev = setSel.value;
+        setSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT SET</option>';
+        sets.forEach(s => { 
+            let o = document.createElement('option'); 
+            o.value = s; o.text = s; 
+            o.style.background = '#161620'; 
+            o.style.color = '#fff'; 
+            setSel.appendChild(o); 
+        });
+        if (prev && sets.has(prev)) setSel.value = prev; else if (sets.size > 0) setSel.value = Array.from(sets)[0];
+    }
+
+    let tSel = document.getElementById('teamSelector');
+    if (tSel) {
+        let prevT = tSel.value;
+        tSel.innerHTML = '<option value="" disabled hidden style="background:#161620; color:#888;">SELECT TEAM</option>';
+        let keys = Object.keys(state.allRegisteredTeams);
+        keys.forEach(t => { 
+            let o = document.createElement('option'); 
+            o.value = t; o.text = t; 
+            o.style.background = '#161620'; 
+            o.style.color = state.allRegisteredTeams[t]?.color || '#fff'; 
+            tSel.appendChild(o); 
+        });
+        if (prevT && keys.includes(prevT)) tSel.value = prevT; else if (keys.length > 0) tSel.value = keys[0];
     }
 }
 
-// ─ HOTKEYS ──────────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-    if (document.getElementById('adminDashboardWrapper').style.display === 'none') return;
-    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+// --- Specific Actions ---
 
-    switch(e.code) {
-        case 'Space': e.preventDefault(); pullRandomFromSet(); break;
-        case 'KeyS': e.preventDefault(); if(state.liveState.auction_state === 'bidding' && state.liveState.highest_bidder !== '-' && state.liveState.highest_bidder !== 'Base Price') sellPlayer(); break;
-        case 'KeyX': e.preventDefault(); if(state.liveState.auction_state === 'bidding') passPlayer(); break;
-        case 'KeyP': e.preventDefault(); togglePause(); break;
-    }
-});
-
-// ─ TIMER OVERRIDES & SETTINGS ───────────────────────────────────────
-window.startTimer = (secs, newState) => {
-    if (!state.roomRef || state.liveState.auction_state === 'idle') return;
-    state.roomRef.child('live_state').update({
-        timer_end: getCurrentServerTime() + (secs * 1000),
-        auction_state: newState || state.liveState.auction_state,
-        paused_remaining: null
+function confirmDeleteTeam(teamCode) {
+    showPrompt('Delete Franchise', `Enter the PIN for '${teamCode}' to confirm deletion:`, '4-digit PIN', val => {
+        if (state.allRegisteredTeams[teamCode] && state.allRegisteredTeams[teamCode].pin === val) {
+            state.roomRef.child('teams_auth/' + teamCode).remove();
+            state.roomRef.child('logged_in_teams/' + teamCode).remove();
+            persistEvent(`🗑️ Franchise <strong>${esc(teamCode)}</strong> deleted by auctioneer.`);
+        } else { showAlert('Wrong PIN','Incorrect PIN. Deletion cancelled.'); }
     });
-};
+}
 
-window.openSettings = () => {
-    document.getElementById('set-room-key').value = state.roomKey || '';
-    document.getElementById('set-room-name').value = state.settings.room_name || '';
-    document.getElementById('set-purse').value = state.settings.starting_purse || 100;
-    document.getElementById('set-bid-timer').value = state.settings.bid_timer_secs || 15;
-    document.getElementById('set-cooldown').value = state.settings.cooldown_secs || 10;
-    
-    document.getElementById('set-inc-base').value = state.settings.inc_base || 20;
-    document.getElementById('set-inc-mid').value = state.settings.inc_mid || 50;
-    document.getElementById('set-inc-high').value = state.settings.inc_high || 100;
-    
-    document.getElementById('set-limit-mid').value = state.settings.limit_mid || 2;
-    document.getElementById('set-limit-high').value = state.settings.limit_high || 5;
-    
-    document.getElementById('set-overseas-rule').value = state.settings.overseas_limit_enabled ? "true" : "false";
-    document.getElementById('set-max-ov').value = state.settings.max_overseas || 8;
-    document.getElementById('set-min-squad').value = state.settings.min_squad || 18;
-    document.getElementById('set-max-squad').value = state.settings.max_squad || 25;
+function togglePin(teamCode) {
+    let n = document.getElementById(`rep-name-${teamCode}`), p = document.getElementById(`rep-pin-${teamCode}`);
+    if (n && p) { let show = n.style.display !== 'none'; n.style.display = show ? 'none' : 'block'; p.style.display = show ? 'block' : 'none'; }
+}
 
-    document.getElementById('label-mid-start').textContent = document.getElementById('set-limit-mid').value;
-    document.getElementById('label-high-start').textContent = document.getElementById('set-limit-high').value;
+function sendBroadcast() {
+    let inp = document.getElementById('broadcastInput'), msg = inp.value.trim();
+    if (!msg) { inp.focus(); return; }
+    if (state.roomRef) state.roomRef.child('broadcast').set({ message: msg, active: true, ts: getCurrentServerTime() });
+    inp.value = ''; persistEvent(`📢 Auctioneer broadcast: <em>${esc(msg)}</em>`);
+}
 
+function clearBroadcast() { 
+    if (state.roomRef) state.roomRef.child('broadcast').set({ message: '', active: false, ts: getCurrentServerTime() }); 
+}
+
+function sendChatMessage() {
+    let inp = document.getElementById('chatInput'), msg = inp.value.trim();
+    if (msg && state.roomRef) { state.roomRef.child('chat_events').push({ team: 'ADMIN', text: msg, time: getCurrentServerTime() }); inp.value = ''; }
+}
+
+function openSettings() {
     document.getElementById('settingsOverlay').style.display = 'flex';
-};
+    document.getElementById('set-room-key').value = state.roomKey || '';
+    let s = state.settings;
+    document.getElementById('set-room-name').value = s.room_name || 'IPL Auction';
+    document.getElementById('set-purse').value = s.starting_purse || 100;
+    document.getElementById('set-overseas-rule').value = s.overseas_limit_enabled !== false ? 'true' : 'false';
+    document.getElementById('set-inc-base').value = s.inc_base || 20;
+    document.getElementById('set-inc-mid').value = s.inc_mid || 50;
+    document.getElementById('set-inc-high').value = s.inc_high || 100;
+    document.getElementById('set-limit-mid').value = s.limit_mid || 2;
+    document.getElementById('set-limit-high').value = s.limit_high || 5;
+    document.getElementById('label-mid-start').textContent = s.limit_mid || 2;
+    document.getElementById('label-high-start').textContent = s.limit_high || 5;
+    document.getElementById('set-max-ov').value = s.max_overseas || 8;
+    document.getElementById('set-min-squad').value = s.min_squad || 18;
+    document.getElementById('set-max-squad').value = s.max_squad || 25;
+    document.getElementById('set-bid-timer').value = s.bid_timer_secs || 15;
+    document.getElementById('set-cooldown').value = s.cooldown_secs || 10;
+}
 
-window.saveSettings = () => {
-    if (state.roomRef) {
+function saveSettings() {
+    let rName = document.getElementById('set-room-name').value.trim();
+    if (state.roomRef && rName) {
         state.roomRef.child('settings').update({
-            room_name: document.getElementById('set-room-name').value,
-            starting_purse: parseInt(document.getElementById('set-purse').value) || 100,
-            bid_timer_secs: parseInt(document.getElementById('set-bid-timer').value) || 15,
-            cooldown_secs: parseInt(document.getElementById('set-cooldown').value) || 10,
-            
+            room_name: rName, 
+            starting_purse: parseInt(document.getElementById('set-purse').value) || 100, 
+            overseas_limit_enabled: document.getElementById('set-overseas-rule').value === 'true',
+            limit_mid: parseFloat(document.getElementById('set-limit-mid').value) || 2,
+            limit_high: parseFloat(document.getElementById('set-limit-high').value) || 5,
             inc_base: parseInt(document.getElementById('set-inc-base').value) || 20,
             inc_mid: parseInt(document.getElementById('set-inc-mid').value) || 50,
             inc_high: parseInt(document.getElementById('set-inc-high').value) || 100,
-            
-            limit_mid: parseFloat(document.getElementById('set-limit-mid').value) || 2,
-            limit_high: parseFloat(document.getElementById('set-limit-high').value) || 5,
-            
-            overseas_limit_enabled: document.getElementById('set-overseas-rule').value === "true",
             max_overseas: parseInt(document.getElementById('set-max-ov').value) || 8,
             min_squad: parseInt(document.getElementById('set-min-squad').value) || 18,
-            max_squad: parseInt(document.getElementById('set-max-squad').value) || 25
+            max_squad: parseInt(document.getElementById('set-max-squad').value) || 25,
+            bid_timer_secs: parseInt(document.getElementById('set-bid-timer').value) || 15,
+            cooldown_secs: parseInt(document.getElementById('set-cooldown').value) || 10
         });
         document.getElementById('settingsOverlay').style.display = 'none';
         persistEvent('⚙️ Auction settings updated.');
     }
-};
+}
 
-window.togglePause = () => {
+function togglePause() {
     if (!state.roomRef) return;
     let currentState = state.liveState.auction_state;
     if (currentState === 'paused') {
@@ -619,9 +771,13 @@ window.togglePause = () => {
         let remaining = state.liveState.timer_end ? Math.max(0, state.liveState.timer_end - getCurrentServerTime()) : 0;
         state.roomRef.child('live_state').update({ auction_state: 'paused', timer_end: 0, paused_remaining: remaining });
     }
-};
+}
 
-window.bypassCooldown = () => {
+function bypassCooldown() {
     if (!state.roomRef || state.liveState.auction_state !== 'cooldown') return;
-    state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: getCurrentServerTime() + ((state.settings.bid_timer_secs||15)*1000) });
-};
+    state.roomRef.child('live_state').update({ auction_state: 'bidding', timer_end: getCurrentServerTime() + ((state.settings.bid_timer_secs || 15) * 1000) });
+}
+
+function startTimer(secs, auctionState) {
+    if (state.roomRef) state.roomRef.child('live_state').update({ auction_state: auctionState || 'bidding', timer_end: getCurrentServerTime() + (secs * 1000) });
+}
