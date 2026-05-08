@@ -52,11 +52,13 @@ window.onload = function() {
     setInterval(updateAllPopups, 500);
 };
 
+// --- CORE LOGIN & GATEWAY FUNCTIONS ---
 window.showRoomKeyScreen = () => { document.getElementById('roomKeyScreen').style.display = 'flex'; };
 window.backToGateway = () => { window.location.href = 'index.html'; };
 
 window.handleVerifyRoomKey = () => {
     let key = document.getElementById('joinRoomKey').value.trim();
+    if(!key) return showAlert('Missing Key', 'Please enter a Room Key.');
     verifyRoomKey(key).then(success => {
         if (success) {
             document.getElementById('roomKeyScreen').style.display = 'none';
@@ -462,16 +464,16 @@ window.addEventListener('watchlistUpdated', () => window.refreshLists());
 window.addEventListener('rosterOrderUpdated', updateMyTeamUI);
 
 let _deckRoleFilter = '';
+let _isStarFilterActive = false; 
 
 window.toggleStarFilter = function(el) {
-    if (_deckRoleFilter === 'STAR') {
-        _deckRoleFilter = '';
+    _isStarFilterActive = !_isStarFilterActive;
+    if (!_isStarFilterActive) {
         el.style.background = '#111';
         el.style.borderColor = '#333';
         el.style.boxShadow = 'none';
         el.style.color = '#888';
     } else {
-        _deckRoleFilter = 'STAR';
         el.style.background = '#22222d';
         el.style.borderColor = '#ffc107';
         el.style.boxShadow = '0 0 10px rgba(255,193,7,0.2)';
@@ -480,16 +482,12 @@ window.toggleStarFilter = function(el) {
     window.refreshLists();
 };
 
-// ─ STAR FILTER FIX ──────────────────────────────────────────────────
-// This enforces the universal bypass when the star filter is active
 window.refreshLists = function() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('deckSearch')?.value.toLowerCase() || '';
     
-    // Bypass the set filter completely if the STAR filter is toggled ON
-    let effectiveSet = _deckRoleFilter === 'STAR' ? '' : set;
-    
-    renderDeckList('deckList', effectiveSet, deckSearch, _deckRoleFilter, watchlist, false);
+    // Pass the _isStarFilterActive flag explicitly to bypass normal filters
+    renderDeckList('deckList', set, deckSearch, _deckRoleFilter, watchlist, false, _isStarFilterActive);
     
     renderUnsoldList('unsoldList', '', false);
     
@@ -698,20 +696,3 @@ function initializeWarRoom(teamId, myUid, myName) {
         }
     });
 }
-
-window.backToGateway = typeof backToGateway !== 'undefined' ? backToGateway : null;
-window.handleVerifyRoomKey = typeof handleVerifyRoomKey !== 'undefined' ? handleVerifyRoomKey : null;
-window.prepareCustomLogin = typeof prepareCustomLogin !== 'undefined' ? prepareCustomLogin : null;
-window.handleSubmitAuth = typeof handleSubmitAuth !== 'undefined' ? handleSubmitAuth : null;
-window.backToSelection = typeof backToSelection !== 'undefined' ? backToSelection : null;
-window.logout = typeof logout !== 'undefined' ? logout : null;
-window.openFranchiseSettings = typeof openFranchiseSettings !== 'undefined' ? openFranchiseSettings : null;
-window.exportMySquadCSV = typeof exportMySquadCSV !== 'undefined' ? exportMySquadCSV : null;
-window.exportMySquadPDF = typeof exportMySquadPDF !== 'undefined' ? exportMySquadPDF : null;
-window.exportAllSquadsCSV = typeof exportAllSquadsCSV !== 'undefined' ? exportAllSquadsCSV : null;
-window.exportAllSquadsPDF = typeof exportAllSquadsPDF !== 'undefined' ? exportAllSquadsPDF : null;
-window.switchTab = typeof switchTab !== 'undefined' ? switchTab : null;
-window.refreshLists = typeof refreshLists !== 'undefined' ? refreshLists : null;
-window.toggleStarFilter = typeof toggleStarFilter !== 'undefined' ? toggleStarFilter : null;
-window.sendChatMessage = typeof sendChatMessage !== 'undefined' ? sendChatMessage : null;
-window.dismissBroadcast = typeof dismissBroadcast !== 'undefined' ? dismissBroadcast : null;
