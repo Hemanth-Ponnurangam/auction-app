@@ -1,6 +1,11 @@
+/**
+ * main.js (Franchise)
+ * The main controller for the Franchise portal.
+ */
+
 import { db, getCurrentServerTime } from '../shared/firebase.js';
 import { state, setRoomState, setMyTeamState, recalculateBudgets } from '../shared/state.js';
-import { esc, showAlert, showConfirm, closeModal } from '../shared/dom.js';
+import { esc, showAlert, closeModal, showConfirm } from '../shared/dom.js';
 import { playSound } from '../shared/audio.js';
 import { verifyRoomKey, submitTeamAuth } from '../shared/auth.js';
 import { renderDeckList, renderUnsoldList, renderSquadList } from '../shared/render.js';
@@ -233,11 +238,6 @@ function attachFirebaseListeners() {
             banner.classList.add('show');
             let connVisible = document.getElementById('connBanner').style.display !== 'none';
             banner.style.top = connVisible ? '36px' : '0';
-            
-            // 5 Second Auto-Dismissal
-            setTimeout(() => {
-                if (typeof window.dismissBroadcast === 'function') window.dismissBroadcast();
-            }, 5000);
         } else {
             banner.classList.remove('show');
         }
@@ -422,7 +422,6 @@ function updateMyTeamUI() {
             let tData  = state.allRegisteredTeams[t] || {};
             let tColor = tData.color || '#fff';
             let tRep   = tData.repName || 'Unknown';
-            // Use the synced paddle holder if available, otherwise fallback
             let tPaddle = tData.paddleHolder || 'Available'; 
             let rCr    = (state.teamBudgets[t] !== undefined ? state.teamBudgets[t] : (startingPurseCr * CRORE)) / CRORE;
             let count  = state.playerPool.filter(p => p && p.status === 'sold' && p.team === t).length;
@@ -481,7 +480,8 @@ window.toggleStarFilter = function(el) {
     window.refreshLists();
 };
 
-// Universal Star Filter Bypass
+// ─ STAR FILTER FIX ──────────────────────────────────────────────────
+// This enforces the universal bypass when the star filter is active
 window.refreshLists = function() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('deckSearch')?.value.toLowerCase() || '';
@@ -583,7 +583,6 @@ document.addEventListener('keydown', e => {
     }
 });
 
-
 let isPaddleHolder = false;
 
 function initializeWarRoom(teamId, myUid, myName) {
@@ -627,7 +626,6 @@ function initializeWarRoom(teamId, myUid, myName) {
             if(bidBtn) bidBtn.style.display = 'block';
             if(reqBtn) reqBtn.style.display = 'none';
             if(sugBtn) sugBtn.style.display = 'none';
-            // Sync paddle holder identity globally to teams_auth for all franchises to see
             state.roomRef.child(`teams_auth/${teamId}/paddleHolder`).set(paddleData.name);
         } else {
             isPaddleHolder = false;
@@ -657,7 +655,6 @@ function initializeWarRoom(teamId, myUid, myName) {
         });
     }
 
-    // 10 Second Paddle Transfer Logic
     const reqBtn = document.getElementById('requestPaddleBtn');
     if(reqBtn) {
         reqBtn.replaceWith(reqBtn.cloneNode(true));
@@ -678,7 +675,6 @@ function initializeWarRoom(teamId, myUid, myName) {
         });
     }
 
-    // Listen for incoming transfer requests (Only triggers for current paddle holder)
     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).on('value', snap => {
         const req = snap.val();
         if (req && isPaddleHolder && req.requesterUid !== myUid) {
@@ -689,12 +685,12 @@ function initializeWarRoom(teamId, myUid, myName) {
 
             showConfirm('Paddle Transfer Request', 
                 `${req.requesterName} wants the paddle. It will transfer automatically in 10 seconds.`, 
-                () => { // Accept early
+                () => { 
                     clearTimeout(transferTimeout);
                     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: req.requesterUid, name: req.requesterName });
                     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).remove();
                 }, 
-                () => { // Cancel request
+                () => { 
                     clearTimeout(transferTimeout);
                     db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).remove();
                 }
