@@ -1,11 +1,6 @@
-/**
- * main.js (Franchise)
- * The main controller for the Franchise portal.
- */
-
 import { db, getCurrentServerTime } from '../shared/firebase.js';
 import { state, setRoomState, setMyTeamState, recalculateBudgets } from '../shared/state.js';
-import { esc, showAlert, closeModal } from '../shared/dom.js';
+import { esc, showAlert, showConfirm, closeModal } from '../shared/dom.js';
 import { playSound } from '../shared/audio.js';
 import { verifyRoomKey, submitTeamAuth } from '../shared/auth.js';
 import { renderDeckList, renderUnsoldList, renderSquadList } from '../shared/render.js';
@@ -238,6 +233,11 @@ function attachFirebaseListeners() {
             banner.classList.add('show');
             let connVisible = document.getElementById('connBanner').style.display !== 'none';
             banner.style.top = connVisible ? '36px' : '0';
+            
+            // 5 Second Auto-Dismissal
+            setTimeout(() => {
+                if (typeof window.dismissBroadcast === 'function') window.dismissBroadcast();
+            }, 5000);
         } else {
             banner.classList.remove('show');
         }
@@ -422,6 +422,8 @@ function updateMyTeamUI() {
             let tData  = state.allRegisteredTeams[t] || {};
             let tColor = tData.color || '#fff';
             let tRep   = tData.repName || 'Unknown';
+            // Use the synced paddle holder if available, otherwise fallback
+            let tPaddle = tData.paddleHolder || 'Available'; 
             let rCr    = (state.teamBudgets[t] !== undefined ? state.teamBudgets[t] : (startingPurseCr * CRORE)) / CRORE;
             let count  = state.playerPool.filter(p => p && p.status === 'sold' && p.team === t).length;
             let isOnline = state.activePresence[t];
@@ -440,6 +442,7 @@ function updateMyTeamUI() {
                 <div style="font-weight:bold; font-size:13px; margin-bottom:2px;">${esc(t)} ${dot}</div>
                 <div class="other-team-rep-name">${esc(tRep)}</div>
                 <div class="purse-val" style="color:${rCr > 0 ? '#28a745' : '#dc3545'};">₹${rCr.toFixed(2)} Cr</div>
+                <div style="font-size:9px; color:#0dcaf0; margin-top:2px;">Paddle: ${esc(tPaddle)}</div>
                 <div style="font-size:9px; color:#666; text-transform:uppercase; margin-top:2px;">${count} Players</div>
             </div>`;
         });
@@ -478,10 +481,14 @@ window.toggleStarFilter = function(el) {
     window.refreshLists();
 };
 
+// Universal Star Filter Bypass
 window.refreshLists = function() {
     let set = document.getElementById('setSelector')?.value || '';
     let deckSearch = document.getElementById('deckSearch')?.value.toLowerCase() || '';
-    renderDeckList('deckList', set, deckSearch, _deckRoleFilter, watchlist, false);
+    
+    // Bypass the set filter if the STAR filter is active
+    let effectiveSet = _deckRoleFilter === 'STAR' ? '' : set;
+    renderDeckList('deckList', effectiveSet, deckSearch, _deckRoleFilter, watchlist, false);
     
     renderUnsoldList('unsoldList', '', false);
     
@@ -619,6 +626,8 @@ function initializeWarRoom(teamId, myUid, myName) {
             if(bidBtn) bidBtn.style.display = 'block';
             if(reqBtn) reqBtn.style.display = 'none';
             if(sugBtn) sugBtn.style.display = 'none';
+            // Sync paddle holder identity globally to teams_auth for all franchises to see
+            state.roomRef.child(`teams_auth/${teamId}/paddleHolder`).set(paddleData.name);
         } else {
             isPaddleHolder = false;
             if(bidBtn) bidBtn.style.display = 'none';
@@ -647,13 +656,50 @@ function initializeWarRoom(teamId, myUid, myName) {
         });
     }
 
+    // 10 Second Paddle Transfer Logic
     const reqBtn = document.getElementById('requestPaddleBtn');
     if(reqBtn) {
         reqBtn.replaceWith(reqBtn.cloneNode(true));
         document.getElementById('requestPaddleBtn').addEventListener('click', () => {
-            db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
+            db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).once('value', pSnap => {
+                const currentPaddle = pSnap.val();
+                if (currentPaddle && currentPaddle.uid !== myUid) {
+                    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).set({ 
+                        requesterUid: myUid, 
+                        requesterName: myName, 
+                        timestamp: Date.now() 
+                    });
+                    showAlert('Paddle Requested', `Requested paddle from ${currentPaddle.name}. They have 10 seconds to cancel.`);
+                } else {
+                    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: myUid, name: myName });
+                }
+            });
         });
     }
+
+    // Listen for incoming transfer requests (Only triggers for current paddle holder)
+    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).on('value', snap => {
+        const req = snap.val();
+        if (req && isPaddleHolder && req.requesterUid !== myUid) {
+            let transferTimeout = setTimeout(() => {
+                db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: req.requesterUid, name: req.requesterName });
+                db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).remove();
+            }, 10000);
+
+            showConfirm('Paddle Transfer Request', 
+                `${req.requesterName} wants the paddle. It will transfer automatically in 10 seconds.`, 
+                () => { // Accept early
+                    clearTimeout(transferTimeout);
+                    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddle`).set({ uid: req.requesterUid, name: req.requesterName });
+                    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).remove();
+                }, 
+                () => { // Cancel request
+                    clearTimeout(transferTimeout);
+                    db.ref(`rooms/${state.roomKey}/franchises/${teamId}/paddleRequest`).remove();
+                }
+            );
+        }
+    });
 }
 
 window.backToGateway = typeof backToGateway !== 'undefined' ? backToGateway : null;
