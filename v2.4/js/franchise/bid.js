@@ -1,14 +1,10 @@
-/**
- * bid.js
- * Handles all bidding logic, jump menus, and bid button state for the Franchise portal.
- */
-
 import { state } from '../shared/state.js';
 import { playSound } from '../shared/audio.js';
 import { showAlert, showPrompt } from '../shared/dom.js';
 import { getCurrentServerTime } from '../shared/firebase.js';
 
 const CRORE = 10_000_000;
+let localBidCooldown = false; // 1-Second cooldown lock
 
 export function getCurrentBidIncrement() {
     let set = state.settings;
@@ -27,6 +23,8 @@ export function getCurrentBidIncrement() {
 }
 
 export function placeExactBid(amount) {
+    if (localBidCooldown) return; // Block execution if cooldown is active
+    
     closeJumpMenu();
     let myBudget = state.teamBudgets[state.myTeamName] !== undefined 
         ? state.teamBudgets[state.myTeamName] 
@@ -53,13 +51,16 @@ export function placeExactBid(amount) {
         liveData.bid_stack       = stack;
         liveData.current_bid     = amount;
         liveData.highest_bidder  = state.myTeamName;
-        liveData.timer_end       = getCurrentServerTime() + (state.settings.bid_timer_secs * 1000);
+        liveData.timer_end       = getCurrentServerTime() + ((state.settings.bid_timer_secs || 15) * 1000);
         liveData.auction_state   = 'bidding';
         return liveData;
     }, (err, committed, snap) => {
         if (err) console.error('Bid transaction failed:', err);
         else if (committed) {
             playSound('bid');
+            // Trigger 1-second cooldown lock
+            localBidCooldown = true;
+            setTimeout(() => { localBidCooldown = false; }, 1000);
         } else {
             let d = snap.val();
             let isDataFirstBid = d && (d.highest_bidder === 'Base Price' || d.highest_bidder === '-' || d.highest_bidder === '');
@@ -92,6 +93,14 @@ export function openJumpMenu(e) {
     if (e) e.stopPropagation();
     let popup = document.getElementById('jumpBidPopup');
     let mainBtn = document.getElementById('mainActionButton');
+    
+    // Hide buttons if current bid is greater than or equal to 5Cr / 10Cr
+    let curBid = state.liveState?.current_bid || 0;
+    let btn5 = document.getElementById('jb-5cr');
+    let btn10 = document.getElementById('jb-10cr');
+    if (btn5) btn5.style.display = curBid >= 50000000 ? 'none' : 'block';
+    if (btn10) btn10.style.display = curBid >= 100000000 ? 'none' : 'block';
+
     popup.style.display = 'flex';
     let btnRect = mainBtn.getBoundingClientRect();
     popup.style.top = (btnRect.top - 10) + 'px';
@@ -191,7 +200,6 @@ export function attachBidListeners() {
     mainBtn.addEventListener('touchcancel', () => clearTimeout(bidPressTimer));
     mainBtn.oncontextmenu = function() { return false; }; 
     
-    // External click closer
     document.addEventListener('click', e => {
         let popup = document.getElementById('jumpBidPopup');
         if (popup && popup.style.display === 'flex' && !popup.contains(e.target) && e.target.id !== 'mainActionButton') {
@@ -200,7 +208,6 @@ export function attachBidListeners() {
     });
 }
 
-// Attach globals for HTML inline onclick attributes
 window.placeExactBid = placeExactBid;
 window.promptManualBid = promptManualBid;
 window.closeJumpMenu = closeJumpMenu;
