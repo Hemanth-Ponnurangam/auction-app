@@ -14,26 +14,36 @@ let globalImages = {};
 let globalTeams = {};
 let activeRooms = {};
 
+// ─ SAFE DOM INJECTOR (Fixes Table/Tbody <div> Collisions) ───────────
+function getSafeContainer(tabId, newContainerId, cssStyles) {
+    let container = document.getElementById(newContainerId);
+    if (!container) {
+        const tab = document.getElementById(tabId);
+        if (!tab) return null;
+        
+        const panel = tab.querySelector('.panel');
+        if (!panel) return null;
+
+        // Hide the existing HTML table wrapper safely
+        const oldTable = panel.querySelector('.table-responsive');
+        if (oldTable) oldTable.style.display = 'none';
+
+        // Generate a valid container for div cards
+        container = document.createElement('div');
+        container.id = newContainerId;
+        container.style.cssText = cssStyles;
+        panel.appendChild(container);
+    }
+    return container;
+}
+
 window.onload = function() {
-    // 1. Inject Logo URL into Add Team Modal safely
+    // Inject Logo URL into Add Team Modal safely
     const colorInput = document.getElementById('ntColor');
     if (colorInput && !document.getElementById('ntLogo')) {
         const logoHtml = `<label class="modal-label" style="margin-top:15px;">Logo URL (Transparent PNG)</label>
                           <input type="text" id="ntLogo" class="modal-input" placeholder="https://.../logo.png">`;
         colorInput.insertAdjacentHTML('afterend', logoHtml);
-    }
-
-    // 2. Convert Image Directory table to Grid safely INSIDE the bordered box
-    const imgTable = document.querySelector('.db-table');
-    if (imgTable) {
-        const parentDiv = imgTable.parentElement;
-        imgTable.style.display = 'none'; // Hide old table
-        if (!document.getElementById('imgCardGrid')) {
-            const grid = document.createElement('div');
-            grid.id = 'imgCardGrid';
-            grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;';
-            parentDiv.appendChild(grid);
-        }
     }
 
     setupEventListeners();
@@ -159,7 +169,8 @@ function updateDbDropdown() {
 document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 
 function renderDatabaseManager() {
-    const list = document.getElementById('presetDbList');
+    // Generate safe div container instead of trying to put divs inside the <tbody>
+    const list = getSafeContainer('tab-databases', 'dbCardContainer', 'display:flex; flex-direction:column; gap:10px; padding:15px;');
     if (!list) return;
     list.innerHTML = '';
     
@@ -311,7 +322,7 @@ function handleDatabaseUpload() {
 
 // ─ 2. Image Directory ───────────────────────────────────────────────
 function renderImageCards() {
-    let grid = document.getElementById('imgCardGrid');
+    const grid = getSafeContainer('tab-images', 'imgCardGrid', 'display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;');
     if (!grid) return; 
     grid.innerHTML = '';
 
@@ -423,7 +434,7 @@ window.addUrlToPlayer = (playerName) => {
 
 // ─ 3. Active Rooms ──────────────────────────────────────────────────
 function renderActiveRooms() {
-    let container = document.getElementById('roomsContainer');
+    const container = getSafeContainer('tab-rooms', 'activeRoomsContainer', 'display:flex; flex-direction:column; gap:10px; padding:15px;');
     if (!container) return;
     
     let keys = Object.keys(activeRooms);
@@ -461,7 +472,7 @@ window.deleteRoom = (key) => {
 
 // ─ 4. Global Franchises ─────────────────────────────────────────────
 function renderGlobalTeams() {
-    const list = document.getElementById('globalTeamsList');
+    const list = getSafeContainer('tab-franchises', 'globalTeamsGridCard', 'display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:15px; padding:15px;');
     if (!list) return;
     list.innerHTML = '';
 
