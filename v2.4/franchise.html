@@ -235,8 +235,8 @@
 </div>
 
 <div id="jumpBidPopup" style="position: fixed; display: none; background: #161620; border: 1px solid #444; border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.9); z-index: 9999; flex-direction: column; gap: 8px; width: 140px; transform: translate(-50%, -110%);">
-    <button class="jb-5" onclick="typeof window.placeExactBid === 'function' ? window.placeExactBid((window.state?.liveState?.current_bid || 0) + 5000000) : null">+5 Lakhs</button>
-    <button class="jb-10" onclick="typeof window.placeExactBid === 'function' ? window.placeExactBid((window.state?.liveState?.current_bid || 0) + 10000000) : null">+10 Lakhs</button>
+    <button id="jb-5cr" class="jb-5" onclick="typeof window.placeExactBid === 'function' ? window.placeExactBid(50000000) : null">5 Cr</button>
+    <button id="jb-10cr" class="jb-10" onclick="typeof window.placeExactBid === 'function' ? window.placeExactBid(100000000) : null">10 Cr</button>
     <button class="jb-manual" onclick="typeof window.promptManualBid === 'function' ? window.promptManualBid() : null">MANUAL</button>
     <button class="jb-cancel" onclick="typeof window.closeJumpMenu === 'function' ? window.closeJumpMenu() : null">CANCEL</button>
 </div>
