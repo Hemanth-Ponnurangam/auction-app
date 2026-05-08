@@ -10,6 +10,7 @@ import { parseVanillaCSV } from './csv.js';
 
 let isSuperAdmin = false;
 let activeDatabases = {};
+let activeDatabasesLoaded = false;
 let globalImages = {};
 let globalTeams = {};
 let activeRooms = {};
@@ -91,9 +92,12 @@ function setupEventListeners() {
         btnImportImgMapping.addEventListener('click', handleBulkImageImport);
     }
     
-    // Search
+    // Search & Preset Filter
     document.getElementById('adminDbSearch')?.addEventListener('input', renderDatabaseManager);
     document.getElementById('adminImgSearch')?.addEventListener('input', renderImageCards);
+
+    // ✅ FIX 1: Moved from module-level (line 164) into setupEventListeners so DOM is ready
+    document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 }
 
 // Map globals for inline HTML triggers
@@ -126,30 +130,47 @@ function executeAdminBoot() {
     document.getElementById('adminLoginScreen').style.display = 'none';
     let dash = document.getElementById('masterDashboard');
     if (dash) dash.style.display = 'flex';
-    
+
+    // ✅ FIX 2: Show loading state before Firebase responds
+    const list = document.getElementById('presetDbList');
+    if (list) list.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">Loading databases…</p>';
+
+    // ✅ FIX 3: Added error callbacks to all .on() listeners so failures surface visibly
     db.ref('presets').on('value', snap => {
         activeDatabases = snap.val() || {};
+        activeDatabasesLoaded = true;
         updateDbDropdown();
         renderDatabaseManager();
+    }, err => {
+        console.error('[Firebase] Failed to read presets:', err.code, err.message);
+        const l = document.getElementById('presetDbList');
+        if (l) l.innerHTML = `<p style="color:#e74c3c; text-align:center; padding:20px;">⚠️ Failed to load databases: ${err.message}</p>`;
     });
     
     db.ref('global_player_images').on('value', snap => {
         globalImages = snap.val() || {};
         renderImageCards();
+    }, err => {
+        console.error('[Firebase] Failed to read global_player_images:', err.code, err.message);
     });
     
     db.ref('rooms').on('value', snap => {
         activeRooms = snap.val() || {};
         renderActiveRooms();
+    }, err => {
+        console.error('[Firebase] Failed to read rooms:', err.code, err.message);
     });
     
     db.ref('global_teams').on('value', snap => {
         globalTeams = snap.val() || {};
         renderGlobalTeams();
+    }, err => {
+        console.error('[Firebase] Failed to read global_teams:', err.code, err.message);
     });
 }
 
 // ─ 1. Database Manager ──────────────────────────────────────────────
+// (dbSelector change listener was moved into setupEventListeners to ensure DOM is ready)
 function updateDbDropdown() {
     let sel = document.getElementById('dbSelector');
     if (!sel) return;
@@ -160,8 +181,6 @@ function updateDbDropdown() {
     });
     if (prev && activeDatabases[prev]) sel.value = prev;
 }
-
-document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 
 function renderDatabaseManager() {
     // Map directly to your existing #presetDbList in admin.html
@@ -175,7 +194,10 @@ function renderDatabaseManager() {
     let dbKeys = filterDb ? [filterDb] : Object.keys(activeDatabases);
 
     if (dbKeys.length === 0) {
-        list.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No databases uploaded yet.</p>';
+        // ✅ FIX 4: Don't show "No databases" until Firebase has actually responded
+        list.innerHTML = activeDatabasesLoaded
+            ? '<p style="color:#666; text-align:center; padding:20px;">No databases uploaded yet.</p>'
+            : '<p style="color:#666; text-align:center; padding:20px;">Loading databases…</p>';
         return;
     }
 
