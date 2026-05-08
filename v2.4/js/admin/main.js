@@ -15,12 +15,18 @@ let globalTeams = {};
 let activeRooms = {};
 
 window.onload = function() {
-    // Dynamically inject the Logo URL input into the Add Team Modal safely
+    // 1. Inject Logo URL into Add Team Modal safely
     const colorInput = document.getElementById('ntColor');
     if (colorInput && !document.getElementById('ntLogo')) {
         const logoHtml = `<label class="modal-label" style="margin-top:15px;">Logo URL (Transparent PNG)</label>
                           <input type="text" id="ntLogo" class="modal-input" placeholder="https://.../logo.png">`;
         colorInput.insertAdjacentHTML('afterend', logoHtml);
+    }
+
+    // 2. Convert Image Directory table to Grid inside the panel
+    const imgPanel = document.querySelector('#tab-images .panel > div:last-child');
+    if (imgPanel && !document.getElementById('imgCardGrid')) {
+        imgPanel.innerHTML = '<div id="imgCardGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;"></div>';
     }
 
     setupEventListeners();
@@ -52,7 +58,7 @@ function setupEventListeners() {
     
     document.getElementById('btnLogoutAdmin')?.addEventListener('click', logoutAdmin);
     
-    // Robust Tab Switching (e.currentTarget prevents icon clicks from breaking logic)
+    // Tab Switching
     document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
         btn.addEventListener('click', e => {
             const targetBtn = e.currentTarget; 
@@ -65,7 +71,7 @@ function setupEventListeners() {
         });
     });
     
-    // Bind Modal Actions
+    // Modals & Buttons
     document.getElementById('btnOpenUploadModal')?.addEventListener('click', () => document.getElementById('uploadModal').style.display = 'flex');
     document.getElementById('btnOpenImgModal')?.addEventListener('click', () => document.getElementById('uploadImageCsvModal').style.display = 'flex');
     document.getElementById('btnOpenAddTeamModal')?.addEventListener('click', () => document.getElementById('addTeamModal').style.display = 'flex');
@@ -77,7 +83,6 @@ function setupEventListeners() {
     document.getElementById('btnSubmitDbUpload')?.addEventListener('click', handleDatabaseUpload);
     document.getElementById('btnSubmitAddTeam')?.addEventListener('click', handleAddGlobalTeam);
     
-    // Single / Bulk Image Bindings
     const addSingleImgBtn = document.querySelector('#tab-images .panel-header button.outline');
     if (addSingleImgBtn) addSingleImgBtn.addEventListener('click', openSingleImagePrompt);
     
@@ -91,7 +96,7 @@ function setupEventListeners() {
     document.getElementById('adminImgSearch')?.addEventListener('input', renderImageCards);
 }
 
-// Ensure critical functions are globally available in case HTML has hardcoded onclick attributes
+// Map globals for inline HTML triggers
 window.handleAdminLogin = handleAdminLogin;
 window.logoutAdmin = logoutAdmin;
 window.handleDatabaseUpload = handleDatabaseUpload;
@@ -159,16 +164,9 @@ function updateDbDropdown() {
 document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 
 function renderDatabaseManager() {
-    // Dynamic Safe Injection: Creates a fresh container and hides old tables to prevent DOM breakage
-    let list = document.getElementById('dbCardContainer');
-    if (!list) {
-        const tab = document.getElementById('tab-databases');
-        if (!tab) return;
-        tab.querySelectorAll('table, .table-wrapper, .table-responsive').forEach(el => el.style.display = 'none');
-        list = document.createElement('div');
-        list.id = 'dbCardContainer';
-        tab.appendChild(list);
-    }
+    // Map directly to your existing #presetDbList in admin.html
+    const list = document.getElementById('presetDbList');
+    if (!list) return;
     
     list.innerHTML = '';
     
@@ -335,17 +333,8 @@ function handleDatabaseUpload() {
 
 // ─ 2. Image Directory ───────────────────────────────────────────────
 function renderImageCards() {
-    // Dynamic Safe Injection
     let grid = document.getElementById('imgCardGrid');
-    if (!grid) {
-        const tab = document.getElementById('tab-images');
-        if (!tab) return;
-        tab.querySelectorAll('table, .table-wrapper, .table-responsive').forEach(el => el.style.display = 'none');
-        grid = document.createElement('div');
-        grid.id = 'imgCardGrid';
-        grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;';
-        tab.appendChild(grid);
-    }
+    if (!grid) return; 
     
     grid.innerHTML = '';
 
@@ -470,21 +459,13 @@ window.addUrlToPlayer = (playerName) => {
 
 // ─ 3. Active Rooms ──────────────────────────────────────────────────
 function renderActiveRooms() {
-    // Dynamic Safe Injection
-    let container = document.getElementById('activeRoomsContainer');
-    if (!container) {
-        const tab = document.getElementById('tab-rooms');
-        if (!tab) return;
-        tab.querySelectorAll('table, .table-wrapper, .table-responsive').forEach(el => el.style.display = 'none');
-        container = document.createElement('div');
-        container.id = 'activeRoomsContainer';
-        container.style.cssText = 'display:flex; flex-direction:column; gap:10px; padding:15px;';
-        tab.appendChild(container);
-    }
+    // Map directly to your existing #roomsContainer in admin.html
+    let container = document.getElementById('roomsContainer');
+    if (!container) return;
     
     let keys = Object.keys(activeRooms);
     if (!keys.length) {
-        container.innerHTML = "<p style='color:#666; font-size:12px; text-align:center; padding:20px;'>No active auction rooms running.</p>";
+        container.innerHTML = "<p style='color:#666; font-size:12px; text-align:center; padding:20px; grid-column:1/-1;'>No active auction rooms running.</p>";
         return;
     }
 
@@ -501,11 +482,11 @@ function renderActiveRooms() {
         <div class="room-card" style="background:#161620; border:1px solid #333; border-radius:10px; padding:15px;">
             <div class="r-title" style="color:#fff; font-size:16px; font-weight:bold; margin-bottom:10px; display:flex; justify-content:space-between;">
                 ${esc(settings.room_name || 'Unnamed Room')}
-                <span class="r-pin" style="color:#0dcaf0;">${esc(key)}</span>
+                <span class="r-pin" style="color:#0dcaf0; font-family:monospace; background:#000; padding:2px 6px; border-radius:4px; font-size:14px;">${esc(key)}</span>
             </div>
-            <div class="r-stat" style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px; color:#aaa;"><span>Status</span><span style="color:${status==='bidding'?'#28a745':'#ffc107'}">${status.toUpperCase()}</span></div>
-            <div class="r-stat" style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px; color:#aaa;"><span>Current Bid</span><span style="color:#28a745; font-weight:bold;">₹${currentBid.toFixed(2)} Cr</span></div>
-            <div class="r-stat" style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:12px; color:#aaa;"><span>Leader</span><span style="color:#fff;">${esc(leader)}</span></div>
+            <div class="r-stat" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed #222; font-size:12px; color:#aaa;"><span>Status</span><span style="color:${status==='bidding'?'#28a745':'#ffc107'}; font-weight:bold;">${status.toUpperCase()}</span></div>
+            <div class="r-stat" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed #222; font-size:12px; color:#aaa;"><span>Current Bid</span><span style="color:#28a745; font-weight:bold;">₹${currentBid.toFixed(2)} Cr</span></div>
+            <div class="r-stat" style="display:flex; justify-content:space-between; padding:8px 0; margin-bottom:10px; font-size:12px; color:#aaa;"><span>Leader</span><span style="color:#fff; font-weight:bold;">${esc(leader)}</span></div>
             <button class="action-btn outline danger delete-room-btn" style="width:100%; font-size:11px;" onclick="deleteRoom('${esc(key)}')">Terminate Room</button>
         </div>`;
     });
@@ -520,18 +501,9 @@ window.deleteRoom = (key) => {
 
 // ─ 4. Global Franchises (With Editing) ──────────────────────────────
 function renderGlobalTeams() {
-    // Dynamic Safe Injection
-    let list = document.getElementById('globalTeamsGridCard');
-    if (!list) {
-        const tab = document.getElementById('tab-franchises');
-        if (!tab) return;
-        tab.querySelectorAll('table, .table-wrapper, .table-responsive').forEach(el => el.style.display = 'none');
-        list = document.createElement('div');
-        list.id = 'globalTeamsGridCard';
-        list.className = 'preset-teams-grid'; // Re-use franchise grid styles if present, or generic grid
-        list.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:15px; padding:15px;';
-        tab.appendChild(list);
-    }
+    // Map directly to your existing #globalTeamsList in admin.html
+    const list = document.getElementById('globalTeamsList');
+    if (!list) return;
     
     list.innerHTML = '';
 
@@ -539,18 +511,18 @@ function renderGlobalTeams() {
         const t = globalTeams[code];
         const card = document.createElement('div');
         card.className = 'team-card';
-        card.style.cssText = `border: 2px solid ${t.color || '#333'}; position: relative; background: #161620; border-radius: 10px; padding: 20px 10px; text-align: center;`;
+        card.style.cssText = `border: 1px solid ${t.color || '#333'}; position: relative; background: #000; border-radius: 8px; padding: 15px; text-align: center;`;
         
         const logoHtml = t.logo ? `<img src="${esc(t.logo)}" style="max-height:50px; max-width:80px; margin-bottom:10px; object-fit:contain; filter:drop-shadow(0 0 5px rgba(255,255,255,0.2));" alt="logo">` : '';
 
         card.innerHTML = `
             <div style="position:absolute; top:5px; right:5px; display:flex; gap:5px;">
-                <button class="action-btn outline" style="padding:4px 8px; font-size:10px; border-color:#888; color:#fff;" onclick="editGlobalTeam('${esc(code)}')">✏️</button>
-                <button class="action-btn danger" style="padding:4px 8px; font-size:10px;" onclick="deleteGlobalTeam('${esc(code)}')">✕</button>
+                <button class="action-btn outline" style="padding:2px 6px; font-size:10px; border-color:#888; color:#fff;" onclick="editGlobalTeam('${esc(code)}')">✏️</button>
+                <button class="action-btn danger" style="padding:2px 6px; font-size:10px;" onclick="deleteGlobalTeam('${esc(code)}')">✕</button>
             </div>
             ${logoHtml}
             <div class="t-code" style="color:${esc(t.color || '#fff')}; font-size:24px; font-weight:900; margin-bottom:5px;">${esc(code)}</div>
-            <div class="t-name" style="color:#aaa; font-size:11px; text-transform:uppercase;">${esc(t.name)}</div>
+            <div class="t-name" style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;">${esc(t.name)}</div>
         `;
         list.appendChild(card);
     });
