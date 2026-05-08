@@ -15,8 +15,6 @@ let globalTeams = {};
 let activeRooms = {};
 
 window.onload = function() {
-    setupEventListeners();
-    
     // Dynamically inject the Logo URL input into the Add Team Modal
     const colorInput = document.getElementById('ntColor');
     if (colorInput && !document.getElementById('ntLogo')) {
@@ -30,6 +28,8 @@ window.onload = function() {
     if (imgPanel && !document.getElementById('imgCardGrid')) {
         imgPanel.innerHTML = '<div id="imgCardGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;"></div>';
     }
+
+    setupEventListeners();
 
     let savedPin = sessionStorage.getItem('superAdminPin');
     if (savedPin) {
@@ -69,16 +69,29 @@ function setupEventListeners() {
         });
     });
     
-    // Modals
-    document.getElementById('btnCloseDbUpload')?.addEventListener('click', () => document.getElementById('uploadModal').style.display = 'none');
+    // Modal Openers
+    document.getElementById('btnOpenUploadModal')?.addEventListener('click', () => document.getElementById('uploadModal').style.display = 'flex');
     document.getElementById('btnOpenImgModal')?.addEventListener('click', () => document.getElementById('uploadImageCsvModal').style.display = 'flex');
-    document.getElementById('btnCloseImgModal')?.addEventListener('click', () => document.getElementById('uploadImageCsvModal').style.display = 'none');
     document.getElementById('btnOpenAddTeamModal')?.addEventListener('click', () => document.getElementById('addTeamModal').style.display = 'flex');
-    document.getElementById('btnCloseAddTeam')?.addEventListener('click', () => document.getElementById('addTeamModal').style.display = 'none');
     
-    // Buttons
+    // Add Single Image Button (Targets by DOM structure)
+    const addSingleImgBtn = document.querySelector('#tab-images .panel-header button.outline');
+    if (addSingleImgBtn) addSingleImgBtn.addEventListener('click', openSingleImagePrompt);
+    
+    // Modal Closers
+    document.getElementById('btnCloseDbUpload')?.addEventListener('click', () => document.getElementById('uploadModal').style.display = 'none');
+    document.getElementById('btnCloseImgModal')?.addEventListener('click', () => document.getElementById('uploadImageCsvModal').style.display = 'none');
+    document.getElementById('btnCloseAddTeam')?.addEventListener('click', closeAddTeamModal);
+    
+    // Action Buttons
     document.getElementById('btnSubmitDbUpload')?.addEventListener('click', handleDatabaseUpload);
     document.getElementById('btnSubmitAddTeam')?.addEventListener('click', handleAddGlobalTeam);
+    
+    // Bulk Image Import
+    const btnImportImgMapping = document.querySelector('#uploadImageCsvModal .action-btn');
+    if (btnImportImgMapping && btnImportImgMapping.textContent.includes('IMPORT')) {
+        btnImportImgMapping.addEventListener('click', handleBulkImageImport);
+    }
     
     // Search Filters
     document.getElementById('adminDbSearch')?.addEventListener('input', renderDatabaseManager);
@@ -107,26 +120,22 @@ function executeAdminBoot() {
     document.getElementById('adminLoginScreen').style.display = 'none';
     document.getElementById('masterDashboard').style.display = 'flex';
     
-    // Load Presets
     db.ref('presets').on('value', snap => {
         activeDatabases = snap.val() || {};
         updateDbDropdown();
         renderDatabaseManager();
     });
     
-    // Load Images
     db.ref('global_player_images').on('value', snap => {
         globalImages = snap.val() || {};
         renderImageCards();
     });
     
-    // Load Rooms
     db.ref('rooms').on('value', snap => {
         activeRooms = snap.val() || {};
         renderActiveRooms();
     });
     
-    // Load Global Teams
     db.ref('global_teams').on('value', snap => {
         globalTeams = snap.val() || {};
         renderGlobalTeams();
@@ -157,25 +166,25 @@ function renderDatabaseManager() {
 
     let dbKeys = filterDb ? [filterDb] : Object.keys(activeDatabases);
 
+    // Fix: Show empty state properly if nothing exists
     if (dbKeys.length === 0) {
-        list.innerHTML = '<p style="color:#666; text-align:center;">No databases uploaded yet.</p>';
+        list.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No databases uploaded yet.</p>';
         return;
     }
 
     dbKeys.forEach(dbName => {
-        const players = activeDatabases[dbName] || [];
+        let playersRaw = activeDatabases[dbName] || [];
+        let players = Array.isArray(playersRaw) ? playersRaw : Object.values(playersRaw);
         
-        // Filter players if there is a search query
         const filteredPlayers = filterText 
             ? players.filter(p => (p.name || '').toLowerCase().includes(filterText))
             : players;
 
-        if (filterText && filteredPlayers.length === 0) return; // Hide if no match
+        if (filterText && filteredPlayers.length === 0) return;
 
         const dbCard = document.createElement('div');
         dbCard.style.cssText = 'background:#111; border:1px solid #333; border-radius:8px; margin-bottom:10px; overflow:hidden;';
         
-        // Header
         const header = document.createElement('div');
         header.style.cssText = 'padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#161620;';
         header.innerHTML = `
@@ -190,7 +199,6 @@ function renderDatabaseManager() {
             </div>
         `;
         
-        // Expandable Player List
         const playerContainer = document.createElement('div');
         playerContainer.id = `list-${dbName}`;
         playerContainer.style.cssText = 'display:none; padding:10px; background:#0a0a0f; border-top:1px solid #222; max-height:300px; overflow-y:auto;';
@@ -268,7 +276,8 @@ window.appendPlayersToDB = (e, dbName) => {
             showPrompt('Manual Entry', 'Enter player names separated by commas (e.g. MS Dhoni, Virat Kohli):', '', (val) => {
                 if (!val) return;
                 const newNames = val.split(',').map(n => n.trim()).filter(Boolean);
-                const existing = activeDatabases[dbName] || [];
+                let existingRaw = activeDatabases[dbName] || [];
+                const existing = Array.isArray(existingRaw) ? existingRaw : Object.values(existingRaw);
                 const newPlayers = newNames.map(name => ({
                     name: name, base_price: 20000000, role: 'BAT', nationality: 'Indian', status: 'available', set: 'Uncapped'
                 }));
@@ -280,10 +289,6 @@ window.appendPlayersToDB = (e, dbName) => {
         }, 100);
     });
 };
-
-document.getElementById('btnOpenUploadModal')?.addEventListener('click', () => {
-    document.getElementById('uploadModal').style.display = 'flex';
-});
 
 function handleDatabaseUpload() {
     let dbName = document.getElementById('dbNameInput').value.trim();
@@ -324,9 +329,15 @@ function renderImageCards() {
     if (!grid) return;
     grid.innerHTML = '';
 
+    const keys = Object.keys(globalImages);
+    if (keys.length === 0) {
+        grid.innerHTML = '<p style="color:#666; text-align:center; grid-column:1/-1; padding:20px;">No images mapped yet. Click "Add Single Image" or "Bulk Upload CSV" to begin.</p>';
+        return;
+    }
+
     const query = document.getElementById('adminImgSearch')?.value.toLowerCase() || '';
 
-    Object.keys(globalImages).forEach(playerName => {
+    keys.forEach(playerName => {
         if (query && !playerName.toLowerCase().includes(query)) return;
 
         let imgData = globalImages[playerName];
@@ -359,27 +370,60 @@ function renderImageCards() {
     });
 }
 
-window.updateActiveUrl = (playerName, newUrl) => {
-    db.ref(`global_player_images/${playerName}/active`).set(newUrl);
-};
+function handleBulkImageImport() {
+    let file = document.getElementById('uploadImageFile')?.files[0];
+    if (!file) return showAlert('Error', 'Please select a CSV file.');
+    let reader = new FileReader();
+    reader.onload = e => {
+        let rows = parseVanillaCSV(e.target.result);
+        if(rows.length < 2) return showAlert('Error', 'Invalid CSV or empty file.');
+        
+        let updates = {};
+        rows.slice(1).forEach(r => {
+            let name = r[0]?.trim();
+            let url = r[1]?.trim();
+            if(name && url) {
+                updates[name] = { active: url, urls: [url] };
+            }
+        });
+        db.ref('global_player_images').update(updates).then(() => {
+            document.getElementById('uploadImageCsvModal').style.display = 'none';
+            document.getElementById('uploadImageFile').value = '';
+            showAlert('Success', `Imported ${Object.keys(updates).length} image mappings.`);
+        });
+    };
+    reader.readAsText(file);
+}
 
+function openSingleImagePrompt() {
+    showPrompt('Add Single Image', 'Enter exact Player Name:', '', (playerName) => {
+        if (playerName && playerName.trim()) {
+            setTimeout(() => {
+                showPrompt('Add Image URL', `Enter transparent PNG URL for ${playerName}:`, 'https://...', (url) => {
+                    if (url && url.trim()) {
+                        let safeName = playerName.trim();
+                        let safeUrl = url.trim();
+                        db.ref(`global_player_images/${safeName}`).set({ active: safeUrl, urls: [safeUrl] });
+                        showAlert('Success', `Image successfully mapped to ${safeName}`);
+                    }
+                });
+            }, 400); // 400ms delay prevents modal collision
+        }
+    });
+}
+
+window.updateActiveUrl = (playerName, newUrl) => { db.ref(`global_player_images/${playerName}/active`).set(newUrl); };
+window.deleteImageMapping = (playerName) => { showConfirm('Delete Mapping', `Remove all images mapped to ${playerName}?`, () => { db.ref(`global_player_images/${playerName}`).remove(); }); };
 window.addUrlToPlayer = (playerName) => {
     showPrompt('Add Image URL', `Paste new image URL for ${playerName}:`, 'https://...', (url) => {
         if (!url) return;
         let imgData = globalImages[playerName];
         if (typeof imgData === 'string') imgData = { active: imgData, urls: [imgData] };
-        
         if (!imgData.urls.includes(url)) {
             imgData.urls.push(url);
             imgData.active = url; 
             db.ref(`global_player_images/${playerName}`).set(imgData);
         }
-    });
-};
-
-window.deleteImageMapping = (playerName) => {
-    showConfirm('Delete Mapping', `Remove all images mapped to ${playerName}?`, () => {
-        db.ref(`global_player_images/${playerName}`).remove();
     });
 };
 
@@ -424,7 +468,7 @@ window.deleteRoom = (key) => {
     });
 };
 
-// ─ 4. Global Franchises ─────────────────────────────────────────────
+// ─ 4. Global Franchises (With Editing) ──────────────────────────────
 function renderGlobalTeams() {
     const list = document.getElementById('globalTeamsList');
     if (!list) return;
@@ -440,7 +484,10 @@ function renderGlobalTeams() {
         const logoHtml = t.logo ? `<img src="${esc(t.logo)}" style="max-height:50px; max-width:80px; margin-bottom:10px; object-fit:contain; filter:drop-shadow(0 0 5px rgba(255,255,255,0.2));" alt="logo">` : '';
 
         card.innerHTML = `
-            <button class="action-btn danger" style="position:absolute; top:5px; right:5px; padding:2px 6px; font-size:10px;" onclick="deleteGlobalTeam('${esc(code)}')">✕</button>
+            <div style="position:absolute; top:5px; right:5px; display:flex; gap:5px;">
+                <button class="action-btn outline" style="padding:2px 6px; font-size:10px;" onclick="editGlobalTeam('${esc(code)}')">✏️</button>
+                <button class="action-btn danger" style="padding:2px 6px; font-size:10px;" onclick="deleteGlobalTeam('${esc(code)}')">✕</button>
+            </div>
             ${logoHtml}
             <div class="t-code" style="color:${esc(t.color)}">${esc(code)}</div>
             <div class="t-name">${esc(t.name)}</div>
@@ -461,13 +508,46 @@ function handleAddGlobalTeam() {
         return;
     }
 
-    db.ref(`global_teams/${code}`).set({ name, color, logo }).then(() => {
-        document.getElementById('addTeamModal').style.display = 'none';
-        document.getElementById('ntCode').value = '';
-        document.getElementById('ntName').value = '';
-        if (logoInput) logoInput.value = '';
+    // Using update so it safely sets new teams or overwrites edits
+    db.ref(`global_teams/${code}`).update({ name, color, logo }).then(() => {
+        closeAddTeamModal();
     });
 }
+
+function closeAddTeamModal() {
+    document.getElementById('addTeamModal').style.display = 'none';
+    document.getElementById('ntCode').value = '';
+    document.getElementById('ntCode').disabled = false; // Re-enable if it was disabled during edit
+    document.getElementById('ntName').value = '';
+    let logoInput = document.getElementById('ntLogo');
+    if (logoInput) logoInput.value = '';
+    
+    // Reset Modal UI back to "Add" state
+    let title = document.querySelector('#addTeamModal h2');
+    if(title) title.textContent = 'Add Global Franchise';
+    document.getElementById('btnSubmitAddTeam').textContent = 'ADD TEAM';
+}
+
+window.editGlobalTeam = (code) => {
+    const t = globalTeams[code];
+    if(!t) return;
+    
+    // Pre-fill the modal with existing data
+    document.getElementById('ntCode').value = code;
+    document.getElementById('ntCode').disabled = true; // Lock the code so they don't accidentally create a duplicate
+    document.getElementById('ntName').value = t.name || '';
+    document.getElementById('ntColor').value = t.color || '#007bff';
+    
+    let logoInput = document.getElementById('ntLogo');
+    if(logoInput) logoInput.value = t.logo || '';
+    
+    // Switch Modal UI to "Edit" state
+    let title = document.querySelector('#addTeamModal h2');
+    if(title) title.textContent = 'Edit Global Franchise';
+    document.getElementById('btnSubmitAddTeam').textContent = 'UPDATE TEAM';
+    
+    document.getElementById('addTeamModal').style.display = 'flex';
+};
 
 window.deleteGlobalTeam = (code) => {
     showConfirm('Delete Franchise', `Are you sure you want to delete ${code} from global registry?`, () => {
