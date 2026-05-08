@@ -14,7 +14,7 @@ let globalImages = {};
 let globalTeams = {};
 let activeRooms = {};
 
-// ─ SAFE DOM INJECTOR (Fixes Table/Tbody <div> Collisions) ───────────
+// ─ SAFE DOM INJECTOR ───────────────────────────────────────────────
 function getSafeContainer(tabId, newContainerId, cssStyles) {
     let container = document.getElementById(newContainerId);
     if (!container) {
@@ -24,11 +24,9 @@ function getSafeContainer(tabId, newContainerId, cssStyles) {
         const panel = tab.querySelector('.panel');
         if (!panel) return null;
 
-        // Hide the existing HTML table wrapper safely
         const oldTable = panel.querySelector('.table-responsive');
         if (oldTable) oldTable.style.display = 'none';
 
-        // Generate a valid container for div cards
         container = document.createElement('div');
         container.id = newContainerId;
         container.style.cssText = cssStyles;
@@ -38,7 +36,6 @@ function getSafeContainer(tabId, newContainerId, cssStyles) {
 }
 
 window.onload = function() {
-    // Inject Logo URL into Add Team Modal safely
     const colorInput = document.getElementById('ntColor');
     if (colorInput && !document.getElementById('ntLogo')) {
         const logoHtml = `<label class="modal-label" style="margin-top:15px;">Logo URL (Transparent PNG)</label>
@@ -104,7 +101,6 @@ function setupEventListeners() {
     document.getElementById('adminImgSearch')?.addEventListener('input', renderImageCards);
 }
 
-// Bind Globals for HTML onclicks
 window.handleAdminLogin = handleAdminLogin;
 window.logoutAdmin = logoutAdmin;
 window.handleDatabaseUpload = handleDatabaseUpload;
@@ -156,7 +152,7 @@ function executeAdminBoot() {
     });
 }
 
-// ─ 1. Database Manager ──────────────────────────────────────────────
+// ─ 1. Database Manager (WITH FIREBASE NULL PROTECTION) ──────────────
 function updateDbDropdown() {
     let sel = document.getElementById('dbSelector');
     if (!sel) return;
@@ -169,7 +165,6 @@ function updateDbDropdown() {
 document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 
 function renderDatabaseManager() {
-    // Generate safe div container instead of trying to put divs inside the <tbody>
     const list = getSafeContainer('tab-databases', 'dbCardContainer', 'display:flex; flex-direction:column; gap:10px; padding:15px;');
     if (!list) return;
     list.innerHTML = '';
@@ -179,46 +174,58 @@ function renderDatabaseManager() {
     let dbKeys = filterDb ? [filterDb] : Object.keys(activeDatabases);
 
     let validDbs = 0;
+    
     dbKeys.forEach(dbName => {
-        let playersRaw = activeDatabases[dbName] || [];
-        let players = Array.isArray(playersRaw) ? playersRaw : Object.values(playersRaw);
-        const filteredPlayers = filterText ? players.filter(p => (p.name || '').toLowerCase().includes(filterText)) : players;
+        try {
+            let playersRaw = activeDatabases[dbName] || [];
+            let rawArray = Array.isArray(playersRaw) ? playersRaw : Object.values(playersRaw);
+            
+            // FIREBASE CORRUPTION FIX: Actively remove nulls/undefined entries before processing
+            let validPlayers = rawArray.filter(p => p !== null && typeof p === 'object');
+            
+            const filteredPlayers = filterText 
+                ? validPlayers.filter(p => (p.name || '').toLowerCase().includes(filterText)) 
+                : validPlayers;
 
-        if (filterText && filteredPlayers.length === 0) return;
-        validDbs++;
+            if (filterText && filteredPlayers.length === 0) return;
+            validDbs++;
 
-        const dbCard = document.createElement('div');
-        dbCard.style.cssText = 'background:#111; border:1px solid #333; border-radius:8px; margin-bottom:10px; overflow:hidden;';
-        
-        const header = document.createElement('div');
-        header.style.cssText = 'padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#161620;';
-        header.innerHTML = `
-            <div>
-                <strong style="color:#0dcaf0; font-size:16px;">${esc(dbName)}</strong>
-                <span style="color:#888; font-size:11px; margin-left:10px;">${filteredPlayers.length} Players</span>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="action-btn" style="background:#28a745;" onclick="appendPlayersToDB(event, '${esc(dbName)}')">+ Add Players</button>
-                <button class="action-btn danger outline" onclick="deleteDatabase(event, '${esc(dbName)}')">✕ Delete</button>
-                <button class="action-btn outline" onclick="togglePlayerList(event, 'list-${esc(dbName)}')">▼ View</button>
-            </div>
-        `;
-        
-        const playerContainer = document.createElement('div');
-        playerContainer.id = `list-${dbName}`;
-        playerContainer.style.cssText = 'display:none; padding:10px; background:#0a0a0f; border-top:1px solid #222; max-height:300px; overflow-y:auto;';
-        
-        let pListHtml = filteredPlayers.map((p, i) => `
-            <div style="display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #1a1a24; font-size:12px;">
-                <span style="color:#ccc;">${i+1}. ${esc(p.name)}</span>
-                <span style="color:#888;">${esc(p.role)} | ${esc(p.nationality)}</span>
-            </div>
-        `).join('');
-        playerContainer.innerHTML = pListHtml;
+            const dbCard = document.createElement('div');
+            dbCard.style.cssText = 'background:#111; border:1px solid #333; border-radius:8px; margin-bottom:10px; overflow:hidden;';
+            
+            const header = document.createElement('div');
+            header.style.cssText = 'padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#161620;';
+            header.innerHTML = `
+                <div>
+                    <strong style="color:#0dcaf0; font-size:16px;">${esc(dbName)}</strong>
+                    <span style="color:#888; font-size:11px; margin-left:10px;">${filteredPlayers.length} Players</span>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="action-btn" style="background:#28a745;" onclick="appendPlayersToDB(event, '${esc(dbName)}')">+ Add Players</button>
+                    <button class="action-btn danger outline" onclick="deleteDatabase(event, '${esc(dbName)}')">✕ Delete</button>
+                    <button class="action-btn outline" onclick="togglePlayerList(event, 'list-${esc(dbName)}')">▼ View</button>
+                </div>
+            `;
+            
+            const playerContainer = document.createElement('div');
+            playerContainer.id = `list-${dbName}`;
+            playerContainer.style.cssText = 'display:none; padding:10px; background:#0a0a0f; border-top:1px solid #222; max-height:300px; overflow-y:auto;';
+            
+            let pListHtml = filteredPlayers.map((p, i) => `
+                <div style="display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #1a1a24; font-size:12px;">
+                    <span style="color:#ccc;">${i+1}. ${esc(p.name || 'Unknown')}</span>
+                    <span style="color:#888;">${esc(p.role || '-')} | ${esc(p.nationality || '-')}</span>
+                </div>
+            `).join('');
+            playerContainer.innerHTML = pListHtml;
 
-        dbCard.appendChild(header);
-        dbCard.appendChild(playerContainer);
-        list.appendChild(dbCard);
+            dbCard.appendChild(header);
+            dbCard.appendChild(playerContainer);
+            list.appendChild(dbCard);
+            
+        } catch (err) {
+            console.error(`Skipped rendering corrupted DB: ${dbName}`, err);
+        }
     });
 
     if (validDbs === 0) {
@@ -264,7 +271,10 @@ window.appendPlayersToDB = (e, dbName) => {
                     return p;
                 }).filter(p => p.name);
                 
-                const existing = activeDatabases[dbName] || [];
+                let raw = activeDatabases[dbName] || [];
+                let existing = Array.isArray(raw) ? raw : Object.values(raw);
+                existing = existing.filter(p => p !== null); // Clean before saving
+                
                 db.ref(`presets/${dbName}`).set([...existing, ...newPlayers]).then(() => showAlert('Success', `Appended ${newPlayers.length} players to ${dbName} via CSV.`));
             };
             reader.readAsText(file);
@@ -276,8 +286,10 @@ window.appendPlayersToDB = (e, dbName) => {
             showPrompt('Manual Entry', 'Enter player names separated by commas (e.g. MS Dhoni, Virat Kohli):', '', (val) => {
                 if (!val) return;
                 const newNames = val.split(',').map(n => n.trim()).filter(Boolean);
-                let existingRaw = activeDatabases[dbName] || [];
-                const existing = Array.isArray(existingRaw) ? existingRaw : Object.values(existingRaw);
+                let raw = activeDatabases[dbName] || [];
+                let existing = Array.isArray(raw) ? raw : Object.values(raw);
+                existing = existing.filter(p => p !== null); // Clean before saving
+                
                 const newPlayers = newNames.map(name => ({
                     name: name, base_price: 20000000, role: 'BAT', nationality: 'Indian', status: 'available', set: 'Uncapped'
                 }));
@@ -336,7 +348,6 @@ function renderImageCards() {
         let activeUrl = '';
         let urlList = [];
 
-        // Safe Normalization for corrupted Firebase entries
         if (typeof rawData === 'string') {
             activeUrl = rawData; urlList = [rawData];
         } else if (rawData && rawData.active) {
