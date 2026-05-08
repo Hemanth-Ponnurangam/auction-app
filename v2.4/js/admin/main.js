@@ -1,418 +1,308 @@
-/**
- * main.js (Admin)
- * The main controller for the Super Admin platform console.
- */
-
 import { db } from '../shared/firebase.js';
-import { verifySuperAdmin } from '../shared/auth.js';
-import { esc, showAlert, showConfirm } from '../shared/dom.js';
+import { showAlert, showConfirm, showPrompt, esc, closeModal } from '../shared/dom.js';
+import { parseVanillaCSV } from './csv.js';
 
-let isSuperAdmin = false;
+let activeDatabases = {};
+let globalImages = {};
+let globalTeams = {};
 
-window.onload = function() {
-    setupEventListeners();
-    
-    let savedPin = sessionStorage.getItem('superAdminPin');
-    if (savedPin) {
-        verifySuperAdmin(savedPin).then(valid => {
-            if (valid) {
-                isSuperAdmin = true;
-                executeAdminBoot();
-            } else {
-                document.getElementById('adminLoginScreen').style.display = 'flex';
-            }
-        });
-    } else {
-        document.getElementById('adminLoginScreen').style.display = 'flex';
+window.onload = () => {
+    // Dynamically inject the Logo URL input into the Add Team Modal
+    const colorInput = document.getElementById('ntColor');
+    if (colorInput) {
+        const logoHtml = `<label class="modal-label" style="margin-top:15px;">Logo URL (Transparent PNG)</label>
+                          <input type="text" id="ntLogo" class="modal-input" placeholder="https://.../logo.png">`;
+        colorInput.insertAdjacentHTML('afterend', logoHtml);
     }
+
+    // Convert the Image Directory table into a Card Grid container
+    const imgPanel = document.querySelector('#tab-images .panel > div:last-child');
+    if (imgPanel) {
+        imgPanel.innerHTML = '<div id="imgCardGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;"></div>';
+    }
+
+    attachTabListeners();
 };
 
-// --- Centralized Event Listeners ---
-function setupEventListeners() {
-    // Login Screen
-    document.getElementById('btnAdminLogin')?.addEventListener('click', handleAdminLogin);
-    document.getElementById('adminPinInput')?.addEventListener('keypress', e => {
-        if(e.key === 'Enter') handleAdminLogin();
-    });
-    document.getElementById('btnAdminBack')?.addEventListener('click', () => {
-        window.location.href = 'index.html';
-    });
-    
-    // Header
-    document.getElementById('btnLogoutAdmin')?.addEventListener('click', logoutAdmin);
-    
-    // Modals - Global Teams
-    document.getElementById('btnOpenAddTeamModal')?.addEventListener('click', openAddTeamModal);
-    document.getElementById('btnSubmitAddTeam')?.addEventListener('click', saveNewTeam);
-    document.getElementById('btnCloseAddTeam')?.addEventListener('click', closeAddTeamModal);
-    
-    // Modals - Database Upload
-    document.getElementById('btnOpenUploadModal')?.addEventListener('click', () => {
-        document.getElementById('uploadModal').style.display = 'flex';
-    });
-    document.getElementById('btnSubmitDbUpload')?.addEventListener('click', submitPresetUpload);
-    document.getElementById('btnCloseDbUpload')?.addEventListener('click', () => {
-        document.getElementById('uploadModal').style.display = 'none';
-    });
-
-    // Modals - Image Upload
-    document.getElementById('btnOpenImgModal')?.addEventListener('click', () => {
-        document.getElementById('uploadImageCsvModal').style.display = 'flex';
-    });
-    document.getElementById('btnCloseImgModal')?.addEventListener('click', () => {
-        document.getElementById('uploadImageCsvModal').style.display = 'none';
-    });
-    
-    // Tab Switching (Bulletproof Data-Attribute Method)
-    document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            let tabId = e.currentTarget.dataset.tab;
-            
-            // 1. Hide all tab content panels
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            // 2. Remove the yellow highlight from all tab buttons
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
-            // 3. Show the targeted content panel
-            let target = document.getElementById(`tab-${tabId}`);
-            if (target) target.classList.add('active');
-            
-            // 4. Add the yellow highlight to the clicked button
-            e.currentTarget.classList.add('active');
-        });
-    });
-
-    // Event Delegation for dynamic "Delete" buttons
-    document.getElementById('globalTeamsList')?.addEventListener('click', e => {
-        if (e.target.classList.contains('delete-team-btn')) {
-            confirmDeleteTeam(e.target.dataset.team);
-        }
-    });
-
-    document.getElementById('presetDbList')?.addEventListener('click', e => {
-        if (e.target.classList.contains('delete-db-btn')) {
-            deletePresetDB(e.target.dataset.key);
-        }
-    });
-
-    // 1. Process the Image CSV Upload
-    document.querySelector('#uploadImageCsvModal .action-btn:not(.outline)')?.addEventListener('click', processImageCsvUpload);
-
-    // 2. Delegate the Delete Image buttons
-    document.getElementById('imgTableBody')?.addEventListener('click', e => {
-        if (e.target.classList.contains('delete-img-btn')) {
-            deletePlayerImage(e.target.dataset.name);
-        }
-    });
-
-    // 3. Image Search Bar Filtering
-    document.getElementById('adminImgSearch')?.addEventListener('input', e => {
-        let term = e.target.value.toLowerCase();
-        document.querySelectorAll('#imgTableBody tr').forEach(row => {
-            if (row.cells.length > 1) { // Ignore the "no images" placeholder row
-                let name = row.cells[1].textContent.toLowerCase();
-                row.style.display = name.includes(term) ? '' : 'none';
-            }
-        });
-    });
-
-    // Event Delegation for "Terminate Room" buttons
-    document.getElementById('roomsContainer')?.addEventListener('click', e => {
-        if (e.target.classList.contains('delete-room-btn')) {
-            deleteAuctionRoom(e.target.dataset.room);
-        }
-    });
-}
-
-// --- Auth & Boot ---
-
-function handleAdminLogin() {
-    const pin = document.getElementById('adminPinInput').value.trim();
-    if (!pin) {
-        showAlert("Error", "Please enter a PIN.");
-        return;
-    }
-
-    verifySuperAdmin(pin).then(isValid => {
-        if (isValid) {
-            sessionStorage.setItem('superAdminPin', pin);
-            isSuperAdmin = true;
+document.getElementById('btnAdminLogin').addEventListener('click', () => {
+    let pin = document.getElementById('adminPinInput').value.trim();
+    db.ref('super_admin_pin').once('value', snap => {
+        if (snap.val() === pin) {
             document.getElementById('adminLoginScreen').style.display = 'none';
-            executeAdminBoot();
+            document.getElementById('masterDashboard').style.display = 'flex';
+            initAdminSystems();
         } else {
-            document.getElementById('adminPinInput').value = '';
+            showAlert('Access Denied', 'Invalid System PIN.');
         }
     });
-}
+});
 
-function logoutAdmin() {
-    sessionStorage.removeItem('superAdminPin');
+document.getElementById('btnLogoutAdmin').addEventListener('click', () => {
     window.location.reload();
-}
+});
 
-function executeAdminBoot() {
-    document.getElementById('masterDashboard').style.display = 'flex';
-    attachFirebaseListeners();
-}
-
-// --- Firebase Listeners ---
-
-function attachFirebaseListeners() {
-    db.ref('.info/connected').on('value', snap => {
-        document.getElementById('connBanner').style.display = !snap.val() ? 'block' : 'none';
-    });
-
-    db.ref('global_teams').on('value', snap => {
-        renderGlobalTeams(snap.val() || {});
-    });
-
-    db.ref('preset_databases').on('value', snap => {
-        renderPresetDBs(snap.val() || {});
+function initAdminSystems() {
+    db.ref('presets').on('value', snap => {
+        activeDatabases = snap.val() || {};
+        renderDatabaseManager();
     });
 
     db.ref('global_player_images').on('value', snap => {
-        renderGlobalImages(snap.val() || {});
+        globalImages = snap.val() || {};
+        renderImageCards();
     });
 
-    db.ref('rooms').on('value', snap => {
-        renderActiveRooms(snap.val() || {});
-    });
-}
-
-// --- Global Teams Management ---
-
-function openAddTeamModal() {
-    document.getElementById('addTeamModal').style.display = 'flex';
-}
-
-function closeAddTeamModal() {
-    document.getElementById('addTeamModal').style.display = 'none';
-    document.getElementById('ntCode').value = '';
-    document.getElementById('ntName').value = '';
-}
-
-function saveNewTeam() {
-    let code = document.getElementById('ntCode').value.trim().toUpperCase();
-    let name = document.getElementById('ntName').value.trim();
-    let color = document.getElementById('ntColor').value;
-    
-    if (!code || !name) { 
-        showAlert('Missing Fields', 'Provide Team Code and Name.'); 
-        return; 
-    }
-    
-    db.ref('global_teams/' + code).set({ name, color }).then(() => {
-        closeAddTeamModal();
+    db.ref('global_teams').on('value', snap => {
+        globalTeams = snap.val() || {};
+        renderGlobalTeams();
     });
 }
 
-function confirmDeleteTeam(code) {
-    showConfirm('Remove Franchise', `Are you sure you want to completely remove ${code} from the global platform?`, 
-        () => {
-            db.ref('global_teams/' + code).remove();
-        }
-    );
-}
-
-function renderGlobalTeams(teams) {
-    let el = document.getElementById('globalTeamsList');
-    if (!el) return;
-    
-    let keys = Object.keys(teams);
-    if (!keys.length) { 
-        el.innerHTML = "<p style='color:#666; font-size:12px; text-align:center;'>No franchises found. Add one above.</p>"; 
-        return; 
-    }
-    
-    let html = '';
-    keys.forEach(code => {
-        let t = teams[code];
-        html += `
-        <div class="team-card" style="border-top:4px solid ${t.color};">
-            <div class="t-code" style="color:${t.color}">${esc(code)}</div>
-            <div class="t-name">${esc(t.name)}</div>
-            <button class="action-btn outline delete-team-btn" style="padding:4px 8px; font-size:10px; margin-top:5px;" data-team="${esc(code)}">Remove</button>
-        </div>`;
-    });
-    el.innerHTML = html;
-}
-
-// --- Preset Database UI ---
-
-function submitPresetUpload() {
-    let dbName = document.getElementById('dbNameInput').value.trim();
-    let fileInput = document.getElementById('csvFileInput');
-    
-    if (typeof uploadPresetDB === 'function') {
-        uploadPresetDB(dbName, fileInput.files.length ? fileInput.files[0] : null);
-    } else {
-        showAlert('Coming Soon', 'CSV Upload module is not fully implemented yet.');
-    }
-}
-
-function deletePresetDB(dbKey) {
-    showConfirm('Delete Database', `Permanently delete the preset '${dbKey}'?`, () => {
-        db.ref('preset_databases/' + dbKey).remove();
+function attachTabListeners() {
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById('tab-' + e.target.getAttribute('data-tab')).classList.add('active');
+        });
     });
 }
 
-function renderPresetDBs(dbs) {
-    let el = document.getElementById('presetDbList');
-    let selector = document.getElementById('dbSelector'); 
-    if (!el) return;
-    
-    let keys = Object.keys(dbs);
-    if (!keys.length) {
-        el.innerHTML = "<p style='color:#666; font-size:12px;'>No databases uploaded yet.</p>";
-        if (selector) selector.innerHTML = '<option value="">No presets available</option>';
+// ─ Database Manager (Expandable Player Lists & CSV/Manual Append) ────
+
+function renderDatabaseManager() {
+    const list = document.getElementById('presetDbList');
+    list.innerHTML = '';
+
+    if (Object.keys(activeDatabases).length === 0) {
+        list.innerHTML = '<p style="color:#666; text-align:center;">No databases uploaded yet.</p>';
         return;
     }
 
-    let html = '';
-    let selHtml = '';
-    
-    keys.forEach(key => {
-        let count = dbs[key].length || 0;
-        selHtml += `<option value="${esc(key)}">${esc(key).toUpperCase()} (${count} Players)</option>`;
+    Object.keys(activeDatabases).forEach(dbName => {
+        const players = activeDatabases[dbName] || [];
         
-        html += `
-        <div style="background:#111; border:1px solid #333; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        const dbCard = document.createElement('div');
+        dbCard.style.cssText = 'background:#111; border:1px solid #333; border-radius:8px; margin-bottom:10px; overflow:hidden;';
+        
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding:15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#161620;';
+        header.innerHTML = `
             <div>
-                <div style="color:#ffc107; font-weight:bold; font-size:14px; text-transform:uppercase;">${esc(key)}</div>
-                <div style="color:#888; font-size:10px;">${count} Players</div>
+                <strong style="color:#0dcaf0; font-size:16px;">${esc(dbName)}</strong>
+                <span style="color:#888; font-size:11px; margin-left:10px;">${players.length} Players</span>
             </div>
-            <button class="action-btn danger delete-db-btn" style="padding:4px 8px; font-size:10px;" data-key="${esc(key)}">Delete</button>
-        </div>`;
+            <div style="display:flex; gap:10px;">
+                <button class="action-btn" style="background:#28a745;" onclick="appendPlayersToDB(event, '${dbName}')">+ Add Players</button>
+                <button class="action-btn outline" onclick="togglePlayerList(event, 'list-${dbName}')">▼ View</button>
+            </div>
+        `;
+        
+        // Expandable Player List
+        const playerContainer = document.createElement('div');
+        playerContainer.id = `list-${dbName}`;
+        playerContainer.style.cssText = 'display:none; padding:10px; background:#0a0a0f; border-top:1px solid #222; max-height:300px; overflow-y:auto;';
+        
+        let pListHtml = players.map((p, i) => `
+            <div style="display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #1a1a24; font-size:12px;">
+                <span style="color:#ccc;">${i+1}. ${esc(p.name)}</span>
+                <span style="color:#888;">${esc(p.role)} | ${esc(p.nationality)}</span>
+            </div>
+        `).join('');
+        playerContainer.innerHTML = pListHtml;
+
+        dbCard.appendChild(header);
+        dbCard.appendChild(playerContainer);
+        list.appendChild(dbCard);
     });
-    
-    el.innerHTML = html;
-    if (selector) selector.innerHTML = selHtml; 
 }
 
-// ==========================================
-// IMAGE DIRECTORY LOGIC
-// ==========================================
-
-function processImageCsvUpload() {
-    let fileInput = document.getElementById('uploadImageFile');
-    if (!fileInput.files.length) {
-        showAlert('Missing File', 'Please select a CSV file first.');
-        return;
+window.togglePlayerList = (e, targetId) => {
+    e.stopPropagation();
+    const container = document.getElementById(targetId);
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        e.target.textContent = '▲ Hide';
+    } else {
+        container.style.display = 'none';
+        e.target.textContent = '▼ View';
     }
+};
 
-    let reader = new FileReader();
-    reader.onload = e => {
-        let text = e.target.result;
-        let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-        let updates = {};
-        let count = 0;
-        
-        for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-            if (cols.length >= 2) {
-                let name = cols[0].replace(/^"|"$/g, '').trim();
-                let url = cols[1].replace(/^"|"$/g, '').trim();
-                if (name && url) {
-                    let safeKey = name.replace(/[.#$\[\]\/]/g, '_');
-                    updates[safeKey] = { url: url, originalName: name };
-                    count++;
-                }
-            }
-        }
-        
-        if (count > 0) {
-            db.ref('global_player_images').update(updates).then(() => {
-                showAlert('Success', `Successfully imported ${count} image mappings.`);
-                document.getElementById('uploadImageCsvModal').style.display = 'none';
-                fileInput.value = ''; 
+window.appendPlayersToDB = (e, dbName) => {
+    e.stopPropagation();
+    showConfirm(`Append to ${dbName}`, 'Do you want to upload a CSV file or add names manually?', 
+    () => {
+        // Upload CSV Path
+        let input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv';
+        input.onchange = ev => {
+            let file = ev.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = fileEvent => {
+                let rows = parseVanillaCSV(fileEvent.target.result);
+                if (rows.length < 2) return showAlert('Error', 'CSV format error or empty file.');
+                let headers = rows[0].map(h => h.toLowerCase().trim());
+                let newPlayers = rows.slice(1).map(row => {
+                    let p = { status: 'available' };
+                    headers.forEach((h, i) => {
+                        let val = row[i] ? row[i].trim() : '';
+                        if (h === 'player' || h === 'name') p.name = val;
+                        else if (h === 'base_price' || h === 'price') p.base_price = parseInt(val) || 0;
+                        else p[h] = val;
+                    });
+                    return p;
+                }).filter(p => p.name);
+                
+                const existing = activeDatabases[dbName] || [];
+                db.ref(`presets/${dbName}`).set([...existing, ...newPlayers]).then(() => {
+                    showAlert('Success', `Appended ${newPlayers.length} players to ${dbName} via CSV.`);
+                });
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    },
+    () => {
+        // Manual Entry Path
+        setTimeout(() => {
+            showPrompt('Manual Entry', 'Enter player names separated by commas (e.g. MS Dhoni, Virat Kohli):', '', (val) => {
+                if (!val) return;
+                const newNames = val.split(',').map(n => n.trim()).filter(Boolean);
+                const existing = activeDatabases[dbName] || [];
+                
+                const newPlayers = newNames.map(name => ({
+                    name: name, base_price: 20000000, role: 'BAT', nationality: 'Indian', status: 'available', set: 'Uncapped'
+                }));
+
+                db.ref(`presets/${dbName}`).set([...existing, ...newPlayers]).then(() => {
+                    showAlert('Success', `Appended ${newPlayers.length} players to ${dbName}.`);
+                });
             });
-        } else {
-            showAlert('Error', 'No valid rows found. Ensure CSV has Name and URL columns.');
+        }, 100);
+    });
+};
+
+// ─ Image Directory (Card Layout & Multi-URL) ─────────────────────
+
+function renderImageCards() {
+    const grid = document.getElementById('imgCardGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const query = document.getElementById('adminImgSearch')?.value.toLowerCase() || '';
+
+    Object.keys(globalImages).forEach(playerName => {
+        if (query && !playerName.toLowerCase().includes(query)) return;
+
+        let imgData = globalImages[playerName];
+        if (typeof imgData === 'string') {
+            imgData = { active: imgData, urls: [imgData] };
         }
-    };
-    reader.readAsText(fileInput.files[0]);
-}
-
-function renderGlobalImages(images) {
-    let tbody = document.getElementById('imgTableBody');
-    if (!tbody) return;
-
-    let keys = Object.keys(images);
-    if (!keys.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images mapped yet.</td></tr>';
-        return;
-    }
-
-    let html = '';
-    keys.forEach(key => {
-        let imgData = images[key];
-        let url = typeof imgData === 'string' ? imgData : imgData.url; 
-        let displayName = imgData.originalName || key;
         
-        let safeName = esc(displayName);
-        let safeKey = esc(key);
-        let safeUrl = esc(url);
+        const activeUrl = imgData.active || imgData.urls[0] || '';
         
-        html += `
-        <tr>
-            <td><img src="${safeUrl}" class="img-preview" alt="preview" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='"></td>
-            <td style="font-weight:bold; color:#fff;">${safeName}</td>
-            <td style="color:#888; font-size:11px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeUrl}</td>
-            <td>
-                <button class="action-btn danger delete-img-btn" style="padding:4px 8px; font-size:10px;" data-name="${safeKey}">Remove</button>
-            </td>
-        </tr>`;
-    });
-    tbody.innerHTML = html;
-}
-
-function deletePlayerImage(imageKey) {
-    showConfirm('Remove Image', `Are you sure you want to delete this image mapping?`, () => {
-        db.ref('global_player_images/' + imageKey).remove();
-    });
-}
-
-// ==========================================
-// LIVE SERVERS (ROOMS) LOGIC
-// ==========================================
-
-function renderActiveRooms(rooms) {
-    let container = document.getElementById('roomsContainer');
-    if (!container) return;
-
-    let keys = Object.keys(rooms);
-    if (!keys.length) {
-        container.innerHTML = "<p style='color:#666; font-size:12px; grid-column:1/-1;'>No active auction rooms running.</p>";
-        return;
-    }
-
-    let html = '';
-    keys.forEach(key => {
-        let room = rooms[key];
-        let settings = room.settings || {};
-        let live = room.live_state || {};
-        let status = live.auction_state || 'idle';
-        let currentBid = (live.current_bid || 0) / 10000000;
-        let leader = live.highest_bidder || '-';
-
-        html += `
-        <div class="room-card">
-            <div class="r-title">
-                ${esc(settings.room_name || 'Unnamed Room')}
-                <span class="r-pin">${esc(key)}</span>
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#161620; border:1px solid #2d2d3f; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 5px 15px rgba(0,0,0,0.4);';
+        
+        card.innerHTML = `
+            <div style="height:180px; background:#000; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                <img src="${esc(activeUrl)}" style="width:100%; height:100%; object-fit:cover; object-position:top;" onerror="this.src=''; this.alt='No Image'">
+                <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.9)); padding:10px;">
+                    <h3 style="margin:0; color:#fff; font-size:16px;">${esc(playerName)}</h3>
+                </div>
             </div>
-            <div class="r-stat"><span>Status</span><span style="color:${status==='bidding'?'#28a745':'#ffc107'}">${status.toUpperCase()}</span></div>
-            <div class="r-stat"><span>Current Bid</span><span style="color:#28a745">₹${currentBid.toFixed(2)} Cr</span></div>
-            <div class="r-stat"><span>Leader</span><span>${esc(leader)}</span></div>
-            <button class="action-btn outline danger delete-room-btn" style="width:100%; margin-top:10px; font-size:11px;" data-room="${esc(key)}">Terminate Room</button>
-        </div>`;
+            <div style="padding:12px; display:flex; flex-direction:column; gap:8px; flex:1;">
+                <label style="font-size:10px; color:#888; text-transform:uppercase;">Select Active Source:</label>
+                <select class="admin-select" style="min-width:100%; padding:6px; font-size:11px;" onchange="updateActiveUrl('${esc(playerName)}', this.value)">
+                    ${imgData.urls.map(u => `<option value="${esc(u)}" ${u === activeUrl ? 'selected' : ''}>${esc(u)}</option>`).join('')}
+                </select>
+                <button class="action-btn outline" style="width:100%; font-size:10px; margin-top:auto;" onclick="addUrlToPlayer('${esc(playerName)}')">+ Add Alt URL</button>
+            </div>
+        `;
+        grid.appendChild(card);
     });
-    container.innerHTML = html;
 }
 
-function deleteAuctionRoom(roomKey) {
-    showConfirm('Terminate Room', `Are you sure you want to permanently delete room PIN: ${roomKey}? This will kick all users.`, () => {
-        db.ref('rooms/' + roomKey).remove();
+window.updateActiveUrl = (playerName, newUrl) => {
+    db.ref(`global_player_images/${playerName}/active`).set(newUrl);
+};
+
+window.addUrlToPlayer = (playerName) => {
+    showPrompt('Add Image URL', `Paste new image URL for ${playerName}:`, 'https://...', (url) => {
+        if (!url) return;
+        let imgData = globalImages[playerName];
+        if (typeof imgData === 'string') imgData = { active: imgData, urls: [imgData] };
+        
+        if (!imgData.urls.includes(url)) {
+            imgData.urls.push(url);
+            imgData.active = url; 
+            db.ref(`global_player_images/${playerName}`).set(imgData);
+        }
+    });
+};
+
+document.getElementById('adminImgSearch')?.addEventListener('input', renderImageCards);
+
+// ─ Global Franchises (Transparent Logos) ─────────────────────────
+
+function renderGlobalTeams() {
+    const list = document.getElementById('globalTeamsList');
+    list.innerHTML = '';
+
+    Object.keys(globalTeams).forEach(code => {
+        const t = globalTeams[code];
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.style.borderColor = t.color;
+        card.style.position = 'relative';
+        
+        const logoHtml = t.logo ? `<img src="${esc(t.logo)}" style="max-height:50px; max-width:80px; margin-bottom:10px; object-fit:contain; filter:drop-shadow(0 0 5px rgba(255,255,255,0.2));" alt="logo">` : '';
+
+        card.innerHTML = `
+            <button class="action-btn danger" style="position:absolute; top:5px; right:5px; padding:2px 6px; font-size:10px;" onclick="deleteGlobalTeam('${esc(code)}')">✕</button>
+            ${logoHtml}
+            <div class="t-code" style="color:${esc(t.color)}">${esc(code)}</div>
+            <div class="t-name">${esc(t.name)}</div>
+        `;
+        list.appendChild(card);
     });
 }
+
+document.getElementById('btnOpenAddTeamModal').addEventListener('click', () => {
+    document.getElementById('addTeamModal').style.display = 'flex';
+});
+
+document.getElementById('btnCloseAddTeam').addEventListener('click', () => {
+    document.getElementById('addTeamModal').style.display = 'none';
+});
+
+document.getElementById('btnSubmitAddTeam').addEventListener('click', () => {
+    const code = document.getElementById('ntCode').value.trim().toUpperCase();
+    const name = document.getElementById('ntName').value.trim();
+    const color = document.getElementById('ntColor').value;
+    const logoInput = document.getElementById('ntLogo'); 
+    const logo = logoInput ? logoInput.value.trim() : '';
+
+    if (!code || !name) {
+        showAlert('Error', 'Team code and name are required.');
+        return;
+    }
+
+    db.ref(`global_teams/${code}`).set({ name, color, logo }).then(() => {
+        document.getElementById('addTeamModal').style.display = 'none';
+        document.getElementById('ntCode').value = '';
+        document.getElementById('ntName').value = '';
+        if (logoInput) logoInput.value = '';
+    });
+});
+
+window.deleteGlobalTeam = (code) => {
+    showConfirm('Delete Franchise', `Are you sure you want to delete ${code} from global registry?`, () => {
+        db.ref(`global_teams/${code}`).remove();
+    });
+};
