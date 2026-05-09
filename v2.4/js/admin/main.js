@@ -165,7 +165,11 @@ function updateDbDropdown() {
 document.getElementById('dbSelector')?.addEventListener('change', renderDatabaseManager);
 
 function renderDatabaseManager() {
-    const list = getSafeContainer('tab-databases', 'dbCardContainer', 'display:flex; flex-direction:column; gap:10px; padding:15px;');
+    // FIX: Was calling getSafeContainer('tab-databases', 'dbCardContainer', ...) which looks for
+    // an element id="dbCardContainer" that doesn't exist in admin.html. getSafeContainer then
+    // created a new orphan div appended below the real scroll wrapper, leaving presetDbList empty.
+    // Now we target the correct element that already exists in the HTML.
+    const list = document.getElementById('presetDbList');
     if (!list) return;
     list.innerHTML = '';
     
@@ -334,8 +338,22 @@ function handleDatabaseUpload() {
 
 // ─ 2. Image Directory ───────────────────────────────────────────────
 function renderImageCards() {
-    const grid = getSafeContainer('tab-images', 'imgCardGrid', 'display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;');
-    if (!grid) return; 
+    // FIX: Was calling getSafeContainer('tab-images', 'imgCardGrid', ...) which looked for
+    // id="imgCardGrid" (doesn't exist). It tried to hide a '.table-responsive' wrapper but the
+    // HTML has no such class — so the old table stayed visible and the new grid was appended below it.
+    // Now we correctly find and hide the table's scroll wrapper, then create/reuse the grid div.
+    let grid = document.getElementById('imgCardGrid');
+    if (!grid) {
+        const panel = document.querySelector('#tab-images .panel');
+        if (!panel) return;
+        // Hide the existing scroll wrapper that contains the old <table>
+        const tableWrapper = panel.querySelector('div[style*="overflow-y"]');
+        if (tableWrapper) tableWrapper.style.display = 'none';
+        grid = document.createElement('div');
+        grid.id = 'imgCardGrid';
+        grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:15px;';
+        panel.appendChild(grid);
+    }
     grid.innerHTML = '';
 
     const query = document.getElementById('adminImgSearch')?.value.toLowerCase() || '';
@@ -445,7 +463,9 @@ window.addUrlToPlayer = (playerName) => {
 
 // ─ 3. Active Rooms ──────────────────────────────────────────────────
 function renderActiveRooms() {
-    const container = getSafeContainer('tab-rooms', 'activeRoomsContainer', 'display:flex; flex-direction:column; gap:10px; padding:15px;');
+    // FIX: Was calling getSafeContainer('tab-rooms', 'activeRoomsContainer', ...) — id doesn't
+    // exist in HTML. The correct element is id="roomsContainer". Same orphan-div bug as above.
+    const container = document.getElementById('roomsContainer');
     if (!container) return;
     
     let keys = Object.keys(activeRooms);
@@ -483,7 +503,9 @@ window.deleteRoom = (key) => {
 
 // ─ 4. Global Franchises ─────────────────────────────────────────────
 function renderGlobalTeams() {
-    const list = getSafeContainer('tab-franchises', 'globalTeamsGridCard', 'display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:15px; padding:15px;');
+    // FIX: Was calling getSafeContainer('tab-franchises', 'globalTeamsGridCard', ...) — id doesn't
+    // exist in HTML. The correct element is id="globalTeamsList". Same orphan-div bug as above.
+    const list = document.getElementById('globalTeamsList');
     if (!list) return;
     list.innerHTML = '';
 
