@@ -544,7 +544,10 @@ function updateControlButtons(data, isIdle, isPaused, currentLeader) {
         }
         clocks.forEach(b => setBtn(b, false));
         setBtn(pauseBtn, false);
-        if (!isIdle && diceBtn) diceBtn.style.opacity = '1';
+        // FIX: Was `if (!isIdle && diceBtn)` — dice was never set to opacity 1 during idle state,
+        // so it stayed faded (0.3) after any prior bidding session. Now always shown enabled when
+        // auction is not actively running.
+        if (diceBtn) diceBtn.style.opacity = '1';
     } else {
         if (dynBtn) {
             dynBtn.disabled = false;
