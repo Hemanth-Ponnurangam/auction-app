@@ -50,13 +50,29 @@ export function pullRandomFromSet() {
     let setDropdown = document.getElementById('setSelector');
     let activeSet = setDropdown ? setDropdown.value : '';
     
-    let available = state.playerPool
-        .map((p, i) => ({ p, i }))
-        .filter(item => item.p && item.p.set === activeSet && item.p.status !== 'sold' && item.p.status !== 'unsold');
+    // FIX: If setSelector has no value yet (player pool not yet loaded, or placeholder selected),
+    // fall back to picking from ALL available players across every set instead of failing silently.
+    let available;
+    if (activeSet) {
+        available = state.playerPool
+            .map((p, i) => ({ p, i }))
+            .filter(item => item.p && item.p.set === activeSet && item.p.status !== 'sold' && item.p.status !== 'unsold');
         
-    if (!available.length) { 
-        showAlert('Empty Set', 'No available players left in this set!'); 
-        return; 
+        // If the selected set is exhausted, show a clear message
+        if (!available.length) {
+            showAlert('Empty Set', `No available players left in the "${activeSet}" set!`);
+            return;
+        }
+    } else {
+        // No set selected — pick from all available players
+        available = state.playerPool
+            .map((p, i) => ({ p, i }))
+            .filter(item => item.p && item.p.status !== 'sold' && item.p.status !== 'unsold');
+        
+        if (!available.length) {
+            showAlert('Empty Pool', 'No available players left in the pool!');
+            return;
+        }
     }
     pushPlayerToBlock(available[Math.floor(Math.random() * available.length)].i);
 }
