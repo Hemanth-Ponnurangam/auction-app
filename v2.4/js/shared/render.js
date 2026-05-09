@@ -30,7 +30,9 @@ export function renderDeckList(containerId, activeSet, searchQuery, roleFilter, 
     filtered.forEach(item => {
         let isStar = watchlistSet ? watchlistSet.has(item.p.name) : false;
         let starBtn = watchlistSet ? `<button style="background:transparent; border:none; color:${isStar?'#ffc107':'#444'}; font-size:14px; cursor:pointer;" onclick="toggleWatch('${esc(item.p.name)}')">★</button>` : '';
-        let btn = isAuctioneer ? `<button class="action-btn" style="padding:4px 8px; font-size:10px;" onclick="pushPlayerToBlock(${item.i})">PUSH</button>` : `<div style="text-align:right;">${starBtn}</div>`;
+        // FIX: Was using onclick="pushPlayerToBlock()" which calls window.pushPlayerToBlock — never defined.
+        // Now uses data-push-index so the event delegation in auctioneer/main.js catches it correctly.
+        let btn = isAuctioneer ? `<button class="action-btn" style="padding:4px 8px; font-size:10px;" data-push-index="${item.i}">PUSH</button>` : `<div style="text-align:right;">${starBtn}</div>`;
         let roleStr = item.p.role ? `<span style="font-size:9px; background:#222; padding:2px 6px; border-radius:4px; color:#0dcaf0;">${esc(item.p.role)}</span>` : '';
         let isOv = !['india','indian','ind'].includes((item.p.nationality || 'Indian').trim().toLowerCase());
         let plane = isOv ? '✈️' : '';
@@ -54,7 +56,8 @@ export function renderUnsoldList(containerId, searchQuery, isAuctioneer = false)
 
     let html = '';
     filtered.forEach(item => {
-        let btn = isAuctioneer ? `<button class="action-btn danger" style="padding:4px 8px; font-size:10px; background:#dc3545; color:#fff;" onclick="pushPlayerToBlock(${item.i})">RE-PUSH</button>` : `<span style="color:#dc3545; font-size:10px; font-weight:bold;">UNSOLD</span>`;
+        // FIX: Same as PUSH — was using onclick="pushPlayerToBlock()" which calls undefined window fn.
+        let btn = isAuctioneer ? `<button class="action-btn danger" style="padding:4px 8px; font-size:10px; background:#dc3545; color:#fff;" data-push-index="${item.i}">RE-PUSH</button>` : `<span style="color:#dc3545; font-size:10px; font-weight:bold;">UNSOLD</span>`;
         html += `<div class="list-item" style="border-left-color:#dc3545;"><div class="item-info"><span class="item-name">${esc(item.p.name)}</span><span class="item-price">Base: ₹${(item.p.base_price/CRORE).toFixed(2)} Cr</span></div>${btn}</div>`;
     });
     list.innerHTML = html;
