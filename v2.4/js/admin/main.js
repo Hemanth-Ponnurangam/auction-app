@@ -130,7 +130,7 @@ function executeAdminBoot() {
     let dash = document.getElementById('masterDashboard');
     if (dash) dash.style.display = 'flex';
     
-    db.ref('presets').on('value', snap => {
+    db.ref('preset_databases').on('value', snap => {
         activeDatabases = snap.val() || {};
         updateDbDropdown();
         renderDatabaseManager();
@@ -249,7 +249,7 @@ window.togglePlayerList = (e, targetId) => {
 
 window.deleteDatabase = (e, dbName) => {
     e.stopPropagation();
-    showConfirm('Delete Database', `Are you sure you want to permanently delete "${dbName}"?`, () => { db.ref(`presets/${dbName}`).remove(); });
+    showConfirm('Delete Database', `Are you sure you want to permanently delete "${dbName}"?`, () => { db.ref(`preset_databases/${dbName}`).remove(); });
 };
 
 window.appendPlayersToDB = (e, dbName) => {
@@ -279,7 +279,7 @@ window.appendPlayersToDB = (e, dbName) => {
                 let existing = Array.isArray(raw) ? raw : Object.values(raw);
                 existing = existing.filter(p => p !== null); // Clean before saving
                 
-                db.ref(`presets/${dbName}`).set([...existing, ...newPlayers]).then(() => showAlert('Success', `Appended ${newPlayers.length} players to ${dbName} via CSV.`));
+                db.ref(`preset_databases/${dbName}`).set([...existing, ...newPlayers]).then(() => showAlert('Success', `Appended ${newPlayers.length} players to ${dbName} via CSV.`));
             };
             reader.readAsText(file);
         };
@@ -297,7 +297,7 @@ window.appendPlayersToDB = (e, dbName) => {
                 const newPlayers = newNames.map(name => ({
                     name: name, base_price: 20000000, role: 'BAT', nationality: 'Indian', status: 'available', set: 'Uncapped'
                 }));
-                db.ref(`presets/${dbName}`).set([...existing, ...newPlayers]).then(() => showAlert('Success', `Appended ${newPlayers.length} players to ${dbName}.`));
+                db.ref(`preset_databases/${dbName}`).set([...existing, ...newPlayers]).then(() => showAlert('Success', `Appended ${newPlayers.length} players to ${dbName}.`));
             });
         }, 100);
     });
@@ -325,7 +325,7 @@ function handleDatabaseUpload() {
             return p;
         }).filter(p => p.name);
         
-        db.ref('presets/' + dbName).set(pool).then(() => {
+        db.ref('preset_databases/' + dbName).set(pool).then(() => {
             let modal = document.getElementById('uploadModal');
             if (modal) modal.style.display = 'none';
             document.getElementById('dbNameInput').value = '';
