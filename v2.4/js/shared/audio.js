@@ -1,5 +1,6 @@
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+
 export function playSound(type) {
     if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
