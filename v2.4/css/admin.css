@@ -1,0 +1,45 @@
+/**
+ * css/admin.css
+ * Specific styles, tables, and layouts for the Super Admin platform console.
+ */
+
+.file-upload-wrapper { border: 2px dashed #444; background: #0a0a0f; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+.file-upload-wrapper input[type=file] { color: #aaa; font-size: 12px; width: 100%; margin-top: 8px; }
+.upload-instructions { font-size: 10px; color: #888; margin-top: 8px; line-height: 1.5; background: rgba(255,255,255,.05); padding: 8px; border-radius: 4px; }
+.upload-instructions strong { color: #ffc107; }
+
+/* ─ Dashboard ────────────────────────────────────────────────────── */
+#masterDashboard { display: none; max-width: 1400px; margin: auto; flex-direction: column; gap: 20px; }
+.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 15px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+.main-title { color: #fff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+.main-title span { color: #ffc107; }
+.badge { background: #dc3545; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 1px; }
+.panel { background: #0f0f15; border: 1px solid #222; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+.panel-title { font-size: 16px; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+/* ─ Specialized Inputs ────────────────────────────────────────────── */
+select.admin-select { background: #000; color: #ffc107; border: 1px solid #333; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; outline: none; appearance: none; cursor: pointer; min-width: 250px; }
+input.admin-search { background: #000; color: #fff; border: 1px solid #333; padding: 10px 15px; border-radius: 6px; font-size: 14px; outline: none; width: 250px; }
+input.admin-search:focus { border-color: #007bff; }
+
+/* ─ Grids ────────────────────────────────────────────────────────── */
+.room-grid, .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.room-card { background: #000; border: 1px solid #333; border-radius: 10px; padding: 20px; transition: .3s; }
+.room-card:hover { border-color: #555; transform: translateY(-3px); }
+.r-title { font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+.r-pin { color: #ffc107; font-family: monospace; background: #222; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+.r-stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #222; font-size: 12px; color: #aaa; }
+.r-stat span:last-child { color: #fff; font-weight: bold; }
+.team-card { background: #000; border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #222; }
+.t-code { font-size: 24px; font-weight: 900; margin-bottom: 5px; }
+.t-name { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+
+/* ─ Data Tables ──────────────────────────────────────────────────── */
+.db-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.db-table th { background: #0a0a0f; color: #888; padding: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
+.db-table td { padding: 12px; border-bottom: 1px solid #222; color: #ccc; vertical-align: middle; }
+.db-table tr:hover td { background: #111; color: #fff; }
+
+.modal-label { display: block; font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; letter-spacing: .5px; }
+.img-preview { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; border: 1px solid #444; background: #000; display: inline-block; }

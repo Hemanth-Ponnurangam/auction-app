@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Auction Platform</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .hub-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: #0a0a0f; z-index: 5000;
+        }
+        .hub-card {
+            background: #161620; padding: 40px; border-radius: 15px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,.8); border: 1px solid #2d2d3f; 
+            text-align: center; width: 100%; max-width: 450px;
+        }
+        .spectator-btn {
+            background: transparent; color: #888; border: 1px dashed #444; 
+            box-shadow: none; cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hub-container">
+    <div class="hub-card">
+        <h1 style="color:#fff; font-size:28px; margin-top:0; margin-bottom:10px; letter-spacing:2px;">🏏 IPL <span style="color:#ffc107;">AUCTION</span></h1>
+        <p style="color:#aaa; margin-bottom:30px; font-size:13px;">Select your portal access</p>
+        
+        <button class="btn-massive btn-franchise" onclick="window.location.href='franchise.html'">🏢 FRANCHISE</button>
+        <button class="btn-massive btn-auctioneer" onclick="window.location.href='auctioneer.html'">🔨 AUCTIONEER</button>
+        <button class="btn-massive" style="background:#22222d; color:#fff; border:1px solid #444;" onclick="window.location.href='admin.html'">🛡️ ADMIN CONSOLE</button>
+        
+        <button class="btn-massive spectator-btn" onclick="alert('Spectator Mode is coming in the next update!')">📺 SPECTATOR (COMING SOON)</button>
+    </div>
+</div>
+
+</body>
+</html>
