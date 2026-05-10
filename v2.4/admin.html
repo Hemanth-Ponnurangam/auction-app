@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin – Platform Console</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div id="connBanner">⚡ CONNECTION LOST — Attempting to reconnect…</div>
+
+<div id="adminLoginScreen" class="gateway-container">
+    <div class="gateway-card" style="max-width: 400px;">
+        <div style="font-size: 32px; margin-bottom: 10px;">🛡️</div>
+        <h1 style="color:#fff; font-size:24px; margin-bottom:5px; letter-spacing:2px;">SUPER ADMIN</h1>
+        <p style="color:#888; margin-bottom:25px; font-size:12px; text-transform: uppercase; letter-spacing: 1px;">System Access Only</p>
+        
+        <input type="password" id="adminPinInput" class="login-input" placeholder="Enter PIN" maxlength="6" style="text-align:center; font-size:22px; letter-spacing:8px;">
+        
+        <button id="btnAdminLogin" class="submit-btn" style="margin-top: 10px;">AUTHENTICATE</button>
+        <button id="btnAdminBack" class="back-btn" style="margin-top: 15px;">← Back to Home</button>
+    </div>
+</div>
+
+<div id="masterDashboard">
+    <div class="header">
+        <h1 class="main-title">🛡️ <span>PLATFORM CONSOLE</span> <span class="badge">SUPER ADMIN</span></h1>
+        <button class="action-btn outline" id="btnLogoutAdmin">🔒 LOCK CONSOLE</button>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="databases">🗄️ Database Manager</button>
+        <button class="tab-btn" data-tab="images">📸 Image Directory</button>
+        <button class="tab-btn" data-tab="natflags">🏳️ National Flags</button>
+        <button class="tab-btn" data-tab="roleicons">🎯 Role Icons</button>
+        <button class="tab-btn" data-tab="rooms">📡 Live Servers</button>
+        <button class="tab-btn" data-tab="franchises">🌐 Global Franchises</button>
+    </div>
+
+    <div id="tab-databases" class="tab-content active">
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <h2 class="panel-title">Active Preset</h2>
+                    <select id="dbSelector" class="admin-select"></select>
+                    <input type="text" id="adminDbSearch" class="admin-search" placeholder="🔍 Search players…">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="btnOpenUploadModal" class="action-btn">+ Upload CSV</button>
+                </div>
+            </div>
+            <div style="max-height:600px; overflow-y:auto; border:1px solid #222; border-radius:8px;">
+                <div id="presetDbList" style="padding:15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-images" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <h2 class="panel-title">Global Player Images</h2>
+                    <input type="text" id="adminImgSearch" class="admin-search" placeholder="🔍 Search mapping…">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="btnOpenImgModal" class="action-btn">📥 Bulk Upload CSV</button>
+                    <button class="action-btn outline">+ Add Single Image</button>
+                </div>
+            </div>
+            <p style="color:#888; font-size:12px; margin-top:0;">These images are cached globally. When a player's exact name matches, this image will automatically be displayed in the auction room.</p>
+            <div style="max-height:600px; overflow-y:auto; border:1px solid #222; border-radius:8px;">
+                <table class="db-table">
+                    <thead><tr><th>Preview</th><th>Player Name</th><th>Image URL</th><th>Actions</th></tr></thead>
+                    <tbody id="imgTableBody"><tr><td colspan="4" style="text-align:center; color:#666; padding:20px;">No images mapped yet.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="tab-natflags" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <h2 class="panel-title">National Flag Repository</h2>
+                    <input type="text" id="adminFlagSearch" class="admin-search" placeholder="🔍 Search country…">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="btnAddFlag" class="action-btn">+ Upload Flag PNG</button>
+                </div>
+            </div>
+            <p style="color:#888; font-size:12px; margin-top:0;">Upload country flag images (PNG/JPG). The country key must match the nationality field in your player CSV (e.g. india, australia, england).</p>
+            <div id="flagsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:15px; padding:15px; max-height:600px; overflow-y:auto;">
+                <p style="color:#666; text-align:center; grid-column:1/-1; padding:20px;">No flags uploaded yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-roleicons" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <h2 class="panel-title">Role Icon Repository</h2>
+                    <input type="text" id="adminRoleSearch" class="admin-search" placeholder="🔍 Search role…">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="btnAddRoleIcon" class="action-btn">+ Upload Role Icon PNG</button>
+                </div>
+            </div>
+            <p style="color:#888; font-size:12px; margin-top:0;">Upload role icons (PNG with transparent background). The role key must match the role field in your player CSV (e.g. BAT, BWL, ALL, WK).</p>
+            <div id="roleIconsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:15px; padding:15px; max-height:600px; overflow-y:auto;">
+                <p style="color:#666; text-align:center; grid-column:1/-1; padding:20px;">No role icons uploaded yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-rooms" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Active Auction Rooms</h2>
+                <button class="action-btn outline">🔄 Refresh</button>
+            </div>
+            <div id="roomsContainer" class="room-grid"></div>
+        </div>
+    </div>
+
+    <div id="tab-franchises" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Global Franchise Registry</h2>
+                <button id="btnOpenAddTeamModal" class="action-btn">+ Add New Team</button>
+            </div>
+            <p style="color:#888; font-size:12px; margin-top:0;">These teams are available globally across all rooms.</p>
+            <div id="globalTeamsList" class="team-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="uploadModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Upload Database</h2>
+        <label class="modal-label">Preset ID (e.g. mega_2026)</label>
+        <input type="text" id="dbNameInput" class="modal-input" placeholder="Lowercase, no spaces">
+        <label class="modal-label">CSV File</label>
+        <input type="file" id="csvFileInput" accept=".csv" style="color:#aaa; margin-bottom:15px; width:100%;">
+        <div style="font-size:11px; color:#aaa; background:#0a0a0f; padding:10px; border-radius:6px; border:1px dashed #444; margin-bottom:15px; line-height:1.7;">
+            <strong style="color:#ffc107;">STRICT COLUMNS REQUIRED</strong>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" id="btnSubmitDbUpload">UPLOAD &amp; SAVE</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseDbUpload">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="uploadImageCsvModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2 style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Bulk Upload Images</h2>
+        <label class="modal-label">CSV File</label>
+        <input type="file" id="uploadImageFile" accept=".csv" style="color:#aaa; margin-bottom:15px; width:100%;">
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;">IMPORT MAPPINGS</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseImgModal">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="addTeamModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:400px;">
+        <h2 style="color:#fff; margin-top:0;">Add Global Franchise</h2>
+        <label class="modal-label">Team Code (e.g. CSK)</label>
+        <input type="text" id="ntCode" class="modal-input" style="text-transform:uppercase;" maxlength="5">
+        <label class="modal-label">Full Team Name</label>
+        <input type="text" id="ntName" class="modal-input" placeholder="e.g. Chennai Super Kings">
+        <label class="modal-label">Theme Color</label>
+        <input type="color" id="ntColor" value="#007bff" style="width:100%; height:42px; border-radius:6px; border:1px solid #333; background:#000; cursor:pointer; margin-bottom:20px; padding:2px;">
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" id="btnSubmitAddTeam">ADD TEAM</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseAddTeam">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="addFlagModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:400px;">
+        <h2 style="color:#fff; margin-top:0;">Upload National Flag</h2>
+        <label class="modal-label">Country Key (lowercase, e.g. india, australia)</label>
+        <input type="text" id="flagCountryKey" class="modal-input" placeholder="e.g. india" style="text-transform:lowercase;">
+        <label class="modal-label">Country Display Name</label>
+        <input type="text" id="flagCountryName" class="modal-input" placeholder="e.g. India">
+        <label class="modal-label">Flag Image (PNG/JPG)</label>
+        <input type="file" id="flagImageFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="color:#aaa; margin-bottom:8px; width:100%;" onchange="window.previewFlagUpload(this)">
+        <div id="flagPreview" style="display:none; text-align:center; margin-bottom:12px;">
+            <img id="flagPreviewImg" style="max-height:50px; max-width:100px; border-radius:4px; border:1px solid #444;" alt="Flag preview">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" id="btnSubmitFlag">UPLOAD FLAG</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseFlag">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="addRoleIconModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:400px;">
+        <h2 style="color:#fff; margin-top:0;">Upload Role Icon</h2>
+        <label class="modal-label">Role Key (uppercase, e.g. BAT, BWL, ALL, WK)</label>
+        <input type="text" id="roleIconKey" class="modal-input" placeholder="e.g. BAT" style="text-transform:uppercase;">
+        <label class="modal-label">Role Display Name</label>
+        <input type="text" id="roleIconName" class="modal-input" placeholder="e.g. Batsman">
+        <label class="modal-label">Icon Image (PNG with transparent background)</label>
+        <input type="file" id="roleIconFile" accept="image/png,image/webp,image/svg+xml" style="color:#aaa; margin-bottom:8px; width:100%;" onchange="window.previewRoleIconUpload(this)">
+        <div id="roleIconPreview" style="display:none; text-align:center; margin-bottom:12px; background:repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 12px 12px; padding:8px; border-radius:6px;">
+            <img id="roleIconPreviewImg" style="max-height:60px; max-width:60px; object-fit:contain;" alt="Icon preview">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="flex:1;" id="btnSubmitRoleIcon">UPLOAD ICON</button>
+            <button class="action-btn outline" style="flex:1;" id="btnCloseRoleIcon">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="appModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:420px;">
+        <h2 id="modalTitle" style="color:#fff; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; font-size:18px;"></h2>
+        <p id="modalMessage" style="color:#aaa; margin-bottom:15px; line-height:1.6; white-space:pre-wrap;"></p>
+        <input type="text" id="modalInput" class="modal-input" style="display:none;">
+        <div id="modalButtons" style="display:flex; gap:10px;"></div>
+    </div>
+</div>
+
+<script type="module" src="js/admin/main.js"></script>
+
+</body>
+</html>
