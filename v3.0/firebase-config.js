@@ -23,16 +23,21 @@
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
-    apiKey: "AIzaSyCjJaWjPwK57YDkhPMBLmadg8iaZj5C70A",
-    authDomain: "auction-ea32b.firebaseapp.com",
-    databaseURL: "https://auction-ea32b-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "auction-ea32b",
-    storageBucket: "auction-ea32b.firebasestorage.app",
-    messagingSenderId: "621695853292",
-    appId: "1:621695853292:web:d6dcfe11ee1c7b4fea3bc9",
-    measurementId: "G-31Z19QTDEX"
+  apiKey: "AIzaSyCuI1I49e6QairBH5Nzy6uRTvkIRP4B4pA",
+  authDomain: "auction-465dc.firebaseapp.com",
+  databaseURL: "https://auction-465dc-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "auction-465dc",
+  storageBucket: "auction-465dc.firebasestorage.app",
+  messagingSenderId: "903670398882",
+  appId: "1:903670398882:web:09522c17419dee21d9fcfb",
+  measurementId: "G-PNGMZN8PJR"
 };
 
 // ── Shared Game Constants ──────────────────────────────────────────────────
 const CRORE         = 10_000_000;   // ₹1 Crore in rupees
 const BID_INCREMENT = 2_000_000;    // Standard bid step (₹20 Lakh)
+
+
+
+
+
