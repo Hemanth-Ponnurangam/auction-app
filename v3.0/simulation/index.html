@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Lobby — Cricket HQ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── TOKENS ─────────────────────────────────────────────── */
+        :root {
+            --bg:      #05080c;
+            --bg2:     #0a0f15;
+            --bg3:     #111820;
+            --border:  #1a2535;
+            --text:    #c0ccda;
+            --dim:     #4a6275;
+            --bright:  #e8f0f8;
+            --accent:  #00e5ff;
+            --green:   #00e676;
+            --red:     #ff1744;
+            --yellow:  #ffc107;
+            --mono:    'Space Mono', monospace;
+            --display: 'Barlow Condensed', sans-serif;
+            --body:    'Barlow', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--body); }
+
+        /* animated grid bg */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(0,229,255,.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,229,255,.025) 1px, transparent 1px);
+            background-size: 48px 48px;
+            animation: gridDrift 30s linear infinite;
+        }
+        @keyframes gridDrift {
+            from { background-position: 0 0; }
+            to   { background-position: 48px 48px; }
+        }
+
+        /* ── LAYOUT ─────────────────────────────────────────────── */
+        .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* ── TOP BAR ────────────────────────────────────────────── */
+        .topbar {
+            display: flex; align-items: center; gap: 16px;
+            padding: 14px 28px; border-bottom: 1px solid var(--border);
+            background: rgba(5,8,12,.85); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .topbar-back {
+            font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+            color: var(--dim); text-decoration: none; text-transform: uppercase;
+            display: flex; align-items: center; gap: 6px; transition: color .2s;
+        }
+        .topbar-back:hover { color: var(--accent); }
+        .topbar-sep { color: var(--border); font-size: 18px; }
+        .topbar-title {
+            font-family: var(--display); font-size: 20px; font-weight: 800;
+            letter-spacing: 2px; text-transform: uppercase; color: var(--bright);
+        }
+        .topbar-title span { color: var(--accent); }
+        .topbar-spacer { flex: 1; }
+        .topbar-version { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--dim); }
+
+        /* ── MAIN ───────────────────────────────────────────────── */
+        .main { flex: 1; max-width: 1100px; width: 100%; margin: 0 auto; padding: 32px 24px; }
+
+        /* ── TOOLBAR ────────────────────────────────────────────── */
+        .toolbar {
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .toolbar-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; flex-wrap: wrap; }
+
+        .league-filter-wrap {
+            display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+        }
+        .league-filter-label {
+            font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--dim); white-space: nowrap;
+        }
+        #leagueFilter { display: flex; gap: 6px; flex-wrap: wrap; }
+        .league-pill {
+            font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+            padding: 5px 12px; border-radius: 2px; border: 1px solid var(--border);
+            color: var(--dim); cursor: pointer; transition: all .2s; background: var(--bg2);
+            user-select: none;
+        }
+        .league-pill:hover { border-color: var(--accent); color: var(--accent); }
+        .league-pill.active { background: rgba(0,229,255,.1); border-color: var(--accent); color: var(--accent); }
+
+        .toolbar-right { display: flex; gap: 8px; align-items: center; }
+
+        .join-code-wrap { display: flex; gap: 0; }
+        .join-code-wrap input {
+            background: var(--bg2); border: 1px solid var(--border); border-right: none;
+            color: var(--bright); font-family: var(--mono); font-size: 12px; letter-spacing: 3px;
+            text-transform: uppercase; padding: 8px 12px; border-radius: 2px 0 0 2px; width: 110px; outline: none;
+            transition: border-color .2s;
+        }
+        .join-code-wrap input:focus { border-color: var(--accent); }
+        .join-code-wrap input::placeholder { color: var(--dim); letter-spacing: 2px; }
+        .join-code-wrap button {
+            font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+            padding: 8px 14px; background: var(--bg3); border: 1px solid var(--border);
+            color: var(--text); cursor: pointer; border-radius: 0 2px 2px 0; transition: all .2s;
+            white-space: nowrap;
+        }
+        .join-code-wrap button:hover { border-color: var(--accent); color: var(--accent); }
+
+        .btn-icon {
+            font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+            padding: 8px 14px; background: var(--bg2); border: 1px solid var(--border);
+            color: var(--dim); cursor: pointer; border-radius: 2px; transition: all .2s;
+        }
+        .btn-icon:hover { border-color: var(--dim); color: var(--text); }
+
+        .btn-create {
+            font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; padding: 9px 20px; background: var(--accent);
+            color: var(--bg); border: none; border-radius: 2px; cursor: pointer; transition: all .2s;
+            white-space: nowrap;
+        }
+        .btn-create:hover { background: #33eaff; }
+
+        /* ── ROOM COUNT ─────────────────────────────────────────── */
+        .rooms-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+        }
+        .rooms-header-title {
+            font-family: var(--mono); font-size: 10px; letter-spacing: 3px;
+            text-transform: uppercase; color: var(--dim);
+        }
+        .rooms-count-badge {
+            font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
+            background: var(--bg3); border: 1px solid var(--border);
+            color: var(--accent); padding: 2px 8px; border-radius: 10px;
+        }
+
+        /* ── ROOMS GRID ─────────────────────────────────────────── */
+        #roomsGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .room-card {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: 4px; padding: 20px; cursor: pointer;
+            transition: all .2s; position: relative; overflow: hidden;
+        }
+        .room-card::before {
+            content: ''; position: absolute; inset: 0; opacity: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,229,255,.06) 0%, transparent 70%);
+            transition: opacity .3s;
+        }
+        .room-card:hover { border-color: rgba(0,229,255,.4); transform: translateY(-2px); }
+        .room-card:hover::before { opacity: 1; }
+
+        .room-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+        .room-name { font-family: var(--display); font-size: 20px; font-weight: 800; text-transform: uppercase; color: var(--bright); line-height: 1.1; }
+        .room-status-badge {
+            font-family: var(--mono); font-size: 8px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 3px 8px; border-radius: 2px; white-space: nowrap; flex-shrink: 0;
+        }
+        .status-waiting  .room-status-badge { background: rgba(255,193,7,.1);   border: 1px solid rgba(255,193,7,.3);   color: var(--yellow); }
+        .status-setup    .room-status-badge { background: rgba(0,229,255,.1);    border: 1px solid rgba(0,229,255,.3);   color: var(--accent); }
+        .status-toss     .room-status-badge { background: rgba(0,230,118,.1);    border: 1px solid rgba(0,230,118,.3);   color: var(--green); }
+        .status-live     .room-status-badge { background: rgba(255,23,68,.1);    border: 1px solid rgba(255,23,68,.3);   color: var(--red); }
+        .status-done     .room-status-badge { background: rgba(74,98,117,.1);    border: 1px solid rgba(74,98,117,.3);   color: var(--dim); }
+
+        .room-league { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
+
+        .room-players { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .room-player-slot {
+            font-size: 12px; color: var(--dim);
+            padding: 6px 10px; border: 1px dashed var(--border); border-radius: 2px;
+        }
+        .room-player-slot.filled { color: var(--text); border-style: solid; border-color: var(--border); }
+        .room-player-slot.filled span { color: var(--bright); }
+
+        .room-join-btn {
+            width: 100%; font-family: var(--display); font-size: 13px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase; padding: 10px;
+            background: rgba(0,229,255,.08); border: 1px solid rgba(0,229,255,.25);
+            color: var(--accent); border-radius: 2px; cursor: pointer; transition: all .2s;
+        }
+        .room-join-btn:hover:not(:disabled) { background: rgba(0,229,255,.15); border-color: var(--accent); }
+        .room-join-btn:disabled { background: transparent; border-color: var(--border); color: var(--dim); cursor: default; }
+
+        /* ── EMPTY STATE ────────────────────────────────────────── */
+        .empty-state {
+            text-align: center; padding: 80px 24px; color: var(--dim);
+        }
+        .empty-icon { font-size: 56px; margin-bottom: 16px; opacity: .6; }
+        .empty-state p { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+
+        /* ── MODAL OVERLAY ──────────────────────────────────────── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 500;
+            background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: 4px; padding: 32px; width: 100%; max-width: 420px;
+            position: relative; animation: modalIn .2s ease;
+        }
+        @keyframes modalIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+        .modal-title {
+            font-family: var(--display); font-size: 24px; font-weight: 800;
+            text-transform: uppercase; color: var(--bright); letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        .modal-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--dim); margin-bottom: 24px; }
+
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--dim); margin-bottom: 6px;
+        }
+        .field input, .field select {
+            width: 100%; background: var(--bg3); border: 1px solid var(--border);
+            color: var(--bright); font-family: var(--mono); font-size: 13px;
+            padding: 10px 12px; border-radius: 2px; outline: none; transition: border-color .2s;
+        }
+        .field input:focus, .field select:focus { border-color: var(--accent); }
+        .field input::placeholder { color: var(--dim); }
+        .field select option { background: var(--bg3); }
+
+        .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+        .btn-cancel {
+            flex: 1; font-family: var(--display); font-size: 13px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase; padding: 12px;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--dim); border-radius: 2px; cursor: pointer; transition: all .2s;
+        }
+        .btn-cancel:hover { border-color: var(--dim); color: var(--text); }
+        .btn-confirm {
+            flex: 2; font-family: var(--display); font-size: 13px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase; padding: 12px;
+            background: var(--accent); border: none; color: var(--bg);
+            border-radius: 2px; cursor: pointer; transition: all .2s;
+        }
+        .btn-confirm:hover { background: #33eaff; }
+
+        /* ── LOADING SHIMMER ─────────────────────────────────────── */
+        .shimmer {
+            background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 2px;
+        }
+        @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+        @media (max-width: 600px) {
+            .main { padding: 20px 16px; }
+            .topbar { padding: 12px 16px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar-right { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <a href="index.html" class="topbar-back">⚡ Home</a>
+        <span class="topbar-sep">|</span>
+        <div class="topbar-title">⚡ Simulation <span>HQ</span></div>
+        <div class="topbar-spacer"></div>
+        <a href="admin.html" style="font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">🛡 Admin</a>
+        <span class="topbar-version">v3.0</span>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <span class="league-filter-label">League</span>
+                <div id="leagueFilter"></div>
+            </div>
+            <div class="toolbar-right">
+                <div class="join-code-wrap">
+                    <input type="text" id="joinCodeInput" placeholder="ROOM CODE" maxlength="8">
+                    <button id="btnJoinByCode">Join →</button>
+                </div>
+                <button class="btn-icon" id="btnRefresh" title="Refresh rooms">↻ Refresh</button>
+                <button class="btn-create" id="btnOpenCreate">+ Create Room</button>
+            </div>
+        </div>
+
+        <!-- ROOMS HEADER -->
+        <div class="rooms-header">
+            <span class="rooms-header-title">Active Rooms</span>
+            <span class="rooms-count-badge" id="roomCount">0</span>
+        </div>
+
+        <!-- ROOMS GRID -->
+        <div id="roomsGrid">
+            <!-- populated by lobby.js -->
+            <div class="empty-state" style="grid-column:1/-1;">
+                <div class="empty-icon">🏟️</div>
+                <p>Loading rooms…</p>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ══ CREATE ROOM MODAL ══ -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal">
+        <div class="modal-title">Create Room</div>
+        <div class="modal-sub">Set up a new simulation match</div>
+
+        <div class="field">
+            <label for="createRoomName">Room Name</label>
+            <input type="text" id="createRoomName" placeholder="e.g. Final Showdown">
+        </div>
+        <div class="field">
+            <label for="createLeague">League Dataset</label>
+            <select id="createLeague">
+                <option value="">Loading leagues…</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="createPlayerName">Your Name</label>
+            <input type="text" id="createPlayerName" placeholder="e.g. Rohit">
+        </div>
+        <div class="field">
+            <label for="createFranchise">Franchise (optional)</label>
+            <select id="createFranchise">
+                <option value="">— No franchise —</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" id="btnCancelCreate">Cancel</button>
+            <button class="btn-confirm" id="btnConfirmCreate">Create →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ JOIN ROOM MODAL ══ -->
+<div class="modal-overlay" id="joinModal">
+    <div class="modal">
+        <div class="modal-title" id="joinModalTitle">Join Room</div>
+        <div class="modal-sub" id="joinModalSub">Enter your details</div>
+
+        <div class="field">
+            <label for="joinPlayerName">Your Name</label>
+            <input type="text" id="joinPlayerName" placeholder="e.g. Virat">
+        </div>
+        <div class="field">
+            <label for="joinFranchise">Franchise (optional)</label>
+            <select id="joinFranchise">
+                <option value="">— No franchise —</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" id="btnCancelJoin">Cancel</button>
+            <button class="btn-confirm" id="btnConfirmJoin">Join Match →</button>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase & Lobby -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-config.js"></script>
+<script src="js/lobby.js"></script>
+</body>
+</html>

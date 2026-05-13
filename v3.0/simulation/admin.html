@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Admin Console</title>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <style>
+        :root {
+            --bg:#05080c; --bg2:#0a0f15; --bg3:#111820; --border:#1a2535;
+            --text:#c0ccda; --dim:#4a6275; --bright:#e8f0f8;
+            --accent:#00e5ff; --green:#00e676; --red:#ff1744; --yellow:#ffc107;
+            --mono:'Space Mono',monospace; --display:'Barlow Condensed',sans-serif;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;}
+        body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+            background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+            background-size:48px 48px;animation:gridDrift 30s linear infinite;}
+        @keyframes gridDrift{from{background-position:0 0}to{background-position:48px 48px}}
+
+        /* ── LOGIN GATE ── */
+        .gate{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+        .gate-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:40px 32px;width:340px;text-align:center;}
+        .gate-icon{font-size:40px;margin-bottom:12px;}
+        .gate-title{font-family:var(--display);font-size:28px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--bright);margin-bottom:4px;}
+        .gate-sub{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:24px;}
+        .gate input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--bright);
+            font-family:var(--mono);font-size:22px;letter-spacing:8px;text-align:center;padding:12px;border-radius:2px;outline:none;margin-bottom:14px;transition:border-color .2s;}
+        .gate input:focus{border-color:var(--accent);}
+        .gate-btn{width:100%;font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+            padding:12px;background:var(--accent);color:var(--bg);border:none;border-radius:2px;cursor:pointer;transition:all .2s;}
+        .gate-btn:hover{background:#33eaff;}
+        .gate-back{display:block;margin-top:14px;font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);text-decoration:none;transition:color .2s;}
+        .gate-back:hover{color:var(--text);}
+        .gate-error{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--red);margin-top:10px;display:none;}
+
+        /* ── MAIN CONSOLE ── */
+        .console{display:none;flex-direction:column;min-height:100vh;position:relative;z-index:1;}
+        .topbar{display:flex;align-items:center;gap:16px;padding:14px 28px;border-bottom:1px solid var(--border);
+            background:rgba(5,8,12,.9);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
+        .topbar-title{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--bright);}
+        .topbar-title span{color:var(--accent);}
+        .topbar-spacer{flex:1;}
+        .topbar-logout{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+            color:var(--dim);background:none;border:1px solid var(--border);padding:6px 14px;border-radius:2px;cursor:pointer;transition:all .2s;}
+        .topbar-logout:hover{border-color:var(--red);color:var(--red);}
+        .back-link{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+            color:var(--dim);text-decoration:none;transition:color .2s;}
+        .back-link:hover{color:var(--accent);}
+
+        /* ── CONTENT ── */
+        .content{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:32px 24px;}
+        .section{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:24px;}
+        .section-title{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:2px;
+            text-transform:uppercase;color:var(--bright);margin-bottom:4px;}
+        .section-sub{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:20px;}
+
+        /* ── FORM ── */
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+        @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+        .field{display:flex;flex-direction:column;gap:6px;}
+        .field label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);}
+        .field input,.field select,.field textarea{
+            background:var(--bg3);border:1px solid var(--border);color:var(--bright);
+            font-family:var(--mono);font-size:12px;padding:9px 12px;border-radius:2px;outline:none;transition:border-color .2s;}
+        .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+        .field textarea{resize:vertical;min-height:100px;}
+        .field select option{background:var(--bg3);}
+        .btn{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+            padding:10px 22px;border-radius:2px;cursor:pointer;transition:all .2s;border:none;}
+        .btn-primary{background:var(--accent);color:var(--bg);}
+        .btn-primary:hover{background:#33eaff;}
+        .btn-danger{background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3);color:var(--red);}
+        .btn-danger:hover{background:rgba(255,23,68,.2);}
+
+        /* ── LEAGUES GRID ── */
+        .leagues-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:16px;}
+        .league-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:16px;}
+        .league-card-name{font-family:var(--display);font-size:18px;font-weight:800;text-transform:uppercase;color:var(--bright);margin-bottom:4px;}
+        .league-card-meta{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:12px;}
+        .league-card-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+        /* ── ROOMS TABLE ── */
+        .rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:16px;}
+        .room-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:16px;}
+        .room-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+        .room-card-name{font-family:var(--display);font-size:18px;font-weight:800;text-transform:uppercase;color:var(--bright);}
+        .status-badge{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:2px;}
+        .status-waiting{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);color:var(--yellow);}
+        .status-live{background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3);color:var(--red);}
+        .status-done{background:rgba(74,98,117,.1);border:1px solid rgba(74,98,117,.3);color:var(--dim);}
+        .room-card-meta{font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:12px;}
+        .room-card-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+        .empty{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);text-align:center;padding:40px;grid-column:1/-1;}
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══ LOGIN GATE ══ -->
+<div class="gate" id="gate">
+    <div class="gate-card">
+        <div class="gate-icon">⚡</div>
+        <div class="gate-title">Sim Admin</div>
+        <div class="gate-sub">Authorised Access Only</div>
+        <input type="password" id="pinInput" placeholder="PIN" maxlength="6">
+        <button class="gate-btn" onclick="checkPin()">Authenticate →</button>
+        <a href="index.html" class="gate-back">← Back to Lobby</a>
+        <div class="gate-error" id="pinError">Incorrect PIN</div>
+    </div>
+</div>
+
+<!-- ══ CONSOLE ══ -->
+<div class="console" id="console">
+
+    <header class="topbar">
+        <a href="index.html" class="back-link">← Lobby</a>
+        <div class="topbar-title">⚡ Simulation <span>Admin</span></div>
+        <div class="topbar-spacer"></div>
+        <button class="topbar-logout" onclick="logout()">Sign Out</button>
+    </header>
+
+    <div class="content">
+
+        <!-- ── ADD LEAGUE ── -->
+        <div class="section">
+            <div class="section-title">Add Simulation League</div>
+            <div class="section-sub">Upload player DNA profiles as JSON</div>
+            <div class="form-grid">
+                <div class="field">
+                    <label>League Key (no spaces)</label>
+                    <input type="text" id="leagueKey" placeholder="e.g. ipl2024">
+                </div>
+                <div class="field">
+                    <label>Display Name</label>
+                    <input type="text" id="leagueName" placeholder="e.g. IPL 2024">
+                </div>
+                <div class="field" style="grid-column:1/-1;">
+                    <label>Player Stats JSON</label>
+                    <textarea id="leagueJson" placeholder='{"player1": {"bat_avg":35, ...}, ...}'></textarea>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="addLeague()">+ Add League</button>
+            <span id="leagueStatus" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--green);margin-left:16px;display:none;"></span>
+        </div>
+
+        <!-- ── EXISTING LEAGUES ── -->
+        <div class="section">
+            <div class="section-title">Simulation Leagues</div>
+            <div class="section-sub">Manage uploaded league datasets</div>
+            <div class="leagues-grid" id="leaguesGrid">
+                <div class="empty">Loading leagues…</div>
+            </div>
+        </div>
+
+        <!-- ── SIMULATION ROOMS ── -->
+        <div class="section">
+            <div class="section-title">Active Rooms</div>
+            <div class="section-sub">Monitor and manage all simulation rooms</div>
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="loadRooms()">↻ Refresh</button>
+                <button class="btn btn-danger" onclick="clearDoneRooms()">🗑 Clear Completed</button>
+            </div>
+            <div class="rooms-grid" id="roomsGrid">
+                <div class="empty">Click Refresh to load rooms</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const db = firebase.database();
+const ADMIN_PIN = '111111'; // ← Change this
+
+function checkPin() {
+    const val = document.getElementById('pinInput').value;
+    if (val === ADMIN_PIN) {
+        sessionStorage.setItem('simAdmin', '1');
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('console').style.display = 'flex';
+        loadLeagues();
+        loadRooms();
+    } else {
+        const err = document.getElementById('pinError');
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 2000);
+    }
+}
+document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPin();
+});
+function logout() {
+    sessionStorage.removeItem('simAdmin');
+    location.reload();
+}
+if (sessionStorage.getItem('simAdmin')) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('console').style.display = 'flex';
+    loadLeagues();
+    loadRooms();
+}
+
+// ── LEAGUES ──────────────────────────────────────────────────────
+async function addLeague() {
+    const key  = document.getElementById('leagueKey').value.trim().replace(/\s+/g,'_');
+    const name = document.getElementById('leagueName').value.trim();
+    const raw  = document.getElementById('leagueJson').value.trim();
+    if (!key || !name || !raw) return alert('Fill all fields');
+    let data;
+    try { data = JSON.parse(raw); } catch(e) { return alert('Invalid JSON: ' + e.message); }
+    const status = document.getElementById('leagueStatus');
+    status.textContent = 'Uploading…'; status.style.display = 'inline';
+    await db.ref('simulation_data/leagues/' + key).set({ name, playerStats: data, createdAt: firebase.database.ServerValue.TIMESTAMP });
+    status.textContent = '✓ Saved!';
+    setTimeout(() => status.style.display = 'none', 2500);
+    document.getElementById('leagueKey').value = '';
+    document.getElementById('leagueName').value = '';
+    document.getElementById('leagueJson').value = '';
+    loadLeagues();
+}
+
+async function loadLeagues() {
+    const snap = await db.ref('simulation_data/leagues').once('value');
+    const grid = document.getElementById('leaguesGrid');
+    if (!snap.val()) { grid.innerHTML = '<div class="empty">No leagues yet — add one above</div>'; return; }
+    grid.innerHTML = Object.entries(snap.val()).map(([key, v]) => `
+        <div class="league-card">
+            <div class="league-card-name">${v.name || key}</div>
+            <div class="league-card-meta">KEY: ${key} &nbsp;|&nbsp; ${Object.keys(v.playerStats||{}).length} players</div>
+            <div class="league-card-actions">
+                <button class="btn btn-danger" onclick="deleteLeague('${key}')">Delete</button>
+            </div>
+        </div>`).join('');
+}
+
+async function deleteLeague(key) {
+    if (!confirm('Delete league "' + key + '"?')) return;
+    await db.ref('simulation_data/leagues/' + key).remove();
+    loadLeagues();
+}
+
+// ── ROOMS ─────────────────────────────────────────────────────────
+async function loadRooms() {
+    const snap = await db.ref('simulation/rooms').once('value');
+    const grid = document.getElementById('roomsGrid');
+    if (!snap.val()) { grid.innerHTML = '<div class="empty">No rooms yet</div>'; return; }
+    const rooms = snap.val();
+    grid.innerHTML = Object.entries(rooms).map(([id, r]) => {
+        const status = r.status || 'unknown';
+        const badge  = `<span class="status-badge status-${status}">${status.toUpperCase()}</span>`;
+        const p1 = r.players?.team1?.playerName || '—';
+        const p2 = r.players?.team2?.playerName || '—';
+        return `
+        <div class="room-card">
+            <div class="room-card-top">
+                <div class="room-card-name">${r.name || id}</div>
+                ${badge}
+            </div>
+            <div class="room-card-meta">
+                ${r.league || '—'} &nbsp;|&nbsp; ${p1} vs ${p2}<br>
+                Code: <span style="color:var(--accent);letter-spacing:2px;">${r.code || '—'}</span>
+            </div>
+            <div class="room-card-actions">
+                <a href="room.html?roomId=${id}" target="_blank" style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:2px;text-decoration:none;">View →</a>
+                <button class="btn btn-danger" style="font-size:10px;padding:5px 12px;" onclick="deleteRoom('${id}')">Delete</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function deleteRoom(id) {
+    if (!confirm('Delete room ' + id + '?')) return;
+    await db.ref('simulation/rooms/' + id).remove();
+    loadRooms();
+}
+
+async function clearDoneRooms() {
+    if (!confirm('Delete all completed rooms?')) return;
+    const snap = await db.ref('simulation/rooms').once('value');
+    if (!snap.val()) return;
+    const deletes = Object.entries(snap.val())
+        .filter(([,r]) => r.status === 'done' || r.status === 'complete')
+        .map(([id]) => db.ref('simulation/rooms/' + id).remove());
+    await Promise.all(deletes);
+    loadRooms();
+}
+</script>
+</body>
+</html>

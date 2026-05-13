@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Simulation — Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+    <link rel="stylesheet" href="css/simulation.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div class="top-left">
+        <a href="index.html" class="back-link">← Lobby</a>
+        <div id="topRoomName" class="top-room-name">Loading…</div>
+        <span id="topRoomCode" class="top-room-code">—</span>
+        <span id="topLeague" class="top-league"></span>
+    </div>
+    <div id="phaseIndicator" class="phase-indicator waiting">● WAITING</div>
+</div>
+
+<div class="shell">
+
+    <!-- ══ WAITING PHASE ══ -->
+    <div id="waitingPhase">
+        <div class="wait-icon">🏟️</div>
+        <h2 class="wait-title">Waiting for <span>Opponent</span></h2>
+        <div class="wait-code-box">
+            <div class="wait-code-label">Share this room code</div>
+            <div class="wait-code-value" id="waitRoomCode">—</div>
+        </div>
+        <div class="wait-slots" id="playerSlots">○ Slot 1 open · ○ Slot 2 open</div>
+    </div>
+
+    <!-- ══ SETUP PHASE ══ -->
+    <div id="setupPhase">
+        <div class="setup-grid">
+
+            <!-- MY TEAM -->
+            <div>
+                <div class="setup-panel">
+                    <div class="setup-panel-header">
+                        <div>
+                            <div class="setup-panel-title">Your Squad</div>
+                            <div class="setup-panel-sub">Select your Playing XI</div>
+                        </div>
+                        <span class="squad-count" id="mySquadCount" style="color:var(--dim);">0 / 11</span>
+                    </div>
+                    <div class="setup-panel-body">
+                        <div class="team-header">
+                            <div class="team-avatar">🏏</div>
+                            <div>
+                                <div class="team-name-display" id="myTeamName">—</div>
+                                <span class="franchise-tag" id="myFranchiseTag">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="search-wrap" style="position:relative;">
+                            <span class="search-icon">🔍</span>
+                            <input class="player-search-input" id="playerSearch" placeholder="Search player name…" autocomplete="off">
+                            <div class="player-results" id="playerResults"></div>
+                        </div>
+
+                        <!-- CSV Upload -->
+                        <div class="upload-row">
+                            <span class="csv-label">Or upload XI CSV</span>
+                            <input type="file" id="xiCsvInput" accept=".csv" style="flex:1;font-size:11px;">
+                            <button class="btn-sm" id="btnClearSquad">Clear</button>
+                        </div>
+
+                        <!-- Squad list -->
+                        <ul class="squad-list" id="mySquadList">
+                            <li style="text-align:center;padding:20px;font-family:var(--mono);font-size:10px;color:var(--dim);">No players selected</li>
+                        </ul>
+
+                        <!-- Bowling Allocation -->
+                        <div class="section-title">⚾ Bowling Allocation</div>
+                        <div id="bowlingAllocation"></div>
+                        <div class="bowlers-total invalid" id="bowlersTotalLabel">Total: 0 / 20 overs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPPONENT -->
+            <div>
+                <div class="setup-panel">
+                    <div class="setup-panel-header">
+                        <div>
+                            <div class="setup-panel-title">Opponent</div>
+                            <div class="setup-panel-sub" id="setupOpponentStatus">⏳ Waiting for opponent…</div>
+                        </div>
+                    </div>
+                    <div class="setup-panel-body">
+                        <div class="team-header">
+                            <div class="team-avatar">🎯</div>
+                            <div>
+                                <div class="team-name-display" id="oppTeamName">—</div>
+                                <span class="franchise-tag" id="oppFranchiseTag">—</span>
+                            </div>
+                        </div>
+                        <div class="opp-not-ready" id="oppNotReady">⏳ Opponent is still selecting their squad…</div>
+                        <div id="oppSquadDisplay">
+                            <ul class="squad-list" id="oppSquadList"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ready bar -->
+                <div class="setup-status-bar">
+                    <div>
+                        <div class="ready-status" id="readyStatus">You: Not Ready | Opponent: Not Ready</div>
+                    </div>
+                    <button class="btn-ready" id="btnReady">✓ Confirm Ready</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MATCH PHASE ══ -->
+    <div id="matchPhase">
+
+        <!-- Innings switcher -->
+        <div class="innings-tabs">
+            <button class="inning-tab active" id="inningTab1" onclick="window.__switchInnings(1)">1st Innings</button>
+            <button class="inning-tab" id="inningTab2" onclick="window.__switchInnings(2)">2nd Innings</button>
+        </div>
+
+        <!-- Scoreboard -->
+        <div class="scoreboard">
+            <div class="batting-team-side">
+                <div class="batting-team-name" id="battingTeamName">—</div>
+                <div class="vs-label" id="vsLabel">vs —</div>
+                <div class="score-meta">
+                    <div class="score-meta-item"><div class="score-meta-val" id="crrVal">0.00</div><div class="score-meta-lbl">CRR</div></div>
+                    <div class="score-meta-item"><div class="score-meta-val" id="last5Val">—</div><div class="score-meta-lbl">Last 5 ov</div></div>
+                    <div class="score-meta-item"><div class="score-meta-val" id="extrasVal">0</div><div class="score-meta-lbl">Extras</div></div>
+                </div>
+            </div>
+            <div style="text-align:center;">
+                <div class="live-score" id="liveScore">0/0</div>
+                <div class="live-overs" id="liveOvers">0.0 ov</div>
+            </div>
+            <div></div>
+        </div>
+
+        <!-- Target Banner (2nd innings) -->
+        <div id="targetBanner" style="display:none;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.3);border-radius:4px;padding:14px 24px;margin-bottom:16px;display:none;gap:32px;align-items:center;flex-wrap:wrap;">
+            <div class="target-item"><div class="target-val" id="targetVal">—</div><div class="target-lbl">Target</div></div>
+            <div class="target-item"><div class="target-val" id="needVal">—</div><div class="target-lbl">Need</div></div>
+            <div class="target-item"><div class="target-val" id="ballsLeftVal">—</div><div class="target-lbl">Balls Left</div></div>
+            <div class="target-item"><div class="target-val" id="rrrVal">—</div><div class="target-lbl">RRR</div></div>
+        </div>
+
+        <!-- Over balls -->
+        <div class="over-balls-row">
+            <span class="over-balls-label">This Over</span>
+            <div id="overBalls" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- Match controls -->
+        <!-- Toss rescue bar: visible only when status is toss but no overlay (team1 host) -->
+        <div id="tossRescueBar" style="display:none;background:rgba(255,193,7,.06);border:1px solid rgba(255,193,7,.3);border-radius:4px;padding:12px 16px;margin-bottom:16px;display:none;align-items:center;gap:16px;flex-wrap:wrap;">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--yellow);">⚠ TOSS STALLED</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--dim);flex:1;">The toss did not complete. Click below to restart it.</span>
+            <button onclick="window.retryToss()" style="font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:8px 20px;background:var(--yellow);color:#000;border:none;border-radius:2px;cursor:pointer;">↺ Restart Toss</button>
+        </div>
+        <div class="match-controls">
+            <div class="speed-btns">
+                <button class="speed-btn" data-speed="1200" onclick="setSpeed(this)">🐢</button>
+                <button class="speed-btn active" data-speed="800" onclick="setSpeed(this)">Normal</button>
+                <button class="speed-btn" data-speed="400" onclick="setSpeed(this)">Fast</button>
+                <button class="speed-btn" data-speed="80" onclick="setSpeed(this)">⚡ Max</button>
+            </div>
+            <button class="btn-pause" id="btnPause" onclick="togglePause()">⏸ PAUSE</button>
+        </div>
+
+        <!-- Main columns -->
+        <div class="match-columns">
+            <div>
+                <!-- Batters card -->
+                <div class="players-card">
+                    <div class="players-card-header">Batters</div>
+                    <div class="batter-row batting">
+                        <div class="batter-name striker" id="strikerName">—</div>
+                        <div class="batter-stat highlight" id="strikerRuns">0</div>
+                        <div class="batter-stat-lbl">R</div>
+                        <div class="batter-stat" id="strikerBalls">0</div>
+                        <div class="batter-stat-lbl">B</div>
+                        <div class="batter-stat" id="strikerSR">—</div>
+                        <div class="batter-stat-lbl">SR</div>
+                    </div>
+                    <div class="batter-row">
+                        <div class="batter-name" id="nonStrikerName">—</div>
+                        <div class="batter-stat" id="nsRuns">0</div>
+                        <div class="batter-stat-lbl">R</div>
+                        <div class="batter-stat" id="nsBalls">0</div>
+                        <div class="batter-stat-lbl">B</div>
+                    </div>
+                </div>
+
+                <!-- Bowler card -->
+                <div class="players-card">
+                    <div class="players-card-header">Bowler</div>
+                    <div class="bowler-row">
+                        <div class="bowler-name" id="bowlerName">—</div>
+                        <div class="batter-stat" id="bowlerOvs">0</div>
+                        <div class="batter-stat-lbl">Ov</div>
+                        <div class="batter-stat" id="bowlerRuns">0</div>
+                        <div class="batter-stat-lbl">R</div>
+                        <div class="batter-stat highlight" id="bowlerWkts">0</div>
+                        <div class="batter-stat-lbl">W</div>
+                    </div>
+                </div>
+
+                <!-- Scorecard -->
+                <div class="players-card">
+                    <div class="sc-tabs">
+                        <div class="sc-tab active" onclick="switchSc(this,'batting')">Batting</div>
+                        <div class="sc-tab" onclick="switchSc(this,'bowling')">Bowling</div>
+                        <div class="sc-tab" onclick="switchSc(this,'fow')">Fall of Wkts</div>
+                    </div>
+                    <div class="sc-panel active" id="sc-batting" style="overflow:auto;">
+                        <table class="sc-table">
+                            <thead><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr></thead>
+                            <tbody id="battingScorecard"></tbody>
+                        </table>
+                    </div>
+                    <div class="sc-panel" id="sc-bowling" style="overflow:auto;">
+                        <table class="sc-table">
+                            <thead><tr><th>Bowler</th><th>O</th><th>R</th><th>W</th><th>Eco</th></tr></thead>
+                            <tbody id="bowlingScorecard"></tbody>
+                        </table>
+                    </div>
+                    <div class="sc-panel" id="sc-fow" style="overflow:auto;">
+                        <table class="sc-table">
+                            <thead><tr><th>#</th><th>Batter</th><th>Score</th><th>Over</th></tr></thead>
+                            <tbody id="fowScorecard"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed -->
+            <div class="feed-card">
+                <div class="feed-header">📡 Ball-by-Ball Feed</div>
+                <div class="ball-feed" id="ballFeed"></div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /shell -->
+
+<!-- ══ TOSS OVERLAY ══ -->
+<div class="overlay-screen" id="tossOverlay">
+    <div class="toss-coin">🪙</div>
+    <div class="toss-winner" id="tossWinner"></div>
+    <div class="toss-sub" id="tossWinSub">Flipping coin…</div>
+    <div class="toss-choice-row" id="tossChoiceRow" style="display:none;">
+        <button class="toss-choice-btn toss-bat" onclick="chooseToss('bat')">🏏 Bat</button>
+        <button class="toss-choice-btn toss-bowl" onclick="chooseToss('bowl')">⚾ Bowl</button>
+    </div>
+    <div class="toss-decision-display" id="tossDecisionDisplay" style="display:none;"></div>
+    <!-- Escape hatch shown when toss data is missing -->
+    <div id="tossStuck" style="display:none; margin-top:24px; text-align:center;">
+        <p style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:12px;">TOSS DATA MISSING — HOST CAN RESTART</p>
+        <button onclick="window.retryToss()" style="font-family:var(--display);font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:12px 28px;background:var(--accent);color:var(--bg);border:none;border-radius:2px;cursor:pointer;">↺ Retry Toss</button>
+    </div>
+</div>
+
+<!-- ══ INNINGS BREAK OVERLAY ══ -->
+<div class="overlay-screen" id="inningsBreakOverlay">
+    <div class="break-title">Innings Break</div>
+    <div class="break-score" id="inningsBreakScore">—</div>
+    <div class="break-target" id="inningsBreakTarget">Target: —</div>
+    <div class="break-countdown" id="breakCountdown">5</div>
+</div>
+
+<!-- ══ RESULT OVERLAY ══ -->
+<div class="overlay-screen" id="resultOverlay">
+    <div class="result-trophy" id="resultTrophy">🏆</div>
+    <div class="result-title" id="resultTitle">—</div>
+    <div class="result-sub" id="resultSubtitle">Won by —</div>
+    <div class="result-stats" id="resultStats"></div>
+    <button class="result-btn" onclick="showFinalScorecard()">View Scorecard</button>
+    <a href="index.html" style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);text-decoration:none;margin-top:8px;">← Back to Lobby</a>
+</div>
+
+<script>
+// Scorecard tab switcher
+function switchSc(tab, panel) {
+    document.querySelectorAll('.sc-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sc-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('sc-' + panel).classList.add('active');
+}
+</script>
+<script src="js/engine.js"></script>
+<script src="js/room.js"></script>
+</body>
+</html>
