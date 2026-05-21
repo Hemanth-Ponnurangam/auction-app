@@ -1,0 +1,115 @@
+/**
+ * css/auctioneer.css
+ * Specific styles, layouts, and grids for the Auctioneer Command Center.
+ */
+
+/* ─ Dashboard Layout ────────────────────────────────────────────── */
+#adminDashboardWrapper { display: none; width: 100%; flex-direction: column; }
+.main-title { color: #fff; text-align: center; margin: 0 0 5px; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; text-shadow: 0 0 20px rgba(255,193,7,.4); position: relative; }
+.main-title span { color: #ffc107; }
+.gear-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.05); border: 1px solid #444; border-radius: 8px; padding: 5px 12px; color: #aaa; font-size: 14px; cursor: pointer; transition: .3s; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+.gear-btn:hover { background: #333; color: #fff; border-color: #555; }
+
+.dashboard { width: 100%; max-width: 1400px; margin: auto; display: flex; flex-direction: row; justify-content: space-between; align-items: stretch; gap: 15px; height: calc(100vh - 50px); padding-bottom: 10px; }
+.col-left { width: calc(65% - 7px); display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+.col-right { width: calc(35% - 7px); display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+.panel { background: #161620; padding: 12px 15px; border-radius: 12px; border: 1px solid #2d2d3f; box-shadow: 0 4px 15px rgba(0,0,0,.2); position: relative; display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.data-box { background: #0a0a0f; padding: 12px 15px; border-radius: 8px; border: 1px solid #222; margin-bottom: 10px; flex-shrink: 0; }
+.highlight { color: #28a745; font-weight: bold; display: block; }
+
+/* ─ Timer Arc (Auctioneer Size) ────────────────────────────────── */
+.timer-arc-wrapper { position: relative; width: 108px; height: 108px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.timer-arc-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.timer-arc-svg circle { transition: stroke-dashoffset .5s linear, stroke .3s; }
+.timer-text { font-weight: bold; font-size: 2rem !important; line-height: 1; transition: color .3s, text-shadow .3s; display: inline-block; position: relative; z-index: 1; margin: 0 !important; }
+.timer-green { color: #28a745; text-shadow: 0 0 20px rgba(40,167,69,.8); }
+.timer-orange { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.8); }
+.timer-red { color: #dc3545; text-shadow: 0 0 25px rgba(220,53,69,.9); animation: pulse 1s infinite; }
+.timer-paused { color: #fd7e14; text-shadow: 0 0 20px rgba(253,126,20,.6); }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+/* ─ Player UI (Compact for Admin) ───────────────────────────────── */
+.player-top-section { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 10px; }
+.player-photo-box { width: 100px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-weight: bold; flex-shrink: 0; background: rgba(0,0,0,.3); overflow: hidden; }
+.player-header { flex: 1; }
+.player-name { font-size: 24px; color: #fff; font-weight: bold; margin: 0; line-height: 1.1; display: flex; align-items: center; }
+.past-teams { font-size: 10px; color: #ffc107; background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-top: 8px; }
+.player-role-pill { font-size: 10px; color: #007bff; background: rgba(0,123,255,.1); border: 1px solid rgba(0,123,255,.3); padding: 3px 8px; border-radius: 12px; display: inline-block; font-weight: bold; letter-spacing: 1px; margin-left: 6px; }
+
+.stats-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #222; border-radius: 6px; border: 1px solid #222; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
+.stat-box { background: #0a0a0f; text-align: center; padding: 8px 2px; }
+.stat-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; font-weight: bold; }
+.stat-val { font-size: 15px; color: #eee; font-weight: bold; }
+
+.bid-history-container { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; margin-top: 10px; margin-bottom: 10px; height: 75px; overflow-y: auto; font-size: 11px; }
+.bid-history-item { padding: 4px 8px; border-bottom: 1px solid #1a1a24; display: flex; justify-content: space-between; align-items: center; }
+
+/* ─ Action Buttons ──────────────────────────────────────────────── */
+button { border: none; padding: 10px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: .2s; color: white; text-transform: uppercase; }
+button:not(:disabled):active { transform: translateY(0); }
+.btn-green { background: linear-gradient(145deg,#28a745,#1e7e34); width: 48%; font-size: 15px; padding: 12px; letter-spacing: 2px; border: 1px solid #218838; box-shadow: 0 4px 15px rgba(40,167,69,.2); border-radius: 8px; flex-shrink: 0; }
+.btn-green:not(:disabled):hover { background: linear-gradient(145deg,#218838,#19692c); box-shadow: 0 6px 20px rgba(40,167,69,.4); transform: translateY(-2px); }
+.btn-red { background: linear-gradient(145deg,#dc3545,#bd2130); width: 48%; font-size: 15px; padding: 12px; letter-spacing: 2px; border: 1px solid #c82333; box-shadow: 0 4px 15px rgba(220,53,69,.2); border-radius: 8px; flex-shrink: 0; }
+.btn-red:not(:disabled):hover { background: linear-gradient(145deg,#c82333,#a71d2a); box-shadow: 0 6px 20px rgba(220,53,69,.4); transform: translateY(-2px); }
+
+.btn-clock { background: rgba(253,126,20,.1); border: 1px solid #fd7e14; color: #fd7e14; }
+.btn-clock:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
+.circle-btn { width: 34px; height: 34px; border-radius: 50%; padding: 0 !important; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.btn-pause { background: rgba(253,126,20,.15); border: 1px solid #fd7e14; color: #fd7e14; }
+.btn-pause:not(:disabled):hover { background: #fd7e14; color: #fff; transform: translateY(-1px); }
+.btn-pause.is-paused { background: rgba(40,167,69,.15); border-color: #28a745; color: #28a745; }
+.btn-pause.is-paused:not(:disabled):hover { background: #28a745; color: #fff; }
+
+.btn-undo { background: rgba(108,117,125,.1); border: 1px solid #6c757d; color: #e0e0e0; }
+.btn-undo:not(:disabled):hover { background: #6c757d; color: #fff; transform: translateY(-1px); }
+.btn-outline-danger { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #dc3545; }
+.btn-outline-danger:not(:disabled):hover { background: #dc3545; color: #fff; transform: translateY(-1px); }
+.btn-push { background: rgba(0,123,255,.1); border: 1px solid #007bff; color: #58a6ff; }
+.btn-push:not(:disabled):hover { background: #007bff; color: #fff; box-shadow: 0 0 10px rgba(0,123,255,.5); }
+.btn-repush { background: rgba(220,53,69,.1); border: 1px solid #dc3545; color: #ff6b7b; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: .2s; }
+.btn-repush:not(:disabled):hover { background: #dc3545; color: #fff; }
+
+.btn-dice { background: #22222d; border: 1px solid #444; color: #fff; padding: 6px 14px; font-size: 20px; border-radius: 8px; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.btn-dice:not(:disabled):hover { background: #3a3a4c; border-color: #666; transform: scale(1.05); }
+.flex-row { display: flex; justify-content: space-between; margin-bottom: 0; gap: 15px; flex-shrink: 0; }
+
+/* ─ Broadcast Input Row ──────────────────────────────────────────── */
+.broadcast-row { display: flex; gap: 6px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #222; }
+.broadcast-input { background: #0a0a0f; color: #fff; border: 1px solid #fd7e14; border-radius: 6px; padding: 6px 10px; font-size: 11px; outline: none; flex: 1; transition: .2s; }
+.broadcast-input:focus { border-color: #ffaa44; box-shadow: 0 0 8px rgba(253,126,20,.3); }
+.btn-broadcast-send { background: linear-gradient(145deg,#fd7e14,#c85c00); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; letter-spacing: .5px; flex-shrink: 0; transition: .2s; text-transform: uppercase; }
+.btn-broadcast-send:hover { background: linear-gradient(145deg,#ff9a3c,#fd7e14); transform: translateY(-1px); }
+.btn-broadcast-clear { background: rgba(220,53,69,.1); color: #dc3545; border: 1px solid #dc3545; padding: 6px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; flex-shrink: 0; transition: .2s; }
+.btn-broadcast-clear:hover { background: #dc3545; color: #fff; }
+.broadcast-active-dot { width: 7px; height: 7px; border-radius: 50%; background: #fd7e14; box-shadow: 0 0 8px #fd7e14; animation: blink 1s infinite; flex-shrink: 0; }
+
+/* ─ Budget Grid (Perfect 10 Fit) ────────────────────────────────── */
+.budget-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: minmax(calc(50% - 6px), 1fr); gap: 12px; overflow-y: auto; padding: 12px; flex: 1; min-height: 0; }
+.budget-card { background: #0a0a0f; border: 1px solid #222; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; transition: all .3s; }
+.budget-card-empty { border: 1px dashed #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px; font-weight: bold; letter-spacing: 1px; height: 100%; }
+
+@keyframes leaderPulse { 0% { box-shadow: 0 0 10px rgba(255,193,7,.2); border-color: rgba(255,193,7,.4) !important; } 100% { box-shadow: 0 0 25px rgba(255,193,7,.9); border-color: rgba(255,193,7,1) !important; } }
+@keyframes soldPulse { 0% { box-shadow: 0 0 10px rgba(57,255,20,.2); border-color: rgba(57,255,20,.4) !important; } 100% { box-shadow: 0 0 25px rgba(57,255,20,.9); border-color: rgba(57,255,20,1) !important; } }
+@keyframes leaderPulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,.2); border-color: rgba(192,192,192,.4) !important; } 100% { box-shadow: 0 0 25px rgba(192,192,192,.9); border-color: rgba(192,192,192,1) !important; } }
+
+.leader-card-glow { animation: leaderPulse 1s infinite alternate !important; z-index: 5; }
+.leader-card-glow-silver { animation: leaderPulseSilver 1s infinite alternate !important; z-index: 5; }
+.sold-card-glow { animation: soldPulse 1s infinite alternate !important; z-index: 5; }
+
+.delete-team-btn { position: absolute; top: 2px; right: 4px; background: transparent; border: none; color: #dc3545; font-size: 14px; cursor: pointer; padding: 0; opacity: .6; transition: .2s; }
+.delete-team-btn:hover { opacity: 1; transform: scale(1.2); }
+.pin-eye { cursor: pointer; opacity: .5; transition: .2s; font-size: 11px; }
+.pin-eye:hover { opacity: 1; }
+
+/* ─ Right Tab Utilities ─────────────────────────────────────────── */
+.compact-select { max-width: 220px; flex: 1; }
+.chat-input-area { display: flex; gap: 8px; background: rgba(0,0,0,.3); padding: 5px; border-radius: 6px; border: 1px solid #2d2d3f; align-items: center; }
+.chat-input { background: #0a0a0f; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 10px; outline: none; flex: 1; transition: .2s; }
+.chat-input:focus { border-color: #007bff; }
+.chat-btn { background: linear-gradient(145deg,#007bff,#0056b3); color: #fff; border: none; border-radius: 4px; font-size: 10px; cursor: pointer; padding: 6px 14px; font-weight: bold; transition: .2s; text-transform: uppercase; letter-spacing: 1px; }
+.chat-btn:hover { transform: translateY(-1px); }
+.log-entry { font-family: 'Consolas', monospace; font-size: 12px; margin-bottom: 8px; color: #aaa; border-bottom: 1px dashed #222; padding-bottom: 8px; }
+.log-time { color: #555; margin-right: 8px; }
+.hotkey-hint { position: absolute; top: 8px; right: 15px; font-size: 11px; color: #888; background: #111118; padding: 4px 8px; border-radius: 8px; border: 1px solid #2d2d3f; z-index: 10; }
+.key-badge { background: #22222d; color: #ffc107; padding: 3px 6px; border-radius: 4px; font-family: monospace; border-bottom: 2px solid #000; margin: 0 4px; }
